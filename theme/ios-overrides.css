@@ -1,0 +1,76 @@
+/* ═══════════════════════════════════════════ */
+/* iOS PWA Specific Fixes                      */
+/* ═══════════════════════════════════════════ */
+
+/* Prevent pull-to-refresh in standalone */
+@media (display-mode: standalone) {
+  html {
+    overscroll-behavior-y: none;
+  }
+}
+
+/* Fix iOS input zoom (font-size < 16px triggers zoom) */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Fix iOS momentum scrolling */
+.scroll-container {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* iOS safe area utilities */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-x {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Fix tap delay on iOS */
+* { touch-action: manipulation; }
+
+/* Prevent text selection on UI elements (not inputs) */
+button, [role="button"], nav, .no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection in content areas */
+p, span, h1, h2, h3, h4, input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Fix iOS 100vh bug */
+.full-height {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Smooth scrollbar hide */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Backdrop blur for modals/sheets */
+.backdrop-blur {
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* iOS-style card shadow */
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Active state for tappable elements */
+button:active, [role="button"]:active, .tappable:active {
+  opacity: 0.7;
+  transition: opacity 0.1s;
+}

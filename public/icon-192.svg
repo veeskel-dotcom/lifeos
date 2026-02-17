@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#007AFF"/>
+      <stop offset="100%" stop-color="#5856D6"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="40" fill="url(#bg)"/>
+  <g transform="translate(96,96)">
+    <circle r="52" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="4"/>
+    <circle r="52" fill="none" stroke="white" stroke-width="4" stroke-dasharray="82 245" stroke-dashoffset="-20" stroke-linecap="round"/>
+    <circle r="38" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3"/>
+    <circle r="38" fill="none" stroke="white" stroke-width="3" stroke-dasharray="120 119" stroke-dashoffset="-10" stroke-linecap="round"/>
+    <text y="8" font-size="36" font-family="system-ui,-apple-system,sans-serif" fill="white" text-anchor="middle" font-weight="700">OS</text>
+  </g>
+</svg>

@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* Кастомные анимации */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@utility animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@utility animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+:root {
+  font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* iOS PWA standalone safe areas */
+body {
+  margin: 0;
+  padding: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  overscroll-behavior: none;
+}
+
+/* iOS momentum scrolling */
+.scroll-container {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Скрыть скроллбар */
+::-webkit-scrollbar { display: none; }
