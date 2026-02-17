@@ -18,9 +18,10 @@ export async function callAI({
   maxTokens = 500,
   temperature = 0.3,
 }) {
-  // 1. API ключ
-  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-  if (!apiKey) {
+  // 1. API ключ — in production the proxy handles it server-side;
+  //    in dev we still check for VITE_OPENROUTER_API_KEY
+  const isDev = import.meta.env.DEV;
+  if (isDev && !import.meta.env.VITE_OPENROUTER_API_KEY) {
     throw new Error('API_KEY_MISSING');
   }
 
@@ -82,8 +83,8 @@ export async function callAIStream({
   temperature = 0.3,
   onChunk, // (text: string) => void
 }) {
-  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-  if (!apiKey) throw new Error('API_KEY_MISSING');
+  const isDev = import.meta.env.DEV;
+  if (isDev && !import.meta.env.VITE_OPENROUTER_API_KEY) throw new Error('API_KEY_MISSING');
 
   const limits = await checkLimits();
   if (limits.blocked) throw new Error(`LIMIT_REACHED:${limits.reason}`);
@@ -92,13 +93,21 @@ export async function callAIStream({
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   messages.push({ role: 'user', content: prompt });
 
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  // In production, use the serverless proxy; in dev, call OpenRouter directly
+  const useDirectApi = isDev && import.meta.env.VITE_OPENROUTER_API_KEY;
+  const streamUrl = useDirectApi
+    ? 'https://openrouter.ai/api/v1/chat/completions'
+    : '/api/proxy/openrouter';
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (useDirectApi) {
+    headers['Authorization'] = `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`;
+    headers['HTTP-Referer'] = window.location.origin;
+  }
+
+  const res = await fetch(streamUrl, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': window.location.origin,
-    },
+    headers,
     body: JSON.stringify({
       model: MODELS[model] || MODELS.fast,
       messages,
@@ -142,8 +151,8 @@ export async function callAIVision({
   temperature = 0.2,
   mimeType = 'image/jpeg',
 }) {
-  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-  if (!apiKey) throw new Error('API_KEY_MISSING');
+  const isDev = import.meta.env.DEV;
+  if (isDev && !import.meta.env.VITE_OPENROUTER_API_KEY) throw new Error('API_KEY_MISSING');
 
   const limits = await checkLimits();
   if (limits.blocked) throw new Error(`LIMIT_REACHED:${limits.reason}`);
@@ -185,8 +194,11 @@ export async function callAIVision({
 
 // ═══ Доступность AI ═══
 export async function isAIAvailable() {
-  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-  if (!apiKey) return { available: false, reason: 'no_key' };
+  // In production, the proxy handles the key; in dev, check for VITE_ key
+  const isDev = import.meta.env.DEV;
+  if (isDev && !import.meta.env.VITE_OPENROUTER_API_KEY) {
+    return { available: false, reason: 'no_key' };
+  }
 
   const limits = await checkLimits();
   if (limits.blocked) return { available: false, reason: limits.reason };
@@ -198,9 +210,11 @@ export async function isAIAvailable() {
 
 // ═══ Статус для UI (Settings → AI) ═══
 export async function getAIStatus() {
+  const isDev = import.meta.env.DEV;
   const limits = await getLimitsStatus();
   return {
-    hasKey: !!import.meta.env.VITE_OPENROUTER_API_KEY,
+    // In production the key is on the server, so always true; in dev check env var
+    hasKey: isDev ? !!import.meta.env.VITE_OPENROUTER_API_KEY : true,
     online: navigator.onLine,
     ...limits,
   };

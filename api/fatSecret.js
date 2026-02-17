@@ -1,15 +1,20 @@
 /**
  * fatSecret.js — Поиск продуктов через FatSecret API.
- * OAuth 2.0 client_credentials, токен кэш 24ч.
+ * In production, calls go through Vercel serverless proxy (OAuth handled server-side).
+ * In dev, falls back to direct FatSecret calls if VITE_FATSECRET_CLIENT_ID is set.
  */
 import { fetchWithRetry, requireOnline } from './_shared';
 
 const TOKEN_URL = 'https://oauth.fatsecret.com/connect/token';
-const API_URL = 'https://platform.fatsecret.com/rest/server.api';
+const DIRECT_API_URL = 'https://platform.fatsecret.com/rest/server.api';
+const PROXY_URL = '/api/proxy/fatsecret';
+
+const isDev = import.meta.env.DEV;
+const useProxy = !(isDev && import.meta.env.VITE_FATSECRET_CLIENT_ID);
 
 let tokenCache = { token: null, expiresAt: 0 };
 
-/* ─── OAuth Token ─── */
+/* ─── OAuth Token (only used in dev mode with direct calls) ─── */
 
 async function getToken() {
   // Проверить memory cache
@@ -63,6 +68,16 @@ async function getToken() {
   return tokenCache.token;
 }
 
+/* ─── Proxy helper ─── */
+
+async function fetchViaProxy(params) {
+  return fetchWithRetry(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+}
+
 /* ─── Normalization ─── */
 
 function normalizeFoodResult(item) {
@@ -90,21 +105,26 @@ function normalizeFoodResult(item) {
 
 export async function searchFood(query, page = 0) {
   requireOnline();
-  const token = await getToken();
 
-  const params = new URLSearchParams({
+  const requestParams = {
     method: 'foods.search.v3',
     search_expression: query,
-    format: 'json',
     max_results: '20',
     page_number: String(page),
     region: 'RU',
     language: 'ru',
-  });
+  };
 
-  const data = await fetchWithRetry(`${API_URL}?${params}`, {
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
+  let data;
+  if (useProxy) {
+    data = await fetchViaProxy(requestParams);
+  } else {
+    const token = await getToken();
+    const params = new URLSearchParams({ ...requestParams, format: 'json' });
+    data = await fetchWithRetry(`${DIRECT_API_URL}?${params}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+  }
 
   const foods = data.foods_search?.results?.food || [];
   const arr = Array.isArray(foods) ? foods : [foods];
@@ -120,19 +140,24 @@ export async function searchFood(query, page = 0) {
 
 export async function getFoodDetail(foodId) {
   requireOnline();
-  const token = await getToken();
 
-  const params = new URLSearchParams({
+  const requestParams = {
     method: 'food.get.v4',
     food_id: String(foodId),
-    format: 'json',
     region: 'RU',
     language: 'ru',
-  });
+  };
 
-  const data = await fetchWithRetry(`${API_URL}?${params}`, {
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
+  let data;
+  if (useProxy) {
+    data = await fetchViaProxy(requestParams);
+  } else {
+    const token = await getToken();
+    const params = new URLSearchParams({ ...requestParams, format: 'json' });
+    data = await fetchWithRetry(`${DIRECT_API_URL}?${params}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+  }
 
   const food = data.food;
   if (!food) return null;

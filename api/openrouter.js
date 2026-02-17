@@ -22,21 +22,29 @@ const LIMITS = {
   monthly_cost_usd: 10.00,
 };
 
-const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+// In production, calls go through Vercel serverless proxy (no API key in client bundle).
+// In dev, falls back to direct OpenRouter calls if VITE_OPENROUTER_API_KEY is set.
+const PROXY_URL = '/api/proxy/openrouter';
+const DIRECT_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+const isDev = import.meta.env.DEV;
+const API_URL = isDev && import.meta.env.VITE_OPENROUTER_API_KEY ? DIRECT_URL : PROXY_URL;
 
 let lastCallTime = 0;
 
 /* ─── Helpers ─── */
 
 function getHeaders() {
-  const key = import.meta.env.VITE_OPENROUTER_API_KEY;
-  if (!key) throw new Error('VITE_OPENROUTER_API_KEY не задан');
-  return {
-    'Authorization': `Bearer ${key}`,
-    'Content-Type': 'application/json',
-    'HTTP-Referer': window.location.origin,
-    'X-Title': 'LifeOS',
-  };
+  const headers = { 'Content-Type': 'application/json' };
+
+  // In dev mode with direct API calls, include the API key
+  if (isDev && import.meta.env.VITE_OPENROUTER_API_KEY) {
+    headers['Authorization'] = `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`;
+    headers['HTTP-Referer'] = window.location.origin;
+    headers['X-Title'] = 'LifeOS';
+  }
+
+  return headers;
 }
 
 function estimateCost(model, usage) {
