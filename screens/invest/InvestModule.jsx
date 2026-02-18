@@ -12,9 +12,15 @@ import TaxCalculator from './TaxCalculator';
 import InvestTools from './InvestTools';
 import FadeIn from '../../components/FadeIn';
 
-export default function InvestModule({ theme, onBack, onToast, onNavigate }) {
+export default function InvestModule({ theme, onBack, onToast, onNavigate, initialView }) {
   // Stack-based navigation (not single prevScreen)
-  const [stack, setStack] = useState([{ name: 'overview', params: null }]);
+  const [stack, setStack] = useState(() => {
+    const base = [{ name: 'overview', params: null }];
+    if (initialView && initialView !== 'overview') {
+      base.push({ name: initialView, params: null });
+    }
+    return base;
+  });
   const navLockRef = useRef(false);
 
   const current = stack[stack.length - 1];

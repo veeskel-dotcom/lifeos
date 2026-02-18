@@ -394,15 +394,15 @@ export default function QuickAddSheet({ open, onClose, onNavigate, theme, onToas
         </h2>
 
         {/* 6 кнопок — 3x2 grid */}
-        <div className="grid grid-cols-4 gap-2 mb-5">
+        <div className="grid grid-cols-4 gap-3 mb-5">
           {actions.map((a, i) => (
             <button
               key={i}
               onClick={a.action}
               className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-transform active:scale-95"
-              style={{ background: theme.gray6 }}
+              style={{ background: a.color + '12' }}
             >
-              <Ic name={a.iconName} color={a.color} size={40} r={12} />
+              <Ic name={a.iconName} color={a.color} size={52} r={16} />
               <span className="text-xs font-medium" style={{ color: theme.text }}>
                 {a.label}
               </span>

@@ -88,7 +88,7 @@ export default function InvestOverview({ theme, onNavigate }) {
       {/* ═══ БРОКЕРСКИЕ СЧЕТА ═══ */}
       {brokers.length > 0 ? (
         <>
-          <div style={{ padding: '4px 0 4px', fontSize: 12, fontWeight: 600, color: theme.gray1 }}>
+          <div style={{ padding: '4px 16px 4px', fontSize: 12, fontWeight: 600, color: theme.gray1 }}>
             БРОКЕРСКИЕ СЧЕТА ({brokers.length})
           </div>
           <Card theme={theme} style={{ padding: 0, overflow: 'hidden', marginBottom: 8 }}>
@@ -102,7 +102,7 @@ export default function InvestOverview({ theme, onNavigate }) {
                   onClick={() => onNavigate?.('brokerDetail', b.name)}
                   className="flex items-center cursor-pointer"
                   style={{ gap: 10, padding: '14px 14px', borderBottom: i < brokers.length - 1 ? `0.5px solid ${theme.gray5}` : 'none' }}>
-                  <Ic name="trend" color={bIsUp ? theme.green : theme.red} size={40} r={12} />
+                  <Ic name="chart" color={bIsUp ? theme.green : theme.red} size={40} r={12} />
                   <div className="flex-1 min-w-0">
                     <div style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>{b.name}</div>
                     <div style={{ fontSize: 12, color: theme.gray2 }}>
@@ -113,8 +113,8 @@ export default function InvestOverview({ theme, onNavigate }) {
                     <div className="tabular-nums" style={{ fontSize: 15, fontWeight: 600, color: theme.text }}>
                       {fmtMoney(b.value)}
                     </div>
-                    <div className="tabular-nums" style={{ fontSize: 12, color: bIsUp ? theme.green : theme.red, fontWeight: 500 }}>
-                      {bIsUp ? '+' : ''}{fmtMoney(b.dailyChange)}
+                    <div className="tabular-nums" style={{ fontSize: 12, color: (b.value - b.cost) >= 0 ? theme.green : theme.red, fontWeight: 500 }}>
+                      {(b.value - b.cost) >= 0 ? '+' : ''}{fmtMoney(b.value - b.cost)} P&L
                     </div>
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export default function InvestOverview({ theme, onNavigate }) {
           <span style={{ color: theme.gray3 }}>→</span>
         </div>
         <div className="flex items-center cursor-pointer" style={{ gap: 10, padding: '12px 14px' }}>
-          <Ic name="edit" color={theme.purple || '#AF52DE'} size={28} r={7} />
+          <Ic name="note" color={theme.purple || '#AF52DE'} size={28} r={7} />
           <div className="flex-1">
             <div style={{ fontSize: 14, color: theme.text }}>Добавить счёт вручную</div>
           </div>

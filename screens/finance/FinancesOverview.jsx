@@ -241,15 +241,16 @@ export default function FinancesOverview({ theme, onNavigate, onBack }) {
               <div style={{ fontSize: 12, fontWeight: 600, color: theme.gray1, padding: '8px 0 4px' }}>РАЗДЕЛЫ</div>
               <Card theme={theme} style={{ padding: 0, overflow: 'hidden' }}>
                 {[
-                  { iconName: 'money', c: theme.green || '#34C759', n: 'Расходы', d: 'Все операции · фильтры', t: 'expenses' },
-                  { iconName: 'wallet', c: theme.accent, n: 'Доходы', d: 'Зарплата, фриланс, дивиденды', t: 'incomes' },
-                  { iconName: 'wallet', c: theme.orange, n: 'Счета', d: `${accounts?.length || 0} счетов`, t: 'accounts' },
-                  { iconName: 'card', c: theme.red, n: 'Кредиты и ипотека', d: `${credits?.length || 0} кредитов`, t: 'credits' },
-                  { iconName: 'trend', c: theme.purple || '#AF52DE', n: 'Инвестиции', d: 'Портфель и сделки', t: 'invest' },
+                  { iconName: 'wallet', c: theme.green || '#34C759', n: 'Расходы', d: 'Все операции · фильтры', t: 'expenses' },
+                  { iconName: 'trend', c: theme.accent, n: 'Доходы', d: 'Зарплата, фриланс, дивиденды', t: 'incomes' },
+                  { iconName: 'card', c: theme.orange, n: 'Счета', d: `${accounts?.length || 0} счетов`, t: 'accounts' },
+                  { iconName: 'bell', c: theme.red, n: 'Кредиты и ипотека', d: `${credits?.length || 0} кредитов`, t: 'credits' },
+                  { iconName: 'chart', c: theme.purple || '#AF52DE', n: 'Инвестиции', d: 'Портфель и сделки', t: 'invest' },
                   { iconName: 'home', c: theme.teal || '#30B0C7', n: 'ЖКХ', d: 'Счётчики · квитанции', t: 'utilities' },
                   { iconName: 'repeat', c: theme.green || '#34C759', n: 'Переводы', d: 'Между своими счетами', t: 'transfer' },
-                  { iconName: 'subscription', c: theme.pink || '#FF2D55', n: 'Подписки', d: 'Активные подписки', t: 'subscriptions' },
-                  { iconName: 'receipt', c: theme.teal || '#30B0C7', n: 'Бюджеты', d: 'Настройка лимитов', t: 'budgets' },
+                  { iconName: 'repeat', c: theme.pink || '#FF2D55', n: 'Подписки', d: 'Активные подписки', t: 'subscriptions' },
+                  { iconName: 'flag', c: theme.teal || '#30B0C7', n: 'Бюджеты', d: 'Настройка лимитов', t: 'budgets' },
+                  { iconName: 'camera', c: theme.orange, n: 'Импорт операций', d: 'Фото / текст / вручную', t: 'import' },
                 ].map((item, i, arr) => (
                   <div key={item.t} onClick={() => onNavigate(item.t)}
                     className="flex items-center cursor-pointer active:opacity-70"

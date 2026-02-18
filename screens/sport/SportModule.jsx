@@ -21,8 +21,8 @@ import MeasurementsScreen from './MeasurementsScreen';
 import ProgressPhotos from './ProgressPhotos';
 import AITrainerScreen from './AITrainerScreen';
 
-export default function SportModule({ theme, onBack }) {
-  const [view, setView] = useState('overview');
+export default function SportModule({ theme, onBack, initialView }) {
+  const [view, setView] = useState(initialView || 'overview');
   const [activeWorkoutId, setActiveWorkoutId] = useState(null);
   const [activeWorkout, setActiveWorkout] = useState(null);
   const [finishedWorkout, setFinishedWorkout] = useState(null);
@@ -161,7 +161,7 @@ export default function SportModule({ theme, onBack }) {
   const renderView = () => {
     switch (view) {
       case 'overview':
-        return <SportOverview theme={theme} onNavigate={navigate} onBack={onBack} />;
+        return <SportOverview theme={theme} onNavigate={navigate} onBack={onBack} activeWorkoutId={activeWorkoutId} />;
 
       case 'activeWorkout':
         return (

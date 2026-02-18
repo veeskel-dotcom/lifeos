@@ -142,8 +142,8 @@ export default function ShoppingList({ theme, onBack }) {
               >
                 <button
                   onClick={() => handleToggle(item.id)}
-                  className="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
-                  style={{ borderColor: theme.gray3, background: 'none', cursor: 'pointer', padding: 0 }}
+                  className="shrink-0 flex items-center justify-center"
+                  style={{ width: 22, height: 22, borderRadius: 5, border: `2px solid ${theme.gray3}`, background: 'none', cursor: 'pointer', padding: 0 }}
                 />
                 <span
                   className="flex-1 text-sm"
@@ -212,8 +212,8 @@ export default function ShoppingList({ theme, onBack }) {
                   >
                     <button
                       onClick={() => handleToggle(item.id)}
-                      className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
-                      style={{ background: theme.accent, border: 'none', cursor: 'pointer', padding: 0 }}
+                      className="shrink-0 flex items-center justify-center"
+                      style={{ width: 22, height: 22, borderRadius: 5, background: theme.accent, border: 'none', cursor: 'pointer', padding: 0 }}
                     >
                       <span className="text-white text-xs">✓</span>
                     </button>

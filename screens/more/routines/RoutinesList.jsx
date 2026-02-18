@@ -85,6 +85,32 @@ export default function RoutinesList({ theme, onBack, onAdd }) {
           {new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
       </div>
+      {/* Stats row: серия / лучшая / месяц */}
+      {completion.total > 0 && (
+        <Card theme={theme}>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center">
+              <div className="text-lg font-bold tabular-nums" style={{ color: theme.orange }}>
+                {Math.max(0, ...(routines || []).map(r => r.streak || 0))}
+              </div>
+              <div className="text-[11px]" style={{ color: theme.gray2 }}>Серия 🔥</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold tabular-nums" style={{ color: theme.accent }}>
+                {Math.max(0, ...(routines || []).map(r => r.best_streak || r.streak || 0))}
+              </div>
+              <div className="text-[11px]" style={{ color: theme.gray2 }}>Лучшая</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold tabular-nums" style={{ color: theme.green }}>
+                {completion.total > 0 ? Math.round((completion.completed / completion.total) * 100) : 0}%
+              </div>
+              <div className="text-[11px]" style={{ color: theme.gray2 }}>Месяц</div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Heatmap — 12 недель активности */}
       {heatmapData.length > 0 && (
         <Card theme={theme}>

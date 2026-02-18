@@ -40,10 +40,10 @@ import SkeletonCard from '../../components/SkeletonCard';
 import Ic from '../../components/Icon';
 
 const MEALS = [
-  { key: 'breakfast', icon: '🌅', label: 'Завтрак' },
-  { key: 'lunch',     icon: '☀️', label: 'Обед' },
-  { key: 'dinner',    icon: '🌙', label: 'Ужин' },
-  { key: 'snack',     icon: '🍪', label: 'Перекус' },
+  { key: 'breakfast', label: 'Завтрак' },
+  { key: 'lunch',     label: 'Обед' },
+  { key: 'dinner',    label: 'Ужин' },
+  { key: 'snack',     label: 'Перекус' },
 ];
 
 function formatDate(date) {
@@ -310,7 +310,7 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
       ) : (
       <>
       {/* ── Calories + Macros ring ── */}
-      <div style={{ borderRadius: 16, margin: "0 16px", padding: 16, background: theme.card }}>
+      <div style={{ borderRadius: 12, margin: "0 16px", padding: 16, background: theme.card }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <ProgressRing
             value={totals.calories}
@@ -420,7 +420,7 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
       )}
 
       {/* ── 4 Meal Sections ── */}
-      {MEALS.map(({ key, icon, label }) => {
+      {MEALS.map(({ key, label }) => {
         const mealLogs = getMealData(key);
         const mealCal = getMealTotal(key);
         const hasItems = mealLogs.some(l => l.items?.length > 0);
@@ -431,8 +431,7 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
                 onClick={() => hasItems && onMealDetail?.(key)}>
-                <span>{icon}</span>
-                <span style={{ fontSize: 14, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.025em", color: theme.gray1 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>
                   {label}
                 </span>
               </div>

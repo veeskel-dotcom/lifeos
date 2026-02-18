@@ -277,6 +277,7 @@ function AppContent({ theme, setTheme }) {
   useEffect(() => {
     installGlobalHandlers(); // Catch errors for mobile debugging
     const initStart = Date.now();
+    let unsub = null;
     (async () => {
       await initializeDB();
       await flushEarlyBuffer(); // DB ready — persist buffered logs
@@ -313,7 +314,7 @@ function AppContent({ theme, setTheme }) {
       });
 
       // Q1: Smart triggers — показывать уведомления
-      const unsub = subscribeTriggers((notifications) => {
+      unsub = subscribeTriggers((notifications) => {
         for (const n of notifications) {
           showToast(`${n.icon} ${n.title}: ${n.message}`);
         }
@@ -321,7 +322,7 @@ function AppContent({ theme, setTheme }) {
       startPeriodicSync();
       logPerf('INIT_COMPLETE', Date.now() - initStart);
     })();
-    return () => { stopPeriodicSync(); unsub(); };
+    return () => { stopPeriodicSync(); unsub?.(); };
   }, []);
 
   /* ── Lock timeout ── */
@@ -341,6 +342,9 @@ function AppContent({ theme, setTheme }) {
     logNav('OPEN', screen, data ? Object.keys(data) : null);
     router.navigate(screen, data);
   }, [router]);
+
+  // Expose for Playwright smoke tests (harmless in prod)
+  if (typeof window !== 'undefined') window.__LIFEOS_NAV = navigate;
 
   const goBack = useCallback(() => {
     if (appNavLockRef.current) return;
@@ -617,6 +621,7 @@ function AppContent({ theme, setTheme }) {
           <SettingsModule
             theme={theme}
             setTheme={setTheme}
+            initialView={sub?.subScreen}
             onBack={goBack}
           />
         );
@@ -636,12 +641,12 @@ function AppContent({ theme, setTheme }) {
       /* Dashboard widget → module subscreens */
       case 'finance':
       case 'finances':
-        return <FinancesModule theme={theme} onBack={goBack} />;
+        return <FinancesModule theme={theme} initialView={sub?.subScreen} onBack={goBack} onNavigate={navigate} onToast={showToast} />;
       case 'invest':
-        return <InvestModule theme={theme} onBack={goBack} onToast={showToast} />;
+        return <InvestModule theme={theme} initialView={sub?.subScreen} onBack={goBack} onToast={showToast} />;
       case 'sport':
       case 'body':
-        return <SportModule theme={theme} onBack={goBack} />;
+        return <SportModule theme={theme} initialView={sub?.subScreen} onBack={goBack} />;
       case 'nutrition':
         return <NutritionScreen theme={theme} onBack={goBack} />;
 

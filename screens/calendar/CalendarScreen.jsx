@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
+import WeekGrid from './WeekGrid';
 import { getEventsForMonth, getEventsForDay } from '../../services/events';
 import { getTasks } from '../../services/tasks';
 
@@ -80,10 +81,21 @@ export default function CalendarScreen({ theme, onBack, onNavigate }) {
     return cells.slice(rowStart, rowStart + 7);
   })();
 
+  if (viewMode === 'week') {
+    return (
+      <div className="flex flex-col h-full">
+        <NavHeader title="Календарь" onBack={onBack} theme={theme}
+          right={<span onClick={() => setViewMode('month')} style={{ cursor: 'pointer', fontSize: 14, color: theme.accent }}>📅 Месяц</span>}
+        />
+        <WeekGrid theme={theme} onBack={() => setViewMode('month')} onNavigate={onNavigate} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       <NavHeader title="Календарь" onBack={onBack} theme={theme}
-        right={<span onClick={() => setViewMode(v => v === 'month' ? 'week' : 'month')} style={{ cursor: 'pointer', fontSize: 14, color: theme.accent }}>{viewMode === 'month' ? '📅 Неделя' : '📅 Месяц'}</span>}
+        right={<span onClick={() => setViewMode('week')} style={{ cursor: 'pointer', fontSize: 14, color: theme.accent }}>📅 Неделя</span>}
       />
 
       <div className="flex-1 overflow-auto px-4 pb-24">

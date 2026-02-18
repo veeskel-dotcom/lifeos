@@ -22,7 +22,12 @@ export default function SportWidget({ theme, onNavigate, data: externalData, siz
     : ownData;
 
   if (data === undefined) return <WidgetSkeleton theme={theme} size={size} />;
-  if (!data) return null;
+  if (!data) return (
+    <WidgetCard title="Спорт" iconName="gym" color={color} theme={theme} size={size} onClick={() => onNavigate?.('sport')}>
+      <span className="font-bold" style={{ fontSize: 28, color: theme.gray3 }}>—</span>
+      <div className="text-[10px] mt-1" style={{ color: theme.gray2 }}>Начните тренировку</div>
+    </WidgetCard>
+  );
 
   return (
     <WidgetCard title="Спорт" iconName="gym" color={color} theme={theme} size={size} onClick={() => onNavigate?.('sport')}>

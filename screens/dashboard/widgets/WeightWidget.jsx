@@ -18,7 +18,12 @@ export default function WeightWidget({ theme, onNavigate, size = 'wide' }) {
   });
 
   if (data === undefined) return <WidgetSkeleton theme={theme} size={size} />;
-  if (!data) return null;
+  if (!data) return (
+    <WidgetCard title="Вес" iconName="weight" color={color} theme={theme} size={size} onClick={() => onNavigate?.('sport')}>
+      <span className="font-bold" style={{ fontSize: 28, color: theme.gray3 }}>— <span className="text-xs font-normal">кг</span></span>
+      <div className="text-[10px] mt-1" style={{ color: theme.gray2 }}>Запишите вес</div>
+    </WidgetCard>
+  );
 
   const sparkData = data.weights?.map(w => w.weight) || [];
   const delta = data.trend;

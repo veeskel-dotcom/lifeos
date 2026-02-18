@@ -32,7 +32,7 @@ function WeightSparkline({ data, theme }) {
   );
 }
 
-export default function SportOverview({ theme, onNavigate, onBack }) {
+export default function SportOverview({ theme, onNavigate, onBack, activeWorkoutId }) {
   const [stats, setStats] = useState({ totalWorkouts: 0, streak: 0, thisWeek: 0, avgDuration: 0 });
   const [latestWeight, setLatestWeight] = useState(null);
   const [weightTrend, setWeightTrend] = useState(null);
@@ -71,6 +71,19 @@ export default function SportOverview({ theme, onNavigate, onBack }) {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-24">
+        {/* Active workout banner */}
+        {activeWorkoutId && (
+          <div
+            onClick={() => onNavigate('activeWorkout')}
+            className="mb-3 p-3 rounded-2xl flex items-center gap-3 cursor-pointer active:opacity-70"
+            style={{ background: theme.red + '15', border: `1px solid ${theme.red}30` }}
+          >
+            <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: theme.red }} />
+            <span className="text-sm font-semibold" style={{ color: theme.red }}>Активная тренировка</span>
+            <span className="ml-auto text-xs font-medium" style={{ color: theme.red }}>Продолжить →</span>
+          </div>
+        )}
+
         <TutorialTip id="sport_intro" theme={theme} icon={<Ic name="gym" color={theme.red} size={20} r={5} raw />}>
           Создайте шаблон тренировки или начните пустую. Прогресс и рекорды отслеживаются автоматически.
         </TutorialTip>
@@ -158,7 +171,7 @@ export default function SportOverview({ theme, onNavigate, onBack }) {
             { i: 'clock', c: theme.accent, n: 'История тренировок', d: `${stats.totalWorkouts} за месяц`, t: 'history' },
             { i: 'trend', c: theme.green || '#34C759', n: 'Прогрессия весов', d: 'Графики и рекорды', t: 'progress' },
             { i: 'weight', c: theme.purple || '#AF52DE', n: 'Вес тела', d: latestWeight ? `${latestWeight.weight} кг` : '— кг', t: 'bodyWeight' },
-            { i: 'target', c: theme.orange, n: 'Обмеры тела', d: '9 параметров', t: 'measurements' },
+            { i: 'chart', c: theme.orange, n: 'Обмеры тела', d: '9 параметров', t: 'measurements' },
             { i: 'repeat', c: theme.teal || '#30B0C7', n: 'Шаблоны тренировок', d: `${templates?.length || 0} шаблонов`, t: 'templateList' },
           ].map((item, i, arr) => (
             <div key={item.t} onClick={() => onNavigate(item.t)}

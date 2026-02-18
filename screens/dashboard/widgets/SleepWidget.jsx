@@ -21,7 +21,12 @@ export default function SleepWidget({ theme, onNavigate, size = 'small' }) {
   }, []);
 
   if (data === undefined) return <WidgetSkeleton theme={theme} size={size} />;
-  if (!data) return null;
+  if (!data) return (
+    <WidgetCard title="Сон" iconName="moon" color={color} theme={theme} size={size} onClick={() => onNavigate?.('sleep')}>
+      <span className="font-bold" style={{ fontSize: 28, color: theme.gray3 }}>— <span className="text-xs font-normal">ч</span></span>
+      <div className="text-[10px] mt-1" style={{ color: theme.gray2 }}>Запишите сон</div>
+    </WidgetCard>
+  );
 
   const hours = data.duration_hours ?? (data.duration_min ? (data.duration_min / 60).toFixed(1) : null);
   const quality = data.quality;

@@ -6,6 +6,7 @@ import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
 import { fmtMoney } from '../../utils/currency';
 import ProgressBar from '../../components/ProgressBar';
+import ProgressRing from '../../components/ProgressRing';
 import Ic from '../../components/Icon';
 
 import SkeletonList from '../../components/SkeletonList';
@@ -60,6 +61,19 @@ export default function BudgetsList({ theme, onBack, onNavigate }) {
       .filter(c => c.spent > 0 || c.limit > 0)
       .sort((a, b) => b.spent - a.spent);
   }, [categories, expenses, budgets]);
+
+  // Weekly spending breakdown for mini-chart
+  const weeklySpending = useMemo(() => {
+    if (!expenses || expenses.length === 0) return [];
+    const weeks = [{}, {}, {}, {}];
+    expenses.forEach(e => {
+      const day = parseInt(e.date?.slice(8) || '1');
+      const weekIdx = Math.min(Math.floor((day - 1) / 7), 3);
+      weeks[weekIdx].amount = (weeks[weekIdx].amount || 0) + e.amount;
+    });
+    return weeks.map((w, i) => ({ label: `Н${i + 1}`, amount: w.amount || 0 }));
+  }, [expenses]);
+  const maxWeek = Math.max(...weeklySpending.map(w => w.amount), 1);
 
   const totalLimits = categoryData?.reduce((s, c) => s + c.limit, 0) || 0;
   const unallocated = totalBudget - totalLimits;
@@ -164,6 +178,29 @@ export default function BudgetsList({ theme, onBack, onNavigate }) {
           </div>
         </Card>
 
+        {/* Weekly spending mini-chart — proto S9 */}
+        {weeklySpending.some(w => w.amount > 0) && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: theme.gray1, letterSpacing: 0.3, marginBottom: 6 }}>
+              РАСХОДЫ ПО НЕДЕЛЯМ
+            </div>
+            <Card theme={theme} style={{ padding: 14 }}>
+              <div className="flex items-end justify-between" style={{ height: 48, gap: 6 }}>
+                {weeklySpending.map((w, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div style={{
+                      width: '100%', borderRadius: 4,
+                      height: Math.max(4, (w.amount / maxWeek) * 40),
+                      background: i === weeklySpending.length - 1 ? theme.accent : (theme.green || '#34C759') + '40',
+                    }} />
+                    <span style={{ fontSize: 9, color: theme.gray2 }}>{w.label}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
+
         {/* By category */}
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide py-2" style={{ color: theme.gray1 }}>
@@ -181,36 +218,46 @@ export default function BudgetsList({ theme, onBack, onNavigate }) {
                 const statusColor = cat.pct >= 100 ? theme.red : cat.pct >= 70 ? theme.orange : (theme.green || '#34C759');
                 return (
                   <div key={cat.id} onClick={() => onNavigate?.('budgetCategory', { detailId: cat.id, month: selectedMonth })}
-                    className="cursor-pointer active:opacity-70"
+                    className="flex items-center gap-3 cursor-pointer active:opacity-70"
                     style={{ padding: '10px 14px', borderBottom: i < arr.length - 1 ? `0.5px solid ${theme.gray5}` : 'none' }}>
-                    <div className="flex justify-between items-center" style={{ marginBottom: 4 }}>
-                      <div className="flex items-center" style={{ gap: 6 }}>
-                        <span style={{ fontSize: 16 }}>{cat.icon}</span>
+                    {/* Circular progress */}
+                    <ProgressRing
+                      value={Math.min(cat.spent, cat.limit || cat.spent || 1)}
+                      max={cat.limit || cat.spent || 1}
+                      size={42}
+                      strokeWidth={4}
+                      color={statusColor}
+                      theme={theme}
+                    >
+                      <span style={{ fontSize: 16 }}>{cat.icon}</span>
+                    </ProgressRing>
+                    {/* Text content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center" style={{ marginBottom: 2 }}>
                         <span style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>{cat.name}</span>
-                        <div style={{ width: 8, height: 8, borderRadius: 4, background: statusColor, flexShrink: 0 }} />
+                        <span className="text-xs font-semibold tabular-nums" style={{ color: statusColor }}>{cat.pct}%</span>
                       </div>
                       <div className="flex items-baseline tabular-nums" style={{ gap: 4 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>{cat.spent.toLocaleString('ru-RU')}₽</span>
-                        <span style={{ fontSize: 12, color: theme.gray3 }}>/</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{cat.spent.toLocaleString('ru-RU')}₽</span>
+                        <span style={{ fontSize: 11, color: theme.gray3 }}>/</span>
                         {editingId === cat.id ? (
                           <input type="number" inputMode="decimal" value={editValue}
                             onChange={e => setEditValue(e.target.value)}
                             onBlur={() => handleSaveLimit(cat)}
                             onKeyDown={e => e.key === 'Enter' && handleSaveLimit(cat)}
                             autoFocus
-                            style={{ width: 80, fontSize: 13, textAlign: 'right', padding: '1px 6px', borderRadius: 4, background: theme.accent + '08', color: theme.accent, border: 'none', outline: 'none' }}
+                            style={{ width: 80, fontSize: 12, textAlign: 'right', padding: '1px 6px', borderRadius: 4, background: theme.accent + '08', color: theme.accent, border: 'none', outline: 'none' }}
                           />
                         ) : (
                           <span onClick={(e) => { e.stopPropagation(); setEditingId(cat.id); setEditValue(String(cat.limit || '')); }}
                             className="cursor-pointer"
-                            style={{ fontSize: 13, fontWeight: 500, color: theme.accent, padding: '1px 6px', borderRadius: 4, background: theme.accent + '08' }}>
+                            style={{ fontSize: 12, fontWeight: 500, color: theme.accent, padding: '1px 6px', borderRadius: 4, background: theme.accent + '08' }}>
                             {cat.limit ? cat.limit.toLocaleString('ru-RU') + '₽' : 'лимит'}
                           </span>
                         )}
                       </div>
+                      {cat.pct >= 100 && <div style={{ fontSize: 11, color: theme.red, marginTop: 2, fontWeight: 500 }}>Превышен на {(cat.spent - cat.limit).toLocaleString('ru-RU')}₽</div>}
                     </div>
-                    <ProgressBar value={cat.spent} max={cat.limit || cat.spent || 1} color={getStatusColor(cat.pct, theme)} height={3} theme={theme} />
-                    {cat.pct >= 100 && <div style={{ fontSize: 11, color: theme.red, marginTop: 2, fontWeight: 500 }}>Превышен на {(cat.spent - cat.limit).toLocaleString('ru-RU')}₽</div>}
                   </div>
                 );
               })}

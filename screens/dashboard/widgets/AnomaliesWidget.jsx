@@ -13,7 +13,12 @@ export default function AnomaliesWidget({ theme, size = 'small' }) {
     } catch { return null; }
   });
 
-  if (!data) return null;
+  if (!data) return (
+    <WidgetCard title="Аномалии" iconName="bell" color={color} theme={theme} size={size}>
+      <span className="font-bold" style={{ fontSize: 28, color: theme.green }}>✓</span>
+      <div className="text-[10px] mt-1" style={{ color: theme.gray2 }}>Всё в норме</div>
+    </WidgetCard>
+  );
 
   return (
     <WidgetCard title="Аномалии" iconName="bell" color={color} theme={theme} size={size}>

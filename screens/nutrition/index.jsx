@@ -102,7 +102,7 @@ export default function NutritionScreen({ theme }) {
     <ScreenWrapper theme={theme}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-1">
-        <span className="text-xl font-bold" style={{ color: theme.text }}>Питание</span>
+        <span style={{ fontSize: 28, fontWeight: 700, color: theme.text }}>Питание</span>
       </div>
 
       {/* Sub-tabs */}

@@ -17,7 +17,12 @@ export default function PortfolioWidget({ theme, onNavigate, size = 'wide' }) {
   });
 
   if (data === undefined) return <WidgetSkeleton theme={theme} size={size} />;
-  if (!data) return null;
+  if (!data) return (
+    <WidgetCard title="Портфель" iconName="trend" color={color} theme={theme} size={size} onClick={() => onNavigate?.('invest')}>
+      <span className="font-bold" style={{ fontSize: 28, color: theme.gray3 }}>—</span>
+      <div className="text-[10px] mt-1" style={{ color: theme.gray2 }}>Добавьте актив</div>
+    </WidgetCard>
+  );
 
   const changeColor = data.change >= 0 ? theme.green : theme.red;
   const changeSign = data.change >= 0 ? '+' : '';

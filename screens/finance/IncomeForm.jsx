@@ -20,6 +20,7 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
   const [recurring, setRecurring] = useState(false);
   const [recurringDay, setRecurringDay] = useState('');
   const [showAccountSheet, setShowAccountSheet] = useState(false);
+  const [note, setNote] = useState('');
   const [errors, setErrors] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
 
@@ -34,6 +35,7 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
       setDate(income.date);
       setRecurring(income.recurring || false);
       setRecurringDay(income.recurring_day?.toString() || '');
+      setNote(income.note || '');
     } else {
       setDate(new Date().toISOString().split('T')[0]);
       if (accounts?.length && !accountId) {
@@ -60,6 +62,7 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
       currency: getCurrencyCode(),
       category_id: categoryId,
       description: description.trim(),
+      note: note.trim(),
       date,
       ts: income?.ts || Date.now(),
       account_id: accountId,
@@ -155,6 +158,24 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
             )}
           </div>
         )}
+
+        {/* Note — proto S5 */}
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: theme.gray1, marginBottom: 6, display: 'block', textTransform: 'uppercase', letterSpacing: 0.3 }}>
+            Заметка
+          </label>
+          <textarea
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            placeholder="Комментарий к записи..."
+            className="outline-none resize-none"
+            style={{
+              width: '100%', minHeight: 60, padding: 12, borderRadius: 12,
+              border: `1px solid ${theme.gray5}`, background: theme.card,
+              color: theme.text, fontSize: 14,
+            }}
+          />
+        </div>
 
         <div className="pt-2">
           <FormButton onClick={handleSubmit} disabled={!amount || !categoryId} size="full" theme={{ ...theme, accent: theme.green }}>

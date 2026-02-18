@@ -119,8 +119,8 @@ export default function BarcodeScanner({ onClose, onProductFound, theme }) {
 
       {/* Result card */}
       {status === 'found' && product && (
-        <div className="absolute bottom-0 left-0 right-0 z-20 rounded-t-2xl px-4 pt-3 pb-8"
-          style={{ background: theme.card, boxShadow: '0 -4px 20px rgba(0,0,0,0.3)' }}>
+        <div className="absolute bottom-0 left-0 right-0 z-20 px-4 pt-3 pb-8"
+          style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, background: theme.card, boxShadow: '0 -4px 20px rgba(0,0,0,0.3)' }}>
           {/* Handle */}
           <div className="w-9 h-1 rounded-full mx-auto mb-3" style={{ background: theme.gray3 }} />
 

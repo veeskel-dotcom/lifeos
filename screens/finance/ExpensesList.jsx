@@ -11,7 +11,6 @@ import SkeletonList from '../../components/SkeletonList';
 import EmptyState from '../../components/EmptyState';
 import { fmtMoney } from '../../utils/currency';
 import { exportExpensesCSV } from '../../services/export';
-import DateRangeFilter from '../../components/DateRangeFilter';
 import Ic from '../../components/Icon';
 
 /* ── Constants ── */
@@ -20,8 +19,11 @@ const MONTHS_SHORT = ['Янв','Фев','Мар','Апр','Май','Июн','И�
 const DAYS_SHORT = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 const PERIOD_FILTERS = [
   { id: 'all', label: 'Все' },
+  { id: 'today', label: 'Сегодня' },
   { id: 'week', label: 'Неделя' },
   { id: 'month', label: 'Месяц' },
+  { id: '3m', label: '3 мес' },
+  { id: 'custom', label: '📅' },
 ];
 
 /* ── Helpers ── */
@@ -43,7 +45,8 @@ function formatDateHeader(dateStr) {
 
 export default function ExpensesList({ theme, onBack, onNavigate, filterAccountId, filterCategoryId, filterMonth }) {
   const [periodFilter, setPeriodFilter] = useState('all');
-  const [dateRange, setDateRange] = useState({ from: null, to: null, preset: 'all' });
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
   const [categoryFilter, setCategoryFilter] = useState(null);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -72,7 +75,10 @@ export default function ExpensesList({ theme, onBack, onNavigate, filterAccountI
     let list = [...allExpenses];
 
     // Period filter
-    if (periodFilter === 'week') {
+    const today = new Date().toISOString().split('T')[0];
+    if (periodFilter === 'today') {
+      list = list.filter(e => e.date === today);
+    } else if (periodFilter === 'week') {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       const cutoff = weekAgo.toISOString().split('T')[0];
@@ -80,11 +86,14 @@ export default function ExpensesList({ theme, onBack, onNavigate, filterAccountI
     } else if (periodFilter === 'month') {
       const monthStart = new Date().toISOString().slice(0, 7) + '-01';
       list = list.filter(e => e.date >= monthStart);
+    } else if (periodFilter === '3m') {
+      const d = new Date();
+      d.setMonth(d.getMonth() - 3);
+      list = list.filter(e => e.date >= d.toISOString().split('T')[0]);
+    } else if (periodFilter === 'custom') {
+      if (customFrom) list = list.filter(e => e.date >= customFrom);
+      if (customTo) list = list.filter(e => e.date <= customTo);
     }
-
-    // M2.2: Date range filter
-    if (dateRange.from) list = list.filter(e => e.date >= dateRange.from);
-    if (dateRange.to) list = list.filter(e => e.date <= dateRange.to);
 
     // Category filter (chip or prop-based drill-down)
     const activeCatId = filterCategoryId || categoryFilter;
@@ -103,7 +112,7 @@ export default function ExpensesList({ theme, onBack, onNavigate, filterAccountI
     }
 
     return list;
-  }, [allExpenses, periodFilter, dateRange, categoryFilter, filterAccountId, filterCategoryId, filterMonth, search]);
+  }, [allExpenses, periodFilter, customFrom, customTo, categoryFilter, filterAccountId, filterCategoryId, filterMonth, search]);
 
   /* ── Group by date ── */
 
@@ -171,9 +180,24 @@ export default function ExpensesList({ theme, onBack, onNavigate, filterAccountI
       {!filterCategoryId && (
         <div className="px-3 pb-1">
           <ChipBar chips={PERIOD_FILTERS} active={periodFilter} onChange={setPeriodFilter} theme={theme} />
-          <div className="mt-2">
-            <DateRangeFilter value={dateRange} onChange={setDateRange} theme={theme} />
-          </div>
+          {periodFilter === 'custom' && (
+            <div className="flex gap-2 mt-2">
+              <input
+                type="date"
+                value={customFrom}
+                onChange={e => setCustomFrom(e.target.value)}
+                className="flex-1 rounded-lg px-3 py-2 text-sm"
+                style={{ background: theme.card, color: theme.text, border: `1px solid ${theme.gray5}` }}
+              />
+              <input
+                type="date"
+                value={customTo}
+                onChange={e => setCustomTo(e.target.value)}
+                className="flex-1 rounded-lg px-3 py-2 text-sm"
+                style={{ background: theme.card, color: theme.text, border: `1px solid ${theme.gray5}` }}
+              />
+            </div>
+          )}
         </div>
       )}
 

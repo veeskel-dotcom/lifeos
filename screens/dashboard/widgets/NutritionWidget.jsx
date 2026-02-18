@@ -24,7 +24,12 @@ export default function NutritionWidget({ theme, onNavigate, data: externalData,
     : ownData;
 
   if (data === undefined) return <WidgetSkeleton theme={theme} size={size} />;
-  if (!data) return null;
+  if (!data) return (
+    <WidgetCard title="Питание" iconName="leaf" color={color} theme={theme} size={size} onClick={() => onNavigate?.('nutrition')}>
+      <span className="font-bold" style={{ fontSize: 28, color: theme.gray3 }}>0 <span className="text-xs font-normal">ккал</span></span>
+      <div className="text-[10px] mt-1" style={{ color: theme.gray2 }}>Запишите приём пищи</div>
+    </WidgetCard>
+  );
 
   const { totals, goals } = data;
   const calPct = goals.calories > 0 ? Math.round((totals.calories / goals.calories) * 100) : 0;

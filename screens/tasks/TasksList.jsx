@@ -5,7 +5,6 @@ import ChipBar from '../../components/ChipBar';
 import EmptyState from '../../components/EmptyState';
 import { getTasks, addTask, toggleTask, deleteTask, updateTask, groupTasks, getProductivityStats } from '../../services/tasks';
 import { getActiveProjects } from '../../services/projects';
-import VoiceAddButton from '../../components/VoiceAddButton';
 import RowMetaLine from '../../components/RowMetaLine';
 import CalendarView from './CalendarView';
 import TutorialTip from '../../components/TutorialTip';
@@ -280,26 +279,7 @@ export default function TasksList({ theme, onBack, onNavigate, initialView, onTo
           </button>
         )}
 
-        {/* Add button */}
-        <div className="flex gap-2 mt-2">
-          <button
-            onClick={() => onNavigate('taskForm')}
-            className="flex-1 py-3.5 rounded-xl text-white text-base font-semibold"
-            style={{ background: theme.accent }}
-          >
-            ＋ Новая задача
-          </button>
-          <VoiceAddButton
-            theme={theme}
-            hint="Скажите задачу"
-            onResult={async (text) => {
-              if (text.trim()) {
-                await addTask({ title: text.trim() });
-                load();
-              }
-            }}
-          />
-        </div>
+        {/* Add via Quick Add (+) on TabBar */}
         </>
         )}
       </div>
@@ -369,8 +349,9 @@ function TaskRow({ task, theme, isLast, onToggle, onTap, onDelete, isBouncing, o
         <span className="text-white text-sm font-semibold">Удалить</span>
       </div>
       <div
-        className="flex items-center gap-3 px-4 py-3 relative"
+        className="flex items-center px-4 py-3 relative"
         style={{
+          gap: 10,
           background: isOverdue ? (theme.red || '#FF3B30') + '06' : theme.card,
           transform: `translateX(${swipeX}px)`, transition: swipeX === 0 ? 'transform 0.2s' : 'none',
         }}
@@ -445,9 +426,9 @@ function TaskRow({ task, theme, isLast, onToggle, onTap, onDelete, isBouncing, o
 // ── Kanban View ──
 function KanbanView({ tasks, theme, onTap, onRefresh }) {
   const columns = [
-    { status: 'todo', label: 'К выполнению', color: theme.accent },
-    { status: 'in_progress', label: 'В работе', color: theme.orange },
-    { status: 'done', label: 'Готово', color: theme.green },
+    { status: 'todo', label: 'СДЕЛАТЬ', color: theme.red },
+    { status: 'in_progress', label: 'В РАБОТЕ', color: theme.orange },
+    { status: 'done', label: 'ГОТОВО', color: theme.green },
   ];
 
   const changeStatus = async (id, newStatus) => {
@@ -467,7 +448,7 @@ function KanbanView({ tasks, theme, onTap, onRefresh }) {
           <div key={col.status} className="flex-1 min-w-[130px]">
             <div className="flex items-center gap-2 mb-2 px-1">
               <div className="w-2 h-2 rounded-full" style={{ background: col.color }} />
-              <span className="text-xs font-semibold" style={{ color: theme.gray1 }}>{col.label}</span>
+              <span className="text-xs" style={{ color: theme.gray1, fontWeight: 700 }}>{col.label}</span>
               <span className="text-xs" style={{ color: theme.gray2 }}>{items.length}</span>
             </div>
             <div className="flex flex-col gap-2">

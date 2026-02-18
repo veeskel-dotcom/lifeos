@@ -21,7 +21,12 @@ export default function RoutinesWidget({ theme, onNavigate, data: externalData, 
     : ownData;
 
   if (data === undefined) return <WidgetSkeleton theme={theme} size={size} />;
-  if (!data) return null;
+  if (!data) return (
+    <WidgetCard title="Привычки" iconName="repeat" color={color} theme={theme} size={size} onClick={() => onNavigate?.('routines')}>
+      <span className="font-bold" style={{ fontSize: 28, color: theme.gray3 }}>—</span>
+      <div className="text-[10px] mt-1" style={{ color: theme.gray2 }}>Добавьте привычку</div>
+    </WidgetCard>
+  );
 
   const pct = data.total > 0 ? Math.round((data.done / data.total) * 100) : 0;
 

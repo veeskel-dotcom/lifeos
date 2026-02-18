@@ -69,7 +69,9 @@ export default function TabBar({ active, onChange, onQuickAdd, theme, quickOpen 
       alignItems: 'center',
       height: 80,
       paddingBottom: 'env(safe-area-inset-bottom)',
-      background: theme.card,
+      background: 'rgba(255,255,255,0.97)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
       borderTop: `0.5px solid ${theme.gray5}`,
       zIndex: 100,
     }}>
@@ -94,10 +96,11 @@ export default function TabBar({ active, onChange, onQuickAdd, theme, quickOpen 
         >
           {tab.id === 'quick' ? (
             <div style={{
-              width: 44, height: 44, borderRadius: 22,
+              width: 48, height: 48, borderRadius: 24,
               background: theme.accent,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               marginTop: -16,
+              boxShadow: '0 4px 12px rgba(0,122,255,0.35)',
               transform: quickOpen ? 'rotate(45deg)' : 'rotate(0deg)',
               transition: 'transform 0.25s ease',
             }}>
@@ -107,12 +110,12 @@ export default function TabBar({ active, onChange, onQuickAdd, theme, quickOpen 
             </div>
           ) : (
             <>
-              <div style={{ opacity: active === tab.id ? 1 : 0.4 }}>
-                {ICONS[tab.icon]?.(active === tab.id ? theme.accent : theme.text)}
+              <div>
+                {ICONS[tab.icon]?.(active === tab.id ? theme.accent : theme.gray2)}
               </div>
               <span style={{
                 fontSize: 10,
-                color: active === tab.id ? theme.accent : theme.gray1,
+                color: active === tab.id ? theme.accent : theme.gray2,
                 fontWeight: active === tab.id ? 600 : 400,
               }}>{tab.label}</span>
             </>

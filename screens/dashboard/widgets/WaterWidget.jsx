@@ -24,7 +24,12 @@ export default function WaterWidget({ theme, onNavigate, data: externalData, siz
     : ownData;
 
   if (data === undefined) return <WidgetSkeleton theme={theme} size={size} />;
-  if (!data) return null;
+  if (!data) return (
+    <WidgetCard title="Вода" iconName="drop" color={color} theme={theme} size={size} onClick={() => onNavigate?.('nutrition')}>
+      <span className="font-bold" style={{ fontSize: 28, color: theme.gray3 }}>0 <span className="text-xs font-normal">мл</span></span>
+      <div className="text-[10px] mt-1" style={{ color: theme.gray2 }}>Добавьте воду</div>
+    </WidgetCard>
+  );
 
   const pct = data.percent ?? (data.goal > 0 ? Math.round((data.current / data.goal) * 100) : 0);
 

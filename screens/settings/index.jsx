@@ -11,8 +11,8 @@ import AboutScreen from './AboutScreen';
 import AppearanceScreen from './AppearanceScreen';
 import ErrorLogScreen from './ErrorLogScreen';
 
-export default function SettingsModule({ theme, onBack, onThemeChange }) {
-  const [view, setView] = useState('main');
+export default function SettingsModule({ theme, onBack, onThemeChange, initialView }) {
+  const [view, setView] = useState(initialView || 'main');
 
   const goBack = () => setView('main');
 

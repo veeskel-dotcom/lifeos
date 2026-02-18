@@ -13,7 +13,7 @@ function WaterRing({ current, goal, size = 120, theme }) {
   const r = (size - 12) / 2;
   const circ = 2 * Math.PI * r;
   const offset = circ * (1 - pct);
-  const color = pct >= 1 ? theme.green : theme.accent;
+  const color = pct >= 1 ? theme.green : (theme.teal || '#30B0C7');
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
@@ -71,7 +71,7 @@ export default function WaterTracker({ date, theme, onUpdate }) {
       {/* Заголовок */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Ic name="drop" color={theme.accent} size={22} r={6} raw />
+          <Ic name="drop" color={theme.teal || '#30B0C7'} size={22} r={6} raw />
           <span className="text-base font-semibold" style={{ color: theme.text }}>Вода</span>
         </div>
         <span className="text-sm" style={{ color: theme.gray1 }}>
@@ -105,8 +105,8 @@ export default function WaterTracker({ date, theme, onUpdate }) {
             onClick={() => handleAdd(ml)}
             className="flex-1 py-2 rounded-xl text-sm font-medium transition-colors"
             style={{
-              background: theme.accent + '18',
-              color: theme.accent,
+              background: (theme.teal || '#30B0C7') + '18',
+              color: theme.teal || '#30B0C7',
               border: 'none',
               cursor: 'pointer',
             }}

@@ -131,14 +131,14 @@ export default function DashboardScreen({ theme, onNavigate, onToast }) {
       <div className="px-4 pt-14 pb-2">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-2xl font-bold" style={{ color: theme.text }}>{greeting}</div>
+            <div style={{ fontSize: 13, color: theme.gray1 }}>{greeting}</div>
             <div
-              className="text-xs mt-0.5 cursor-pointer active:opacity-60"
-              style={{ color: theme.gray2 }}
+              className="cursor-pointer active:opacity-60"
+              style={{ fontSize: 28, fontWeight: 700, color: theme.text, marginTop: 2 }}
               onClick={() => onNavigate?.('tasks', { view: 'calendar' })}
             >
               {new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}
-              <span className="ml-1 inline-flex align-middle"><Ic name="calendar" color={theme.accent} size={14} r={3} /></span>
+              <span className="ml-1.5 inline-flex align-middle"><Ic name="calendar" color={theme.accent} size={16} r={3} /></span>
             </div>
           </div>
           <button
@@ -219,11 +219,11 @@ function DailyTipBanner({ theme }) {
     <div className="mb-3">
       <div
         className="flex items-start gap-3 px-4 py-3 rounded-2xl"
-        style={{ background: theme.accent + '08', border: `0.5px solid ${theme.accent}20` }}
+        style={{ background: 'linear-gradient(135deg, #007AFF08, #5856D608)', border: `0.5px solid ${theme.accent}20` }}
       >
-        <span className="text-lg mt-0.5">{tip.icon}</span>
+        <Ic name="bot" color={theme.purple || '#5856D6'} size={28} r={8} />
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-semibold mb-0.5" style={{ color: theme.accent }}>Совет дня</div>
+          <div className="text-xs font-semibold mb-0.5" style={{ color: theme.accent }}>AI Брифинг</div>
           <div className="text-xs" style={{ color: theme.text }}>{tip.text}</div>
         </div>
         <button

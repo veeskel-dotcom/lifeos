@@ -484,10 +484,15 @@ function ChatBubble({ msg, theme, onCorrect, onConfirm, onAction }) {
   const isUser = msg.role === 'user';
 
   return (
-    <div className={`flex mb-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex mb-3 ${isUser ? 'justify-end' : 'justify-start'}`} style={{ gap: 8 }}>
+      {!isUser && (
+        <div className="shrink-0 mt-1">
+          <Ic name="bot" color={theme.accent} size={28} r={8} />
+        </div>
+      )}
       <div className="max-w-[80%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed"
         style={{
-          background: isUser ? theme.accent : theme.card,
+          background: isUser ? theme.accent : (theme.isDark ? `${theme.accent}10` : theme.gray6),
           color: isUser ? '#fff' : theme.text,
           borderBottomRightRadius: isUser ? 6 : 16,
           borderBottomLeftRadius: isUser ? 16 : 6,

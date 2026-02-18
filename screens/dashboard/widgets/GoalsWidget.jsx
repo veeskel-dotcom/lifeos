@@ -15,8 +15,18 @@ export default function GoalsWidget({ theme, onNavigate, size = 'small' }) {
     } catch { return null; }
   });
 
-  if (data === undefined) return null;
-  if (!data) return null;
+  if (data === undefined) return (
+    <WidgetCard title="Цели" iconName="target" color={color} theme={theme} size={size} onClick={() => onNavigate?.('goals')}>
+      <span className="font-bold" style={{ fontSize: 28, color: theme.gray3 }}>—</span>
+      <div className="text-[10px] mt-1" style={{ color: theme.gray2 }}>Создайте цель</div>
+    </WidgetCard>
+  );
+  if (!data) return (
+    <WidgetCard title="Цели" iconName="target" color={color} theme={theme} size={size} onClick={() => onNavigate?.('goals')}>
+      <span className="font-bold" style={{ fontSize: 28, color: theme.gray3 }}>—</span>
+      <div className="text-[10px] mt-1" style={{ color: theme.gray2 }}>Создайте цель</div>
+    </WidgetCard>
+  );
 
   return (
     <WidgetCard title="Цели" iconName="target" color={color} theme={theme} size={size} onClick={() => onNavigate?.('goals')}>

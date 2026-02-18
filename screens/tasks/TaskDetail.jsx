@@ -285,9 +285,14 @@ export default function TaskDetail({ taskId, theme, onBack }) {
                 value: `${task.deadline}${task.deadline_time ? ' ' + task.deadline_time : ''}`,
               },
               task.recurrence && {
-                iconName: 'bell', color: theme.orange,
+                iconName: 'repeat', color: theme.teal || '#30B0C7',
                 label: 'Повтор',
                 value: RECURRENCE_OPTIONS.find(o => o.value === task.recurrence?.type)?.label || '',
+              },
+              task.reminder_at && {
+                iconName: 'bell', color: theme.orange,
+                label: 'Напоминание',
+                value: new Date(task.reminder_at).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
               },
             ].filter(Boolean).map((row, i, arr) => (
               <div key={i} className="flex items-center gap-2.5"

@@ -2,9 +2,11 @@ import db from '../db/index';
 
 export async function addEvent(data) {
   try {
+    const startStr = data.start || new Date().toISOString();
     const event = {
       title: data.title,
-      start: data.start,
+      date: startStr.slice(0, 10),
+      start: startStr,
       end: data.end || null,
       type: data.type || 'personal',
       location: data.location || '',
@@ -59,14 +61,12 @@ export async function deleteEvent(id) {
   }
 }
 
-export async function getEventsForDay(date) {
+export async function getEventsForDay(dateStr) {
   try {
-    // date = 'YYYY-MM-DD'
-    const dayStart = date + 'T00:00:00';
-    const dayEnd = date + 'T23:59:59';
+    // dateStr = 'YYYY-MM-DD'
     return db.events
-      .where('start')
-      .between(dayStart, dayEnd, true, true)
+      .where('date')
+      .equals(dateStr)
       .toArray();
 
   } catch (e) {
@@ -78,11 +78,11 @@ export async function getEventsForDay(date) {
 export async function getEventsForMonth(month) {
   try {
     // month = 'YYYY-MM'
-    const start = month + '-01T00:00:00';
-    const end = month + '-31T23:59:59';
+    const startDate = month + '-01';
+    const endDate = month + '-31';
     return db.events
-      .where('start')
-      .between(start, end, true, true)
+      .where('date')
+      .between(startDate, endDate, true, true)
       .toArray();
 
   } catch (e) {
@@ -93,13 +93,13 @@ export async function getEventsForMonth(month) {
 
 export async function getUpcomingEvents(days = 7) {
   try {
-    const now = new Date().toISOString();
+    const today = new Date().toISOString().slice(0, 10);
     const future = new Date();
     future.setDate(future.getDate() + days);
-    const futureStr = future.toISOString();
+    const futureDate = future.toISOString().slice(0, 10);
     return db.events
-      .where('start')
-      .between(now, futureStr, true, true)
+      .where('date')
+      .between(today, futureDate, true, true)
       .sortBy('start');
 
   } catch (e) {

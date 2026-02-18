@@ -166,7 +166,7 @@ export default function CalendarView({ tasks, theme, onTap, onToggle }) {
                 <button
                   key={cell.date}
                   onClick={() => { setSelectedDate(cell.date); setShowMonth(false); }}
-                  className="w-full aspect-square rounded-lg flex flex-col items-center justify-center text-xs font-medium relative active:scale-90"
+                  className="w-full aspect-square rounded-full flex flex-col items-center justify-center text-xs font-medium relative active:scale-90"
                   style={{
                     background: isSelected ? theme.accent : cell.isToday ? theme.accent + '20' : 'transparent',
                     color: isSelected ? '#fff' : cell.isToday ? theme.accent : theme.text,

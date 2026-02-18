@@ -22,7 +22,12 @@ export default function PaymentsWidget({ theme, onNavigate, size = 'wide' }) {
   });
 
   if (data === undefined) return <WidgetSkeleton theme={theme} size={size} />;
-  if (!data) return null;
+  if (!data) return (
+    <WidgetCard title="Платежи" iconName="bell" color={color} theme={theme} size={size} onClick={() => onNavigate?.('finance')}>
+      <span className="font-bold" style={{ fontSize: 28, color: theme.gray3 }}>—</span>
+      <div className="text-[10px] mt-1" style={{ color: theme.gray2 }}>Нет платежей</div>
+    </WidgetCard>
+  );
 
   return (
     <WidgetCard title="Платежи" iconName="bell" color={color} theme={theme} size={size} onClick={() => onNavigate?.('finance')}>
