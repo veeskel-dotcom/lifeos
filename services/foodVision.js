@@ -78,7 +78,13 @@ async function enrichWithFatSecret(item) {
     const best = await disambiguateMatch(item.name, results.slice(0, 5));
     return scalePortion(best, item.amount_g);
   } catch {
-    return null; // FatSecret недоступен — fallback
+    // FatSecret недоступен — пробуем OpenFoodFacts
+    try {
+      const { searchFoodOFF } = await import('../api/openFoodFacts');
+      const { results } = await searchFoodOFF(item.name);
+      if (results?.[0]) return scalePortion(results[0], item.amount_g);
+    } catch {}
+    return null;
   }
 }
 

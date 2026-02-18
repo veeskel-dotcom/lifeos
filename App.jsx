@@ -321,6 +321,14 @@ function AppContent({ theme, setTheme }) {
       });
       startPeriodicSync();
       logPerf('INIT_COMPLETE', Date.now() - initStart);
+
+      // PWA Shortcuts: /?action=expense|task|workout
+      const action = new URLSearchParams(window.location.search).get('action');
+      if (action) {
+        window.history.replaceState({}, '', '/');
+        const actionMap = { expense: 'expense-form', task: 'task-form', workout: 'active-workout' };
+        if (actionMap[action]) setTimeout(() => navigate(actionMap[action]), 100);
+      }
     })();
     return () => { stopPeriodicSync(); unsub?.(); };
   }, []);

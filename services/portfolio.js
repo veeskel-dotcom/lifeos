@@ -252,13 +252,8 @@ export async function getPerformanceVsBenchmark(months = 6) {
  * Returns metadata for a given broker (margin, divForecast, etc.).
  * Stub implementation — returns null to indicate no stored metadata.
  */
-export async function getBrokerMeta(broker) {
-  try {
-    const meta = await db.table('brokerMeta').get(broker).catch(() => null);
-    return meta || null;
-  } catch (e) {
-    return null;
-  }
+export async function getBrokerMeta(_broker) {
+  return null;
 }
 
 /**

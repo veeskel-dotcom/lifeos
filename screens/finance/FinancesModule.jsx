@@ -18,6 +18,7 @@ import BudgetsList from './BudgetsList';
 import BudgetCategoryDetail from './BudgetCategoryDetail';
 import FinanceAnalytics from './FinanceAnalytics';
 import FinanceTools from './FinanceTools';
+import TransferForm from './TransferForm';
 import UtilitiesScreen from './UtilitiesScreen';
 import FadeIn from '../../components/FadeIn';
 
@@ -27,7 +28,7 @@ export default function FinancesModule({ theme, onBack, initialView, mode, editI
     'analytics': 'analytics',
     'expenses': 'expenses',
     'expense-form': 'expenseForm',
-    'transfer': 'overview', // TransferForm not yet integrated
+    'transfer': 'transfer',
   };
   const initialScreen = modeToView[mode] || initialView || 'overview';
   const [view, setView] = useState(initialScreen);
@@ -55,6 +56,7 @@ export default function FinancesModule({ theme, onBack, initialView, mode, editI
     const backMap = {
       expenses: 'overview',
       expenseForm: editItem ? 'expenses' : 'overview',
+      transfer: 'overview',
       incomes: 'overview',
       incomeForm: editItem ? 'incomes' : 'overview',
       accounts: 'overview',
@@ -229,6 +231,9 @@ export default function FinancesModule({ theme, onBack, initialView, mode, editI
       return <FinanceAnalytics theme={theme} onBack={goBack} />;
     case 'finance-tools':
       return <FinanceTools theme={theme} onBack={goBack} />;
+
+    case 'transfer':
+      return <TransferForm theme={theme} onBack={goBack} onToast={onToast} />;
 
     case 'utilities':
       return <UtilitiesScreen theme={theme} onClose={goBack} />;

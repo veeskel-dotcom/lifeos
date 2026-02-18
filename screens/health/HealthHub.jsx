@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLiveQuery } from '../../hooks/useDB';
 import Card from '../../components/Card';
 import ProgressBar from '../../components/ProgressBar';
@@ -5,6 +6,7 @@ import ProgressRing from '../../components/ProgressRing';
 import SkeletonCard from '../../components/SkeletonCard';
 import NavHeader from '../../components/NavHeader';
 import Ic from '../../components/Icon';
+import { MOOD_LEVELS, logMood, getMoodTrend } from '../../services/mood';
 
 export default function HealthHub({ onBack, onNavigate, theme }) {
   const data = useLiveQuery(async () => {
@@ -21,20 +23,22 @@ export default function HealthHub({ onBack, onNavigate, theme }) {
       db.workouts.orderBy('date').reverse().limit(1).toArray().catch(() => []),
     ]);
 
-    // Sleep week data (last 7 days)
-    const sleepWeek = [];
-    for (let d = 6; d >= 0; d--) {
-      const dt = new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);
-      const s = await db.sleep_log.where('date').equals(dt).first().catch(() => null);
-      sleepWeek.push(s?.duration ? s.duration / 60 : 0);
-    }
+    // Sleep week data (batch: 1 query instead of 7)
+    const sleepData = await db.sleep_log.where('date').between(weekAgo, today + '\uffff').toArray().catch(() => []);
+    const sleepMap = Object.fromEntries(sleepData.map(s => [s.date, s.duration ? s.duration / 60 : 0]));
+    const sleepWeek = Array.from({ length: 7 }, (_, i) => {
+      const dt = new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10);
+      return sleepMap[dt] || 0;
+    });
 
-    // Routine streak
+    // Routine streak (batch: 1 query instead of 365)
+    const yearAgo = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10);
+    const allRoutineLogs = await db.routine_log.where('date').between(yearAgo, today + '\uffff').toArray().catch(() => []);
+    const completedDates = new Set(allRoutineLogs.filter(r => r.completed).map(r => r.date));
     let streakDays = 0;
     for (let d = 0; d < 365; d++) {
       const dt = new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);
-      const dayLogs = await db.routine_log.where('date').equals(dt).toArray().catch(() => []);
-      if (dayLogs.some(r => r.completed)) { streakDays++; } else if (d > 0) break;
+      if (completedDates.has(dt)) streakDays++; else if (d > 0) break;
     }
 
     const weekWeights = await db.body_weight.where('date').between(weekAgo, today + '\uffff').toArray().catch(() => []);
@@ -52,12 +56,18 @@ export default function HealthHub({ onBack, onNavigate, theme }) {
       ? weekWeights[weekWeights.length - 1].weight - weekWeights[0].weight
       : null;
 
+    // Mood
+    const todayMood = await db.mood_log.where('date').equals(today).first().catch(() => null);
+    const moodWeek = await getMoodTrend(7).catch(() => []);
+
     return {
       sleep, sleepWeek, doneRoutines, totalRoutines, streakDays,
       waterMl, waterGoal,
       totalCal, totalP, totalF, totalC, nutritionGoal,
       weight: weight?.weight, weightTrend,
       lastWorkout: workouts[0] || null,
+      todayMood: todayMood?.value || null,
+      moodWeek,
     };
   });
 
@@ -135,6 +145,38 @@ export default function HealthHub({ onBack, onNavigate, theme }) {
               color={theme.teal || theme.accent} height={3} theme={theme} />
           </Card>
         </div>
+
+        {/* Mood */}
+        <Card theme={theme} style={{ marginTop: 8, padding: '12px 14px' }}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-xs font-medium" style={{ color: theme.gray2 }}>Настроение</span>
+            {data.todayMood && <span className="text-xs ml-auto" style={{ color: theme.green }}>записано</span>}
+          </div>
+          <div className="flex justify-between" style={{ gap: 4 }}>
+            {MOOD_LEVELS.map(m => (
+              <button key={m.value}
+                onClick={async () => { await logMood(m.value); }}
+                className="flex-1 flex flex-col items-center py-1.5 rounded-xl active:scale-95 transition-transform"
+                style={{
+                  background: data.todayMood === m.value ? (theme.accent + '18') : 'transparent',
+                  border: data.todayMood === m.value ? `1.5px solid ${theme.accent}` : '1.5px solid transparent',
+                }}>
+                <span style={{ fontSize: 22 }}>{m.emoji}</span>
+                <span style={{ fontSize: 9, color: data.todayMood === m.value ? theme.accent : theme.gray3, marginTop: 2 }}>{m.label}</span>
+              </button>
+            ))}
+          </div>
+          {data.moodWeek?.length > 1 && (
+            <div className="flex items-end gap-1 mt-2" style={{ height: 16 }}>
+              {data.moodWeek.map((m, i) => (
+                <div key={i} className="flex-1 rounded-sm" style={{
+                  height: Math.max(2, (m.value / 5) * 14),
+                  background: i === data.moodWeek.length - 1 ? theme.accent : theme.accent + '40',
+                }} />
+              ))}
+            </div>
+          )}
+        </Card>
 
         {/* Water */}
         <Card theme={theme} style={{ marginTop: 8, padding: '12px 14px' }}

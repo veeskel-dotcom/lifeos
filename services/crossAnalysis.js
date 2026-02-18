@@ -2,52 +2,61 @@ import db from '../db/index';
 
 // ═══ Собрать daily records за N дней ═══
 export async function collectDailyRecords(days = 30) {
-  const records = [];
   const now = new Date();
+  const startDate = new Date(now - days * 86400000).toISOString().split('T')[0];
+  const endDate = now.toISOString().split('T')[0];
+  const range = [startDate, endDate + '\uffff'];
 
+  // 8 batch-запросов вместо 240 (30 дней × 8 запросов)
+  const [allSleep, allMeals, allWorkouts, allTasks, allExpenses, allWeights, allWater, allMoods] = await Promise.all([
+    db.sleep_log.where('date').between(...range).toArray().catch(() => []),
+    db.food_log.where('date').between(...range).toArray().catch(() => []),
+    db.workouts.where('date').between(...range).toArray().catch(() => []),
+    db.tasks.toArray().catch(() => []), // один раз — фильтруем по completed_at
+    db.expenses.where('date').between(...range).toArray().catch(() => []),
+    db.body_weight.where('date').between(...range).toArray().catch(() => []),
+    db.water_log.where('date').between(...range).toArray().catch(() => []),
+    db.mood_log.where('date').between(...range).toArray().catch(() => []),
+  ]);
+
+  // Группировка по дате
+  const groupBy = (arr) => {
+    const map = {};
+    arr.forEach(item => { (map[item.date] ??= []).push(item); });
+    return map;
+  };
+  const sleepByDate = groupBy(allSleep);
+  const mealsByDate = groupBy(allMeals);
+  const workoutsByDate = groupBy(allWorkouts);
+  const expensesByDate = groupBy(allExpenses);
+  const weightByDate = groupBy(allWeights);
+  const waterByDate = groupBy(allWater);
+  const moodByDate = groupBy(allMoods);
+
+  const records = [];
   for (let i = 0; i < days; i++) {
     const date = new Date(now - i * 86400000).toISOString().split('T')[0];
-    const record = { date };
+    const sleep = sleepByDate[date]?.[0];
+    const meals = mealsByDate[date] || [];
+    const workouts = workoutsByDate[date] || [];
+    const expenses = expensesByDate[date] || [];
+    const weight = weightByDate[date]?.[0];
+    const water = waterByDate[date] || [];
+    const mood = moodByDate[date]?.[0];
 
-    try {
-      // Сон
-      const sleep = await db.sleep_log.where('date').equals(date).first();
-      record.sleep_hours = sleep?.duration_hours || null;
-
-      // Еда
-      const meals = await db.food_log.where('date').equals(date).toArray();
-      record.calories = meals.reduce((s, m) => s + (m.calories || m.total_calories || 0), 0) || null;
-      record.protein_g = meals.reduce((s, m) => s + (m.protein || m.total_protein || 0), 0) || null;
-
-      // Тренировки
-      const workouts = await db.workouts.where('date').equals(date).toArray();
-      record.workout = workouts.length > 0;
-      record.workout_type = workouts[0]?.type || null;
-
-      // Задачи выполненные
-      const allTasks = await db.tasks.toArray();
-      record.tasks_completed = allTasks.filter(
-        t => t.status === 'done' && t.completed_at?.startsWith(date)
-      ).length;
-
-      // Расходы
-      const expenses = await db.expenses.where('date').equals(date).toArray();
-      record.expenses = expenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0);
-
-      // Вес
-      const weight = await db.body_weight.where('date').equals(date).first();
-      record.weight_kg = weight?.weight || null;
-
-      // Вода
-      const water = await db.water_log.where('date').equals(date).toArray();
-      record.water_ml = water.reduce((s, w) => s + (w.amount_ml || 0), 0) || null;
-
-      // Настроение
-      const mood = await db.mood_log.where('date').equals(date).first();
-      record.mood = mood?.score || null;
-    } catch { /* пропускаем ошибки по отдельным записям */ }
-
-    records.push(record);
+    records.push({
+      date,
+      sleep_hours: sleep?.duration_hours || null,
+      calories: meals.reduce((s, m) => s + (m.calories || m.total_calories || 0), 0) || null,
+      protein_g: meals.reduce((s, m) => s + (m.protein || m.total_protein || 0), 0) || null,
+      workout: workouts.length > 0,
+      workout_type: workouts[0]?.type || null,
+      tasks_completed: allTasks.filter(t => t.status === 'done' && t.completed_at?.startsWith(date)).length,
+      expenses: expenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0),
+      weight_kg: weight?.weight || null,
+      water_ml: water.reduce((s, w) => s + (w.amount_ml || 0), 0) || null,
+      mood: mood?.score || null,
+    });
   }
 
   return records.reverse(); // хронологический порядок

@@ -1,7 +1,7 @@
 import { chatCompletion } from '../api/openrouter';
 import { trackUsage, checkLimits, getLimitsStatus } from './cost';
 import { getSetting } from '../db/helpers';
-import { AI_LIMITS, MODEL_REGISTRY, LEGACY_MODEL_MAP } from '../utils/constants';
+import { AI_LIMITS, MODEL_REGISTRY, LEGACY_MODEL_MAP, COST_RATES } from '../utils/constants';
 
 const COOLDOWN_MS = AI_LIMITS.cooldown_ms;
 
@@ -151,7 +151,12 @@ export async function callAIStream({
     }
   }
 
-  await trackUsage({ model: resolvedModel, prompt_tokens: 0, completion_tokens: 0, cost_usd: 0 });
+  // Оценка токенов из длины текста (1 токен ≈ 4 символа)
+  const estPromptTokens = Math.ceil(messages.reduce((s, m) => s + (typeof m.content === 'string' ? m.content.length : 0), 0) / 4);
+  const estCompletionTokens = Math.ceil(full.length / 4);
+  const rates = COST_RATES[resolvedModel] || { input: 0.15, output: 0.60 };
+  const estCost = (estPromptTokens * rates.input + estCompletionTokens * rates.output) / 1_000_000;
+  await trackUsage({ model: resolvedModel, prompt_tokens: estPromptTokens, completion_tokens: estCompletionTokens, cost_usd: estCost });
   return full;
 }
 
