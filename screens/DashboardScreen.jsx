@@ -15,6 +15,7 @@ import { checkMilestones } from '../services/milestones';
 import { getOverdueRoutines } from '../services/routines';
 import { getBedtimeRecommendation } from '../services/sleep';
 import TutorialTip from '../components/TutorialTip';
+import Ic from '../components/Icon';
 
 const GREETINGS = [
   { from: 5, to: 12, text: 'Доброе утро' },
@@ -130,14 +131,14 @@ export default function DashboardScreen({ theme, onNavigate, onToast }) {
       <div className="px-4 pt-14 pb-2">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-2xl font-bold" style={{ color: theme.text }}>{greeting} 👋</div>
+            <div className="text-2xl font-bold" style={{ color: theme.text }}>{greeting}</div>
             <div
               className="text-xs mt-0.5 cursor-pointer active:opacity-60"
               style={{ color: theme.gray2 }}
               onClick={() => onNavigate?.('tasks', { view: 'calendar' })}
             >
               {new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}
-              <span className="ml-1" style={{ color: theme.accent }}>📅</span>
+              <span className="ml-1 inline-flex align-middle"><Ic name="calendar" color={theme.accent} size={14} r={3} /></span>
             </div>
           </div>
           <button
@@ -152,7 +153,7 @@ export default function DashboardScreen({ theme, onNavigate, onToast }) {
               fontSize: 12,
             }}
           >
-            <span style={{ fontSize: 14 }}>⚙️</span>
+            <Ic name="gear" color={theme.gray1} size={16} r={4} />
             <span>Настроить</span>
           </button>
         </div>
@@ -166,7 +167,7 @@ export default function DashboardScreen({ theme, onNavigate, onToast }) {
       {/* ── Tutorial ── */}
       <div className="px-4">
         <TutorialTip id="dashboard_welcome" theme={theme} icon="👋">
-          Нажмите ⚙️ Настроить, чтобы показать/скрыть виджеты, изменить размер и порядок.
+          Нажмите Настроить, чтобы показать/скрыть виджеты, изменить размер и порядок.
         </TutorialTip>
       </div>
 

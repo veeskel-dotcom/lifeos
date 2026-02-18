@@ -1,57 +1,70 @@
 import { chatCompletion } from '../api/openrouter';
 import { trackUsage, checkLimits, getLimitsStatus } from './cost';
 import { getSetting } from '../db/helpers';
-import { AI_LIMITS } from '../utils/constants';
+import { AI_LIMITS, MODEL_REGISTRY, LEGACY_MODEL_MAP } from '../utils/constants';
 
 const COOLDOWN_MS = AI_LIMITS.cooldown_ms;
 
-const MODELS = {
-  fast: 'google/gemini-2.5-flash-preview',      // Уровень 3: парсинг (~$0.001)
-  smart: 'anthropic/claude-sonnet-4-20250514',   // Уровень 4: анализ (~$0.005)
-};
+/**
+ * Резолвер модели: taskKey → полный slug.
+ * 1. Если содержит '/' — это прямой slug, пропускаем
+ * 2. Legacy маппинг: fast→parsing, smart→analysis
+ * 3. Пользовательский override из IndexedDB
+ * 4. Дефолт из MODEL_REGISTRY
+ * 5. Fallback на Flash
+ */
+async function resolveModel(taskKey) {
+  if (!taskKey) return MODEL_REGISTRY.parsing;
+  // Прямой slug (содержит '/')
+  if (taskKey.includes('/')) return taskKey;
+  // Legacy
+  const mapped = LEGACY_MODEL_MAP[taskKey] || taskKey;
+  // Пользовательский override
+  try {
+    const overrides = await getSetting('ai_model_overrides');
+    if (overrides?.[mapped]) return overrides[mapped];
+  } catch {}
+  // Дефолт из реестра
+  return MODEL_REGISTRY[mapped] || MODEL_REGISTRY.parsing;
+}
 
 // ═══ Вызвать AI ═══
 export async function callAI({
   prompt,
   systemPrompt,
-  model = 'fast',
+  model = 'parsing',
   maxTokens = 500,
   temperature = 0.3,
 }) {
-  // 1. API ключ — in production the proxy handles it server-side;
-  //    in dev we still check for VITE_OPENROUTER_API_KEY
   const isDev = import.meta.env.DEV;
   if (isDev && !import.meta.env.VITE_OPENROUTER_API_KEY) {
     throw new Error('API_KEY_MISSING');
   }
 
-  // 2. Лимиты
   const limits = await checkLimits();
   if (limits.blocked) {
     throw new Error(`LIMIT_REACHED:${limits.reason}`);
   }
 
-  // 3. Cooldown (1с между вызовами)
   const lastCall = await getSetting('ai_last_call_ts');
   if (lastCall && Date.now() - lastCall < COOLDOWN_MS) {
     await new Promise(r => setTimeout(r, COOLDOWN_MS - (Date.now() - lastCall)));
   }
 
-  // 4. Сообщения
+  const resolvedModel = await resolveModel(model);
+
   const messages = [];
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   messages.push({ role: 'user', content: prompt });
 
-  // 5. Вызов
   try {
     const result = await chatCompletion({
       messages,
-      model: MODELS[model] || MODELS.fast,
+      model: resolvedModel,
       maxTokens,
       temperature,
     });
 
-    // 6. Трекинг
     await trackUsage({
       model: result.model,
       prompt_tokens: result.usage?.prompt_tokens || 0,
@@ -65,10 +78,10 @@ export async function callAI({
       cost: result.cost_usd || 0,
     };
   } catch (err) {
-    // 7. Fallback: smart → fast
-    if (model === 'smart' && !err.message?.startsWith('LIMIT_REACHED') && err.message !== 'API_KEY_MISSING') {
-      console.warn('Primary model failed, trying fallback:', err.message);
-      return callAI({ prompt, systemPrompt, model: 'fast', maxTokens, temperature });
+    // Fallback: любая модель кроме parsing → retry с parsing (Flash)
+    if (model !== 'parsing' && !err.message?.startsWith('LIMIT_REACHED') && err.message !== 'API_KEY_MISSING') {
+      console.warn(`[AI] ${resolvedModel} failed, falling back to parsing:`, err.message);
+      return callAI({ prompt, systemPrompt, model: 'parsing', maxTokens, temperature });
     }
     throw err;
   }
@@ -78,7 +91,7 @@ export async function callAI({
 export async function callAIStream({
   prompt,
   systemPrompt,
-  model = 'fast',
+  model = 'parsing',
   maxTokens = 800,
   temperature = 0.3,
   onChunk, // (text: string) => void
@@ -89,11 +102,12 @@ export async function callAIStream({
   const limits = await checkLimits();
   if (limits.blocked) throw new Error(`LIMIT_REACHED:${limits.reason}`);
 
+  const resolvedModel = await resolveModel(model);
+
   const messages = [];
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   messages.push({ role: 'user', content: prompt });
 
-  // In production, use the serverless proxy; in dev, call OpenRouter directly
   const useDirectApi = isDev && import.meta.env.VITE_OPENROUTER_API_KEY;
   const streamUrl = useDirectApi
     ? 'https://openrouter.ai/api/v1/chat/completions'
@@ -109,7 +123,7 @@ export async function callAIStream({
     method: 'POST',
     headers,
     body: JSON.stringify({
-      model: MODELS[model] || MODELS.fast,
+      model: resolvedModel,
       messages,
       max_tokens: maxTokens,
       temperature,
@@ -137,16 +151,16 @@ export async function callAIStream({
     }
   }
 
-  await trackUsage({ model: MODELS[model], prompt_tokens: 0, completion_tokens: 0, cost_usd: 0 });
+  await trackUsage({ model: resolvedModel, prompt_tokens: 0, completion_tokens: 0, cost_usd: 0 });
   return full;
 }
 
-// ═══ Vision AI (разблокирует A2.2, C1.7, E9, C1.6) ═══
+// ═══ Vision AI ═══
 
 export async function callAIVision({
   imageBase64,
   prompt,
-  model = 'fast',
+  model = 'parsing',
   maxTokens = 1000,
   temperature = 0.2,
   mimeType = 'image/jpeg',
@@ -156,6 +170,8 @@ export async function callAIVision({
 
   const limits = await checkLimits();
   if (limits.blocked) throw new Error(`LIMIT_REACHED:${limits.reason}`);
+
+  const resolvedModel = await resolveModel(model);
 
   const messages = [
     {
@@ -173,9 +189,16 @@ export async function callAIVision({
   try {
     const result = await chatCompletion({
       messages,
-      model: MODELS[model] || MODELS.fast,
+      model: resolvedModel,
       maxTokens,
       temperature,
+    });
+
+    await trackUsage({
+      model: result.model,
+      prompt_tokens: result.usage?.prompt_tokens || 0,
+      completion_tokens: result.usage?.completion_tokens || 0,
+      cost_usd: result.cost_usd || 0,
     });
 
     return {
@@ -184,11 +207,14 @@ export async function callAIVision({
       cost: result.cost_usd || 0,
     };
   } catch (err) {
-    if (model === 'fast') {
-      // Gemini Flash поддерживает vision, fallback не нужен
+    if (model === 'parsing' && !err.message?.startsWith('LIMIT_REACHED') && err.message !== 'API_KEY_MISSING') {
       throw err;
     }
-    return callAIVision({ imageBase64, prompt, model: 'fast', maxTokens, temperature, mimeType });
+    if (!err.message?.startsWith('LIMIT_REACHED') && err.message !== 'API_KEY_MISSING') {
+      console.warn(`[AI Vision] ${resolvedModel} failed, falling back to parsing:`, err.message);
+      return callAIVision({ imageBase64, prompt, model: 'parsing', maxTokens, temperature, mimeType });
+    }
+    throw err;
   }
 }
 

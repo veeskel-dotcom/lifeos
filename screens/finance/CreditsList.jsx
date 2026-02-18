@@ -5,6 +5,7 @@ import Card from '../../components/Card';
 import { fmtMoney } from '../../utils/currency';
 import EmptyState from '../../components/EmptyState';
 import ProgressBar from '../../components/ProgressBar';
+import Ic from '../../components/Icon';
 
 import SkeletonList from '../../components/SkeletonList';
 import ScreenWrapper from '../../components/ScreenWrapper';
@@ -58,10 +59,7 @@ export default function CreditsList({ theme, onBack, onNavigate }) {
             onClick={() => onNavigate('creditDetail', { detailId: nearest.id })}>
             <div style={{ fontSize: 11, fontWeight: 600, color: theme.orange, letterSpacing: 0.3, marginBottom: 6 }}>БЛИЖАЙШИЙ ПЛАТЁЖ</div>
             <div className="flex items-center" style={{ gap: 10 }}>
-              <div className="flex items-center justify-center shrink-0"
-                style={{ width: 40, height: 40, borderRadius: 12, background: (theme.green || '#34C759') + '15', fontSize: 20 }}>
-                {nearest.type === 'card' ? '💳' : '🏠'}
-              </div>
+              <Ic name={nearest.type === 'card' ? 'card' : 'home'} color={theme.green || '#34C759'} size={40} r={12} />
               <div className="flex-1">
                 <div style={{ fontSize: 15, fontWeight: 600, color: theme.text }}>{nearest.name}</div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: theme.orange }}>
@@ -111,10 +109,7 @@ export default function CreditsList({ theme, onBack, onNavigate }) {
                 onClick={() => onNavigate('creditDetail', { detailId: c.id })}>
                 {/* Header */}
                 <div className="flex items-center" style={{ gap: 10, marginBottom: 10 }}>
-                  <div className="flex items-center justify-center shrink-0"
-                    style={{ width: 42, height: 42, borderRadius: 12, background: loanColor + '12', fontSize: 22 }}>
-                    {isCard ? '💳' : '🏠'}
-                  </div>
+                  <Ic name={isCard ? 'card' : 'home'} color={loanColor} size={42} r={12} />
                   <div className="flex-1">
                     <div style={{ fontSize: 15, fontWeight: 600, color: theme.text }}>{c.name}</div>
                     <div style={{ fontSize: 12, color: theme.gray2 }}>

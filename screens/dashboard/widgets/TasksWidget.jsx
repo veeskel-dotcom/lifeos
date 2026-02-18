@@ -26,7 +26,7 @@ export default function TasksWidget({ theme, onNavigate, data: externalData, siz
   const pct = data.total > 0 ? Math.round((data.done / data.total) * 100) : 0;
 
   return (
-    <WidgetCard title="Задачи" icon="✅" color={color} theme={theme} size={size} onClick={() => onNavigate?.('tasks')}>
+    <WidgetCard title="Задачи" iconName="task" color={color} theme={theme} size={size} onClick={() => onNavigate?.('tasks')}>
       <div className="flex items-baseline gap-1">
         <span className="font-bold tabular-nums" style={{ fontSize: size === 'wide' ? 36 : 28, color: theme.text }}>
           {data.done}

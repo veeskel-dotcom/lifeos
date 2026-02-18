@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useSportVideos } from '../../hooks/useDB';
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
+import Ic from '../../components/Icon';
 import { analyzeVideo } from '../../services/videoAnalysis';
 
 const SPORTS = [
-  { id: 'tennis', label: '🎾 Теннис', strokes: ['forehand', 'backhand', 'serve', 'volley'] },
-  { id: 'skiing', label: '⛷ Лыжи', strokes: ['parallel', 'carving', 'moguls'] },
+  { id: 'tennis', label: 'Теннис', iconName: 'gym' },
+  { id: 'skiing', label: 'Лыжи', iconName: 'flag' },
 ];
 
 const STROKE_LABELS = {
@@ -23,19 +24,26 @@ export default function VideoAnalysis({ theme, onBack }) {
   const [sport, setSport] = useState('tennis');
   const [stroke, setStroke] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState('');
   const [error, setError] = useState(null);
 
   const analyses = useSportVideos(sport);
 
   const sportConfig = SPORTS.find(s => s.id === sport);
+  const strokes = sport === 'tennis'
+    ? ['forehand', 'backhand', 'serve', 'volley']
+    : ['parallel', 'carving', 'moguls'];
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsAnalyzing(true);
     setError(null);
+    setAnalysisStep('Извлечение кадров...');
     try {
+      setAnalysisStep('Анализ позы и техники...');
       await analyzeVideo(file, sport, stroke || null);
+      setAnalysisStep('');
     } catch (err) {
       setError(err.message || 'Ошибка анализа');
     } finally {
@@ -48,17 +56,16 @@ export default function VideoAnalysis({ theme, onBack }) {
       <NavHeader title="Видеоанализ" onBack={onBack} left="Спорт" theme={theme} />
 
       <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-4">
-        <div className="mx-4 mt-2 px-3 py-2 rounded-xl text-xs" style={{ background: theme.accent + '10', color: theme.accent }}>
-          Анализ видео в разработке. Результаты демонстрационные.
-        </div>
 
         {/* Sport selector */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-2">
           {SPORTS.map(s => (
             <button
               key={s.id} onClick={() => { setSport(s.id); setStroke(''); }}
+              className="flex items-center justify-center gap-2"
               style={{ flex: 1, padding: '10px 0', borderRadius: 12, fontSize: 14, fontWeight: 500, textAlign: 'center', background: sport === s.id ? theme.accent : theme.gray5, color: sport === s.id ? '#fff' : theme.text }}
             >
+              <Ic name={s.iconName} color={sport === s.id ? '#fff' : theme.gray2} size={18} r={5} raw />
               {s.label}
             </button>
           ))}
@@ -66,10 +73,10 @@ export default function VideoAnalysis({ theme, onBack }) {
 
         {/* Stroke selector */}
         <div className="flex gap-2 flex-wrap">
-          {sportConfig?.strokes.map(st => (
+          {strokes.map(st => (
             <button
               key={st} onClick={() => setStroke(stroke === st ? '' : st)}
-              style={{ padding: '6px 12px', paddingRight: 12, borderRadius: 9999, fontSize: 12, fontWeight: 500, background: stroke === st ? theme.accent : theme.gray5, color: stroke === st ? '#fff' : theme.text }}
+              style={{ padding: '6px 12px', borderRadius: 9999, fontSize: 12, fontWeight: 500, background: stroke === st ? theme.accent : theme.gray5, color: stroke === st ? '#fff' : theme.text }}
             >
               {STROKE_LABELS[st] || st}
             </button>
@@ -78,17 +85,19 @@ export default function VideoAnalysis({ theme, onBack }) {
 
         {/* Upload */}
         <Card theme={theme}>
-          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', paddingTop: 24, paddingBottom: 24 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: isAnalyzing ? 'default' : 'pointer', paddingTop: 24, paddingBottom: 24 }}>
             {isAnalyzing ? (
               <>
-                <div className="animate-pulse" style={{ fontSize: 30, marginBottom: 8 }}>🔄</div>
+                <div className="animate-spin" style={{ marginBottom: 8 }}>
+                  <Ic name="repeat" color={theme.accent} size={36} r={10} />
+                </div>
                 <span style={{ color: theme.accent, fontSize: 14, fontWeight: 500 }}>Анализ видео...</span>
-                <span style={{ color: theme.gray2, fontSize: 12, marginTop: 4 }}>Извлечение кадров и AI-оценка</span>
+                <span style={{ color: theme.gray2, fontSize: 12, marginTop: 4 }}>{analysisStep}</span>
               </>
             ) : (
               <>
-                <div style={{ fontSize: 30, marginBottom: 8 }}>📹</div>
-                <span style={{ color: theme.accent, fontSize: 14, fontWeight: 500 }}>Записать видео (10-30 сек)</span>
+                <Ic name="camera" color={theme.accent} size={36} r={10} />
+                <span style={{ color: theme.accent, fontSize: 14, fontWeight: 500, marginTop: 8 }}>Записать видео (10-30 сек)</span>
                 <span style={{ color: theme.gray2, fontSize: 12, marginTop: 4 }}>Или выбрать из галереи</span>
               </>
             )}
@@ -111,17 +120,25 @@ export default function VideoAnalysis({ theme, onBack }) {
           </div>
           {!analyses || analyses.length === 0 ? (
             <div style={{ padding: '32px 0', textAlign: 'center' }}>
-              <div style={{ fontSize: 30, marginBottom: 8 }}>📊</div>
-              <p style={{ color: theme.gray2, fontSize: 14 }}>Анализов пока нет</p>
+              <Ic name="chart" color={theme.gray3 || theme.gray2} size={36} r={10} />
+              <p style={{ color: theme.gray2, fontSize: 14, marginTop: 8 }}>Анализов пока нет</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {analyses.map(a => (
                 <Card key={a.id} theme={theme}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ color: theme.text, fontSize: 14, fontWeight: 500 }}>
-                      {sport === 'tennis' ? '🎾' : '⛷'} {STROKE_LABELS[a.stroke_type] || 'Общий'} · {a.date}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <Ic name={sportConfig?.iconName || 'gym'} color={theme.accent} size={20} r={6} />
+                      <span style={{ color: theme.text, fontSize: 14, fontWeight: 500 }}>
+                        {STROKE_LABELS[a.stroke_type] || 'Общий'} · {a.date}
+                      </span>
+                    </div>
+                    {a.ai_analysis?.has_pose_data && (
+                      <span style={{ fontSize: 10, color: theme.green, background: theme.green + '18', padding: '2px 6px', borderRadius: 6 }}>
+                        MediaPipe
+                      </span>
+                    )}
                   </div>
 
                   {/* Scores */}
@@ -145,6 +162,17 @@ export default function VideoAnalysis({ theme, onBack }) {
                     <p style={{ color: theme.gray1, fontSize: 13, lineHeight: '18px' }}>
                       {a.ai_analysis.summary}
                     </p>
+                  )}
+
+                  {/* Key observations */}
+                  {a.ai_analysis?.key_observations?.length > 0 && (
+                    <div style={{ marginTop: 6 }}>
+                      {a.ai_analysis.key_observations.map((obs, i) => (
+                        <div key={i} style={{ color: theme.accent, fontSize: 12, marginTop: 3 }}>
+                          {obs}
+                        </div>
+                      ))}
+                    </div>
                   )}
 
                   {/* Drills */}

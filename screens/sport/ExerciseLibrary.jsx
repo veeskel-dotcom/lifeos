@@ -4,6 +4,7 @@ import { useExercises } from '../../hooks/useDB';
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
+import Ic from '../../components/Icon';
 
 import SkeletonList from '../../components/SkeletonList';
 import { MUSCLE_GROUPS, EQUIPMENT_TYPES } from '../../services/exercises';
@@ -98,7 +99,7 @@ export default function ExerciseLibrary({ theme, onBack, onSelect, onNavigate, s
       <div className="flex-1 overflow-y-auto px-4 pb-24">
         {filtered.length === 0 ? (
           <EmptyState
-            icon="🔍"
+            icon={<Ic name="gym" color={theme.gray2} size={48} r={14} />}
             title="Ничего не найдено"
             subtitle="Попробуйте другой запрос или фильтр"
             actionLabel="Сбросить фильтры"

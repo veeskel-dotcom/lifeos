@@ -1,8 +1,10 @@
 /**
  * WidgetCard — Обёртка виджета в стиле iOS 17.
- * Цветной градиент, emoji-заголовок, borderRadius 20.
+ * Цветной градиент, SVG-иконка, borderRadius 20.
  */
-export default function WidgetCard({ title, icon, color, theme, onClick, size = 'small', children }) {
+import Ic from '../../../components/Icon';
+
+export default function WidgetCard({ title, icon, iconName, color, theme, onClick, size = 'small', children }) {
   return (
     <div
       onClick={onClick}
@@ -26,7 +28,11 @@ export default function WidgetCard({ title, icon, color, theme, onClick, size = 
 
       {/* Header */}
       <div className="relative flex items-center gap-1.5 mb-3">
-        <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
+        {iconName ? (
+          <Ic name={iconName} color={color} size={20} r={6} />
+        ) : (
+          <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
+        )}
         <span
           className="font-bold uppercase tracking-wider"
           style={{ fontSize: 10, color, letterSpacing: '0.08em' }}

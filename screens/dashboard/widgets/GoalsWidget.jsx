@@ -19,7 +19,7 @@ export default function GoalsWidget({ theme, onNavigate, size = 'small' }) {
   if (!data) return null;
 
   return (
-    <WidgetCard title="Цели" icon="🎯" color={color} theme={theme} size={size} onClick={() => onNavigate?.('goals')}>
+    <WidgetCard title="Цели" iconName="target" color={color} theme={theme} size={size} onClick={() => onNavigate?.('goals')}>
       <div className="space-y-2">
         {data.map(g => {
           const pct = getProgress(g);

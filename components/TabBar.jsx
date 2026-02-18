@@ -1,15 +1,44 @@
 import { useRef } from 'react';
 import { haptic } from '../utils/ios';
 
+/* SVG line icons — prototype design system */
+const ICONS = {
+  home: (color) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+      <rect x="9" y="14" width="6" height="7" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  ),
+  tasks: (color) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="3" width="18" height="18" rx="3" stroke={color} strokeWidth="1.8" />
+      <path d="M8 12l3 3 5-6" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  nutrition: (color) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M6 21c3-3 8-4 12-8 1-2 2-5 0-8-3-2-6-1-8 0C6 9 5 14 2 17" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6 21c0-4 2-7 6-10" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  ),
+  more: (color) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <circle cx="5" cy="12" r="2" fill={color} />
+      <circle cx="12" cy="12" r="2" fill={color} />
+      <circle cx="19" cy="12" r="2" fill={color} />
+    </svg>
+  ),
+};
+
 export default function TabBar({ active, onChange, onQuickAdd, theme, quickOpen }) {
   const lastTap = useRef({});
 
   const tabs = [
-    { id: 'dashboard', icon: '🏠', label: 'Главная' },
-    { id: 'tasks', icon: '📋', label: 'Задачи' },
-    { id: 'quick', icon: '＋', label: '' },
-    { id: 'nutrition', icon: '🍎', label: 'Еда' },
-    { id: 'more', icon: '···', label: 'Ещё' },
+    { id: 'dashboard', icon: 'home', label: 'Главная' },
+    { id: 'tasks', icon: 'tasks', label: 'Задачи' },
+    { id: 'quick', icon: null, label: '' },
+    { id: 'nutrition', icon: 'nutrition', label: 'Еда' },
+    { id: 'more', icon: 'more', label: 'Ещё' },
   ];
 
   const handleTabPress = (tabId) => {
@@ -60,6 +89,7 @@ export default function TabBar({ active, onChange, onQuickAdd, theme, quickOpen 
             cursor: 'pointer',
             padding: '8px 0',
             fontFamily: 'inherit',
+            minHeight: 44,
           }}
         >
           {tab.id === 'quick' ? (
@@ -67,17 +97,19 @@ export default function TabBar({ active, onChange, onQuickAdd, theme, quickOpen 
               width: 44, height: 44, borderRadius: 22,
               background: theme.accent,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: 24, fontWeight: 300,
               marginTop: -16,
               transform: quickOpen ? 'rotate(45deg)' : 'rotate(0deg)',
               transition: 'transform 0.25s ease',
-            }}>＋</div>
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
           ) : (
             <>
-              <span style={{
-                fontSize: 24,
-                opacity: active === tab.id ? 1 : 0.4,
-              }}>{tab.icon}</span>
+              <div style={{ opacity: active === tab.id ? 1 : 0.4 }}>
+                {ICONS[tab.icon]?.(active === tab.id ? theme.accent : theme.text)}
+              </div>
               <span style={{
                 fontSize: 10,
                 color: active === tab.id ? theme.accent : theme.gray1,

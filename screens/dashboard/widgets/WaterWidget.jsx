@@ -29,7 +29,7 @@ export default function WaterWidget({ theme, onNavigate, data: externalData, siz
   const pct = data.percent ?? (data.goal > 0 ? Math.round((data.current / data.goal) * 100) : 0);
 
   return (
-    <WidgetCard title="Вода" icon="💧" color={color} theme={theme} size={size} onClick={() => onNavigate?.('nutrition')}>
+    <WidgetCard title="Вода" iconName="drop" color={color} theme={theme} size={size} onClick={() => onNavigate?.('nutrition')}>
       <div className="flex items-center gap-3">
         <ProgressRing value={data.current} max={data.goal} size={52} strokeWidth={5} color={color} theme={theme}>
           <span className="font-bold" style={{ fontSize: 11, color }}>{pct}%</span>

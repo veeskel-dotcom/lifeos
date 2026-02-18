@@ -26,7 +26,7 @@ export default function RoutinesWidget({ theme, onNavigate, data: externalData, 
   const pct = data.total > 0 ? Math.round((data.done / data.total) * 100) : 0;
 
   return (
-    <WidgetCard title="Привычки" icon="🔄" color={color} theme={theme} size={size} onClick={() => onNavigate?.('routines')}>
+    <WidgetCard title="Привычки" iconName="repeat" color={color} theme={theme} size={size} onClick={() => onNavigate?.('routines')}>
       <div className="flex items-center gap-3">
         <ProgressRing value={data.done} max={data.total} size={52} strokeWidth={5} color={color} theme={theme}>
           <span className="font-bold" style={{ fontSize: 12, color }}>{pct}%</span>

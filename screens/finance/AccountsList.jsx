@@ -4,13 +4,14 @@ import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
 import { fmtMoney, getSymbolForCode } from '../../utils/currency';
+import Ic from '../../components/Icon';
 
 import SkeletonList from '../../components/SkeletonList';
 const TYPE_LABELS = {
-  debit: 'ДЕБЕТОВЫЕ',
-  credit: 'КРЕДИТНЫЕ',
-  savings: 'НАКОПИТЕЛЬНЫЕ',
-  cash: 'НАЛИЧНЫЕ',
+  debit: 'Дебетовые',
+  credit: 'Кредитные',
+  savings: 'Накопительные',
+  cash: 'Наличные',
 };
 
 const TYPE_ORDER = ['debit', 'credit', 'savings', 'cash'];
@@ -81,10 +82,14 @@ export default function AccountsList({ theme, onBack, onNavigate }) {
                     onClick={() => onNavigate('accountDetail', { detailId: a.id })}
                   >
                     {/* Icon 40×40 r12 — proto S6 */}
-                    <div className="flex items-center justify-center shrink-0"
-                      style={{ width: 40, height: 40, borderRadius: 12, background: (a.color || '#007AFF'), fontSize: 16 }}>
-                      <span style={{ color: '#fff', fontWeight: 700 }}>{a.type === 'cash' ? '💵' : (a.name || 'A').charAt(0)}</span>
-                    </div>
+                    {a.type === 'cash' ? (
+                      <Ic name="money" color={a.color || '#007AFF'} size={40} r={12} />
+                    ) : (
+                      <div className="flex items-center justify-center shrink-0"
+                        style={{ width: 40, height: 40, borderRadius: 12, background: (a.color || '#007AFF'), fontSize: 16 }}>
+                        <span style={{ color: '#fff', fontWeight: 700 }}>{(a.name || 'A').charAt(0)}</span>
+                      </div>
+                    )}
 
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium" style={{ color: theme.text }}>

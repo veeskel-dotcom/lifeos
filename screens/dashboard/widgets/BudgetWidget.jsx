@@ -33,7 +33,7 @@ export default function BudgetWidget({ theme, onNavigate, data: externalData, si
   const barColor = isOver ? theme.red : color;
 
   return (
-    <WidgetCard title="Бюджет" icon="💰" color={color} theme={theme} size={size} onClick={() => onNavigate?.('finance')}>
+    <WidgetCard title="Бюджет" iconName="wallet" color={color} theme={theme} size={size} onClick={() => onNavigate?.('finance')}>
       {size === 'wide' ? (
         <>
           <div className="flex items-baseline gap-2 mb-2">

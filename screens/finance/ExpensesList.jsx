@@ -12,6 +12,7 @@ import EmptyState from '../../components/EmptyState';
 import { fmtMoney } from '../../utils/currency';
 import { exportExpensesCSV } from '../../services/export';
 import DateRangeFilter from '../../components/DateRangeFilter';
+import Ic from '../../components/Icon';
 
 /* ── Constants ── */
 
@@ -152,8 +153,8 @@ export default function ExpensesList({ theme, onBack, onNavigate, filterAccountI
         left
         right={
           <div className="flex items-center gap-3">
-            <span onClick={handleExport} style={{ cursor: 'pointer', fontSize: 16 }}>📤</span>
-            <span onClick={() => setShowSearch(!showSearch)} style={{ cursor: 'pointer', fontSize: 16 }}>🔍</span>
+            <span onClick={handleExport} style={{ cursor: 'pointer' }}><Ic name="share" color={theme.accent} size={20} r={5} raw /></span>
+            <span onClick={() => setShowSearch(!showSearch)} style={{ cursor: 'pointer' }}><Ic name="target" color={theme.accent} size={20} r={5} raw /></span>
           </div>
         }
         theme={theme}

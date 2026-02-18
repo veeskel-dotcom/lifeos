@@ -10,6 +10,7 @@ import RowMetaLine from '../../components/RowMetaLine';
 import CalendarView from './CalendarView';
 import TutorialTip from '../../components/TutorialTip';
 import SkeletonCard from '../../components/SkeletonCard';
+import Ic from '../../components/Icon';
 
 const PRIORITY_COLORS = {
   urgent: '#FF3B30',
@@ -18,7 +19,7 @@ const PRIORITY_COLORS = {
   low: '#AEAEB2',
 };
 
-export default function TasksList({ theme, onNavigate, initialView, onToast }) {
+export default function TasksList({ theme, onBack, onNavigate, initialView, onToast }) {
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [view, setView] = useState(initialView || 'list');
@@ -116,7 +117,14 @@ export default function TasksList({ theme, onNavigate, initialView, onToast }) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-2 pb-1">
-        <h1 className="font-bold" style={{ color: theme.text, fontSize: 28 }}>Задачи</h1>
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <button onClick={onBack} style={{ color: theme.accent, fontSize: 17, padding: '4px 0', minHeight: 44, minWidth: 44, display: 'flex', alignItems: 'center' }}>
+              ← Назад
+            </button>
+          )}
+          <h1 className="font-bold" style={{ color: theme.text, fontSize: 28 }}>Задачи</h1>
+        </div>
         <div className="flex rounded-lg overflow-hidden" style={{ border: `1px solid ${theme.gray4}` }}>
           {[['list', '☰'], ['calendar', '📅'], ['kanban', '▦']].map(([v, icon]) => (
             <button
@@ -155,7 +163,7 @@ export default function TasksList({ theme, onNavigate, initialView, onToast }) {
       {/* Content */}
       <div className="flex-1 overflow-auto px-4 pb-24">
 
-        <TutorialTip id="tasks_intro" theme={theme} icon="✅">
+        <TutorialTip id="tasks_intro" theme={theme} icon={<Ic name="check" color={theme.green} size={20} r={5} />}>
           Фильтры вверху сортируют задачи. Свайпните задачу влево для удаления. Нажмите + для новой задачи.
         </TutorialTip>
 
@@ -172,7 +180,7 @@ export default function TasksList({ theme, onNavigate, initialView, onToast }) {
         {prodStats && (prodStats.thisWeek > 0 || prodStats.streak > 0) && view === 'list' && (
           <Card theme={theme} style={{ marginBottom: 16 }}>
             <div className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: theme.gray1 }}>
-              📊 Продуктивность
+              <span className="inline-flex items-center gap-1"><Ic name="chart" color={theme.accent} size={14} r={4} raw /> Продуктивность</span>
             </div>
             <div className="flex items-center justify-between mb-2">
               <div className="text-center flex-1">
@@ -189,7 +197,7 @@ export default function TasksList({ theme, onNavigate, initialView, onToast }) {
               </div>
               <div className="text-center flex-1">
                 <div className="text-lg font-bold tabular-nums" style={{ color: theme.orange }}>
-                  🔥 {prodStats.streak}
+                  <span className="inline-flex items-center gap-0.5"><Ic name="flame" color={theme.orange} size={14} r={4} raw /> {prodStats.streak}</span>
                 </div>
                 <div className="text-[10px]" style={{ color: theme.gray2 }}>Streak</div>
               </div>
@@ -229,7 +237,7 @@ export default function TasksList({ theme, onNavigate, initialView, onToast }) {
                     {group.label}
                   </span>
                   <span className="text-xs" style={{ color: theme.gray2 }}>({group.items.length})</span>
-                  {group.type === 'overdue' && <span>🔴</span>}
+                  {group.type === 'overdue' && <Ic name="flag" color={theme.red} size={14} r={4} raw />}
                 </div>
                 <Card theme={theme} style={{ padding: 0, overflow: 'hidden' }}>
                   {group.items.map((task, i) => (
@@ -251,7 +259,7 @@ export default function TasksList({ theme, onNavigate, initialView, onToast }) {
 
             {tasks.length === 0 && (
               <EmptyState
-                icon="📋"
+                iconName="task" iconColor={theme.accent}
                 title="Нет задач"
                 subtitle="Создайте первую задачу"
                 tip="Попробуйте режим Канбан для управления проектами"
@@ -268,7 +276,7 @@ export default function TasksList({ theme, onNavigate, initialView, onToast }) {
           <button onClick={() => onNavigate('projects')}
             className="w-full py-3 rounded-xl text-sm font-medium mt-2"
             style={{ background: theme.accent + '12', color: theme.accent, border: `1px dashed ${theme.accent}40`, cursor: 'pointer' }}>
-            ⚙️ Управление проектами
+            <span className="inline-flex items-center gap-1"><Ic name="gear" color={theme.accent} size={14} r={4} raw /> Управление проектами</span>
           </button>
         )}
 
@@ -387,8 +395,8 @@ function TaskRow({ task, theme, isLast, onToggle, onTap, onDelete, isBouncing, o
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
-            {task.priority === 'urgent' && !isDone && <span className="text-xs">⚠️</span>}
-            {task.recurrence && <span className="text-xs" style={{ color: theme.accent }}>🔄</span>}
+            {task.priority === 'urgent' && !isDone && <Ic name="flag" color={theme.red} size={14} r={3} raw />}
+            {task.recurrence && <Ic name="repeat" color={theme.accent} size={14} r={3} raw />}
             <span
               className="font-medium truncate"
               style={{ color: isDone ? theme.gray2 : theme.text, textDecoration: isDone ? 'line-through' : 'none', fontSize: 15 }}
@@ -423,7 +431,7 @@ function TaskRow({ task, theme, isLast, onToggle, onTap, onDelete, isBouncing, o
         {onAssign && (
           <button onClick={(e) => { e.stopPropagation(); onAssign(task.id); }}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-xs shrink-0"
-            style={{ background: theme.accent + '10', border: 'none', cursor: 'pointer' }}>📁</button>
+            style={{ background: theme.accent + '10', border: 'none', cursor: 'pointer' }}><Ic name="archive" color={theme.accent} size={14} r={3} raw /></button>
         )}
         {isOverdue && (
           <span className="text-xs font-bold shrink-0" style={{ color: theme.red }}>!!</span>

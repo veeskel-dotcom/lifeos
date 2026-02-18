@@ -5,6 +5,7 @@ import Card from '../../components/Card';
 import { addWeight, getLatest, getTrend, getGoal, getWeights, setWeightGoal, getWeightGoal, getWeightPrediction } from '../../services/bodyweight';
 import FormInput from '../../components/FormInput';
 import DatePicker from '../../components/DatePicker';
+import Ic from '../../components/Icon';
 
 
 function MiniChart({ data, goal, theme }) {
@@ -106,7 +107,7 @@ export default function BodyWeightLog({ theme, onBack }) {
             {/* D3.3: Прогноз */}
             {prediction?.message && (
               <div style={{ display: 'inline-block', padding: '6px 12px', background: theme.accent + '15', color: theme.accent, fontSize: 12, marginTop: 8, paddingLeft: 12, paddingRight: 12, borderRadius: 8 }}>
-                📊 {prediction.message}
+                <Ic name="chart" color={theme.accent} size={14} r={3} raw /> {prediction.message}
               </div>
             )}
           </div>
@@ -145,7 +146,7 @@ export default function BodyWeightLog({ theme, onBack }) {
             onClick={() => setShowGoalForm(true)}
             style={{ width: '100%', padding: 12, borderRadius: 12, fontSize: 14, fontWeight: 500, cursor: 'pointer', background: theme.card, color: theme.accent, border: `1px solid ${theme.accent}30` }}
           >
-            🎯 Установить цель
+            <Ic name="target" color={theme.accent} size={16} r={4} raw /> Установить цель
           </button>
         )}
         {showGoalForm && (
@@ -172,7 +173,7 @@ export default function BodyWeightLog({ theme, onBack }) {
             onClick={() => setShowGoalForm(true)}
             className="py-1.5 self-start" style={{ fontSize: 12, paddingLeft: 12, paddingRight: 12, borderRadius: 8, color: theme.gray2 }}
           >
-            ✏️ Изменить цель ({goal} кг)
+            <Ic name="edit" color={theme.gray2} size={14} r={3} raw /> Изменить цель ({goal} кг)
           </button>
         )}
 
@@ -205,7 +206,7 @@ export default function BodyWeightLog({ theme, onBack }) {
             onClick={handleSave} disabled={!weight}
             style={{ width: '100%', padding: 12, borderRadius: 12, fontWeight: 600, fontSize: 14, marginTop: 12, border: 'none', cursor: 'pointer', background: weight ? theme.green : theme.gray4, color: '#fff', opacity: weight ? 1 : 0.6 }}
           >
-            💚 Сохранить
+            <Ic name="check" color="#fff" size={16} r={4} raw /> Сохранить
           </button>
         </Card>
 

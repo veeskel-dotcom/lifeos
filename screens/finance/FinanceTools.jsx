@@ -7,16 +7,17 @@ import Card from '../../components/Card';
 import { fmtMoney } from '../../utils/currency';
 import { getSetting, setSetting } from '../../db/helpers';
 import FormInput from '../../components/FormInput';
+import Ic from '../../components/Icon';
 
 /* ═══ R3.2: Налоговый вычет (KZ/RU) ═══ */
 
 const DEDUCTION_TYPES = [
-  { id: 'education', label: 'Образование', icon: '📚', maxRU: 150000, maxKZ: 0 },
-  { id: 'medical', label: 'Лечение', icon: '💊', maxRU: 150000, maxKZ: 0 },
-  { id: 'iis', label: 'ИИС (тип А)', icon: '📈', maxRU: 400000, maxKZ: 0 },
-  { id: 'property', label: 'Покупка жилья', icon: '🏠', maxRU: 2000000, maxKZ: 0 },
-  { id: 'mortgage', label: 'Проценты ипотеки', icon: '🏦', maxRU: 3000000, maxKZ: 0 },
-  { id: 'opv', label: 'ОПВ (КЗ)', icon: '🇰🇿', maxRU: 0, maxKZ: Infinity },
+  { id: 'education', label: 'Образование', iconName: 'note', maxRU: 150000, maxKZ: 0 },
+  { id: 'medical', label: 'Лечение', iconName: 'shield', maxRU: 150000, maxKZ: 0 },
+  { id: 'iis', label: 'ИИС (тип А)', iconName: 'trend', maxRU: 400000, maxKZ: 0 },
+  { id: 'property', label: 'Покупка жилья', iconName: 'home', maxRU: 2000000, maxKZ: 0 },
+  { id: 'mortgage', label: 'Проценты ипотеки', iconName: 'wallet', maxRU: 3000000, maxKZ: 0 },
+  { id: 'opv', label: 'ОПВ (КЗ)', iconName: 'flag', maxRU: 0, maxKZ: Infinity },
 ];
 
 function TaxDeductionCalc({ theme }) {
@@ -38,8 +39,8 @@ function TaxDeductionCalc({ theme }) {
 
   return (
     <Card theme={theme}>
-      <div className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: theme.gray1 }}>
-        📋 Налоговый вычет
+      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: theme.gray1 }}>
+        <Ic name="receipt" color={theme.gray1} size={16} r={4} raw /> Налоговый вычет
       </div>
 
       <label className="text-[10px] mb-1 block" style={{ color: theme.gray2 }}>Зарплата в месяц (до налога)</label>
@@ -56,7 +57,7 @@ function TaxDeductionCalc({ theme }) {
                   color: '#fff' }}>
                 {selected.includes(d.id) ? '✓' : ''}
               </span>
-              {d.icon} {d.label}
+              <Ic name={d.iconName} color={theme.accent} size={16} r={4} raw /> {d.label}
               {d.maxRU !== Infinity && <span className="text-[9px] ml-auto" style={{ color: theme.gray3 }}>макс {fmtMoney(d.maxRU)}</span>}
             </label>
             {selected.includes(d.id) && (
@@ -131,7 +132,7 @@ function CashbackTracker({ theme }) {
   return (
     <Card theme={theme}>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.gray1 }}>💳 Кэшбэк</span>
+        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: theme.gray1 }}><Ic name="card" color={theme.gray1} size={16} r={4} raw /> Кэшбэк</span>
         <button onClick={() => setShowAdd(!showAdd)} className="text-xs font-medium"
           style={{ color: theme.accent, background: 'none', border: 'none', cursor: 'pointer' }}>
           {showAdd ? '✕' : '＋'}

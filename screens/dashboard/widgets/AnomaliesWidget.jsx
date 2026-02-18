@@ -16,7 +16,7 @@ export default function AnomaliesWidget({ theme, size = 'small' }) {
   if (!data) return null;
 
   return (
-    <WidgetCard title="Аномалии" icon="⚠️" color={color} theme={theme} size={size}>
+    <WidgetCard title="Аномалии" iconName="bell" color={color} theme={theme} size={size}>
       {data.map((a, i) => (
         <div
           key={i}

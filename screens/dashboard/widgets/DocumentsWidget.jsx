@@ -18,7 +18,7 @@ export default function DocumentsWidget({ theme, onNavigate, size = 'small' }) {
   if (!data) return null;
 
   return (
-    <WidgetCard title="Документы" icon="📄" color={color} theme={theme} size={size} onClick={() => onNavigate?.('documents')}>
+    <WidgetCard title="Документы" iconName="note" color={color} theme={theme} size={size} onClick={() => onNavigate?.('documents')}>
       {data.map((doc, i) => {
         const daysLeft = Math.ceil((new Date(doc.expires_at) - new Date()) / 86400000);
         return (

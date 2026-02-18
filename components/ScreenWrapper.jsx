@@ -3,7 +3,7 @@ export default function ScreenWrapper({ children, noScroll = false, noPadBottom 
     <div style={{
       minHeight: '100dvh',
       background: theme.bg,
-      paddingTop: 'env(safe-area-inset-top)',
+      /* paddingTop handled by App root container / TransitionWrapper */
       paddingBottom: noPadBottom ? 0 : 'calc(80px + env(safe-area-inset-bottom, 0px))',
       overflowY: noScroll ? 'hidden' : 'auto',
       WebkitOverflowScrolling: 'touch',

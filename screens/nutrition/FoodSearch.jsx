@@ -12,6 +12,7 @@ import {
 } from '../../services/products';
 import { addMeal } from '../../services/nutrition';
 import ScreenWrapper from '../../components/ScreenWrapper';
+import Ic from '../../components/Icon';
 
 const MEAL_LABELS = {
   breakfast: 'Завтрак', lunch: 'Обед', dinner: 'Ужин', snack: 'Перекус',
@@ -229,9 +230,9 @@ export default function FoodSearch({ meal, date, theme, onBack, initialMode }) {
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           {[
             { label: 'Все', key: 'all' },
-            { label: '⏱ Недавние', key: 'recent' },
-            { label: '⭐ Мои', key: 'favorites' },
-            { label: '🍽 Блюда', key: 'dishes' },
+            { label: 'Недавние', key: 'recent', ic: 'clock' },
+            { label: 'Мои', key: 'favorites', ic: 'star' },
+            { label: 'Блюда', key: 'dishes', ic: 'food' },
           ].map(f => (
             <button
               key={f.key}
@@ -241,8 +242,9 @@ export default function FoodSearch({ meal, date, theme, onBack, initialMode }) {
                 background: (filter || 'all') === f.key ? theme.green + '15' : theme.gray5,
                 color: (filter || 'all') === f.key ? theme.green : theme.gray2,
                 border: (filter || 'all') === f.key ? `1.5px solid ${theme.green}` : '1.5px solid transparent',
+                display: 'inline-flex', alignItems: 'center', gap: 4,
               }}
-            >{f.label}</button>
+            >{f.ic && <Ic name={f.ic} color={(filter || 'all') === f.key ? theme.green : theme.gray2} size={14} r={3} raw />}{f.label}</button>
           ))}
         </div>
 
@@ -261,19 +263,19 @@ export default function FoodSearch({ meal, date, theme, onBack, initialMode }) {
               }}
             />
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm" style={{ color: theme.gray2 }}>
-              🔍
+              <Ic name="food" color={theme.gray2} size={16} r={4} raw />
             </span>
           </div>
           <button
             onClick={() => fileRef.current?.click()}
             className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
             style={{ background: theme.gray5, border: 'none', cursor: 'pointer' }}
-          >📷</button>
+          ><Ic name="camera" color={theme.gray1} size={20} r={5} raw /></button>
           <button
             onClick={() => barcodeRef.current?.click()}
             className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
             style={{ background: theme.gray5, border: 'none', cursor: 'pointer' }}
-          >📊</button>
+          ><Ic name="barcode" color={theme.gray1} size={20} r={5} raw /></button>
         </div>
 
         {/* Скрытые файловые инпуты */}
@@ -299,11 +301,11 @@ export default function FoodSearch({ meal, date, theme, onBack, initialMode }) {
         {/* Ничего не найдено */}
         {query.trim().length >= 2 && !loading && results.length === 0 && (
           <EmptyState
-            icon="🔍"
+            icon={<Ic name="food" color={theme.gray2} size={48} r={14} />}
             title="Ничего не найдено"
             subtitle="Попробуйте другой запрос"
-            tip="Можно искать по-русски или английски. Или используйте 📷 для распознавания по фото."
-            actionLabel="✏️ Ввести вручную"
+            tip="Можно искать по-русски или английски. Или используйте камеру для распознавания по фото."
+            actionLabel="Ввести вручную"
             onAction={() => onBack?.('manual')}
             theme={theme}
           />
@@ -320,7 +322,7 @@ export default function FoodSearch({ meal, date, theme, onBack, initialMode }) {
 
         {/* Избранное */}
         {!query && favorites.length > 0 && (
-          <Section title="Избранное ⭐" theme={theme}>
+          <Section title="Избранное" theme={theme}>
             {favorites.map(p => (
               <ProductRow key={p.id} product={p} theme={theme} onSelect={handleSelect} />
             ))}

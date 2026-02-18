@@ -3,6 +3,7 @@ import Card from '../../components/Card';
 import ProgressBar from '../../components/ProgressBar';
 import ActionSheet from '../../components/ActionSheet';
 import { addSet, addExerciseToWorkout, removeSet, finishWorkout, getLastWorkoutForExercise, detectPR } from '../../services/workouts';
+import Ic from '../../components/Icon';
 
 const REST_OPTIONS = [60, 90, 120, 180];
 
@@ -217,7 +218,7 @@ export default function ActiveWorkout({ workoutId, workout: initialWorkout, them
               {/* D1.1: Superset header */}
               {supersetStart && (
                 <div className="flex items-center gap-2 mb-1 px-1">
-                  <span style={{ color: theme.orange, fontSize: 12, fontWeight: 600 }}>🔗 Суперсет</span>
+                  <span style={{ color: theme.orange, fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Ic name="repeat" color={theme.orange} size={14} r={3} raw /> Суперсет</span>
                   <div className="flex-1 h-px" style={{ background: theme.orange + '40' }} />
                 </div>
               )}
@@ -234,14 +235,14 @@ export default function ActiveWorkout({ workoutId, workout: initialWorkout, them
               {/* Exercise header — proto S2: icon 24 r7, gap:8 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: isActive ? 10 : 8, cursor: 'pointer' }}>
                 <div style={{ width: 24, height: 24, borderRadius: 7, background: isDone ? (theme.green || '#34C759') : isActive ? theme.accent : theme.gray3, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>{isDone ? '✓' : '🏋'}</span>
+                  {isDone ? <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>✓</span> : <Ic name="gym" color="transparent" size={16} r={4} raw />}
                 </div>
                 <span style={{ fontSize: 15, fontWeight: 600, color: theme.text, flex: 1 }}>
                   {ex.name}
                 </span>
                 {isDone && <span style={{ fontSize: 11, color: theme.green || '#34C759', fontWeight: 600, marginLeft: 'auto' }}>✓ Готово</span>}
                 {isActive && !isDone && <span style={{ fontSize: 11, color: theme.accent, fontWeight: 500, marginLeft: 'auto' }}>Текущее</span>}
-                {hasPR && <span style={{ fontSize: 11, color: theme.green || '#34C759', fontWeight: 600, marginLeft: 4 }}>🏆 PR</span>}
+                {hasPR && <span style={{ fontSize: 11, color: theme.green || '#34C759', fontWeight: 600, marginLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 2 }}><Ic name="star" color={theme.green || '#34C759'} size={12} r={3} raw /> PR</span>}
               </div>
 
               {/* Completed sets — proto S2 */}
@@ -265,7 +266,7 @@ export default function ActiveWorkout({ workoutId, workout: initialWorkout, them
               {/* Input row — proto S2: #N w:40, weight w:56, reps w:40, check 24×24 r12 */}
               {isActive && !isDone && ex.type === 'cardio' ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0' }}>
-                  <span style={{ width: 40, fontSize: 13, color: theme.gray1 }}>🏃</span>
+                  <span style={{ width: 40, fontSize: 13, color: theme.gray1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Ic name="flame" color={theme.orange} size={18} r={4} raw /></span>
                   <input type="number" inputMode="decimal" placeholder="км" value={inputDistance}
                     onChange={e => setInputDistance(e.target.value)}
                     onClick={e => e.stopPropagation()}
@@ -358,7 +359,7 @@ export default function ActiveWorkout({ workoutId, workout: initialWorkout, them
             onClick={() => setShowCardioSheet(true)}
             className="flex-1 py-3 rounded-xl" style={{ fontSize: 14, fontWeight: 500, background: theme.card, color: theme.orange, border: `1px dashed ${theme.gray4}` }}
           >
-            🏃 Кардио
+            <Ic name="flame" color={theme.orange} size={16} r={4} raw /> Кардио
           </button>
         </div>
         {/* D1.1: Link as superset */}
@@ -372,7 +373,7 @@ export default function ActiveWorkout({ workoutId, workout: initialWorkout, them
             }}
             className="w-full py-2 rounded-xl" style={{ fontSize: 12, fontWeight: 500, color: theme.orange, background: theme.orange + '10' }}
           >
-            🔗 Объединить последние 2 в суперсет
+            <Ic name="repeat" color={theme.orange} size={14} r={3} raw /> Объединить последние 2 в суперсет
           </button>
         )}
 
@@ -420,11 +421,11 @@ export default function ActiveWorkout({ workoutId, workout: initialWorkout, them
         title="Тип кардио"
         theme={theme}
         actions={[
-          { icon: '🏃', label: 'Бег', onClick: () => addExerciseToWorkout(workoutId, { name: '🏃 Бег', type: 'cardio', target_sets: 1 }).then(refreshWorkout) },
-          { icon: '🚴', label: 'Велосипед', onClick: () => addExerciseToWorkout(workoutId, { name: '🚴 Велосипед', type: 'cardio', target_sets: 1 }).then(refreshWorkout) },
-          { icon: '🏊', label: 'Плавание', onClick: () => addExerciseToWorkout(workoutId, { name: '🏊 Плавание', type: 'cardio', target_sets: 1 }).then(refreshWorkout) },
-          { icon: '🚶', label: 'Ходьба', onClick: () => addExerciseToWorkout(workoutId, { name: '🚶 Ходьба', type: 'cardio', target_sets: 1 }).then(refreshWorkout) },
-          { icon: '⏱', label: 'Скакалка', onClick: () => addExerciseToWorkout(workoutId, { name: '⏱ Скакалка', type: 'cardio', target_sets: 1 }).then(refreshWorkout) },
+          { icon: <Ic name="flame" color={theme.accent} size={20} r={5} raw />, label: 'Бег', onClick: () => addExerciseToWorkout(workoutId, { name: '🏃 Бег', type: 'cardio', target_sets: 1 }).then(refreshWorkout) },
+          { icon: <Ic name="transport" color={theme.accent} size={20} r={5} raw />, label: 'Велосипед', onClick: () => addExerciseToWorkout(workoutId, { name: '🚴 Велосипед', type: 'cardio', target_sets: 1 }).then(refreshWorkout) },
+          { icon: <Ic name="drop" color={theme.accent} size={20} r={5} raw />, label: 'Плавание', onClick: () => addExerciseToWorkout(workoutId, { name: '🏊 Плавание', type: 'cardio', target_sets: 1 }).then(refreshWorkout) },
+          { icon: <Ic name="gym" color={theme.accent} size={20} r={5} raw />, label: 'Ходьба', onClick: () => addExerciseToWorkout(workoutId, { name: '🚶 Ходьба', type: 'cardio', target_sets: 1 }).then(refreshWorkout) },
+          { icon: <Ic name="clock" color={theme.accent} size={20} r={5} raw />, label: 'Скакалка', onClick: () => addExerciseToWorkout(workoutId, { name: '⏱ Скакалка', type: 'cardio', target_sets: 1 }).then(refreshWorkout) },
         ]}
       />
     </div>

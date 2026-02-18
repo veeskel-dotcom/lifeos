@@ -25,7 +25,7 @@ export default function PaymentsWidget({ theme, onNavigate, size = 'wide' }) {
   if (!data) return null;
 
   return (
-    <WidgetCard title="Платежи" icon="📅" color={color} theme={theme} size={size} onClick={() => onNavigate?.('finance')}>
+    <WidgetCard title="Платежи" iconName="bell" color={color} theme={theme} size={size} onClick={() => onNavigate?.('finance')}>
       {data.map((item, i) => (
         <div
           key={i}

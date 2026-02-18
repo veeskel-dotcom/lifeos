@@ -4,6 +4,7 @@ import Card from '../../../components/Card';
 import { addNote, updateNote, getAllTags } from '../../../services/notes';
 import IOSKeyboardSpacer from '../../../components/IOSKeyboardSpacer';
 import FormInput from '../../../components/FormInput';
+import Ic from '../../../components/Icon';
 
 /* ── I1: Simple Markdown → HTML renderer ── */
 function renderMarkdown(md) {
@@ -124,13 +125,13 @@ export default function NoteEditor({ theme, onBack, onSave, existing }) {
 
       {saveStatus && (
         <div className="text-xs text-center py-0.5" style={{ color: theme.gray2 }}>
-          {saveStatus === 'saving' ? '💾 Сохраняю...' : '✓ Сохранено'}
+          {saveStatus === 'saving' ? <><Ic name="download" color={theme.gray2} size={12} r={3} raw /> Сохраняю...</> : '✓ Сохранено'}
         </div>
       )}
 
       {/* Тип */}
       <div className="flex gap-2">
-        {[{ v: 'note', l: '📝 Заметка' }, { v: 'diary', l: '📓 Дневник' }].map(t => (
+        {[{ v: 'note', l: 'Заметка', icon: 'note' }, { v: 'diary', l: 'Дневник', icon: 'edit' }].map(t => (
           <button
             key={t.v}
             onClick={() => setType(t.v)}
@@ -140,7 +141,7 @@ export default function NoteEditor({ theme, onBack, onSave, existing }) {
               color: type === t.v ? '#fff' : theme.text,
             }}
           >
-            {t.l}
+            <span className="inline-flex items-center gap-1"><Ic name={t.icon} color={type === t.v ? '#fff' : theme.gray1} size={14} r={3} raw /> {t.l}</span>
           </button>
         ))}
       </div>
@@ -191,7 +192,7 @@ export default function NoteEditor({ theme, onBack, onSave, existing }) {
                 background: (m === 'preview') === preview ? theme.accent : 'transparent',
                 color: (m === 'preview') === preview ? '#fff' : theme.gray2,
               }}>
-              {m === 'edit' ? '✏️ Редактор' : '👁 Превью'}
+              {m === 'edit' ? <><Ic name="edit" color={(m === 'preview') === preview ? '#fff' : theme.gray2} size={12} r={3} raw /> Редактор</> : 'Превью'}
             </button>
           ))}
         </div>

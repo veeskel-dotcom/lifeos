@@ -5,8 +5,9 @@
  */
 import { useState, useCallback } from 'react';
 import NavHeader from '../../components/NavHeader';
-import { WIDGETS } from './widgetRegistry';
+import { WIDGETS, WIDGET_COLORS } from './widgetRegistry';
 import ScreenWrapper from '../../components/ScreenWrapper';
+import Ic from '../../components/Icon';
 
 export default function DashboardEditor({ config, onSave, onBack, theme }) {
   const [items, setItems] = useState(() => [...config].sort((a, b) => a.order - b.order));
@@ -163,7 +164,8 @@ function WidgetRow({ item, widget, idx, total, theme, onMove, onToggle, onChange
       </div>
 
       {/* Name */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        {widget.iconName && <Ic name={widget.iconName} color={WIDGET_COLORS[widget.id]?.(theme) || theme.accent} size={24} r={7} />}
         <span className="text-sm font-medium" style={{ color: theme.text }}>{widget.name}</span>
       </div>
 

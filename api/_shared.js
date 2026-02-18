@@ -25,10 +25,23 @@ export function requireOnline() {
 export async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const start = Date.now();
   try {
     const res = await fetch(url, { ...options, signal: controller.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
+    if (!res.ok) {
+      const elapsed = Date.now() - start;
+      try { const { logAPI } = await import('../lib/logger'); logAPI(options.method || 'GET', url, res.status, elapsed, `HTTP ${res.status}`); } catch {}
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const elapsed = Date.now() - start;
+    try { const { logAPI } = await import('../lib/logger'); logAPI(options.method || 'GET', url, 200, elapsed); } catch {}
+    return data;
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      try { const { logAPI } = await import('../lib/logger'); logAPI(options.method || 'GET', url, 'TIMEOUT', timeoutMs, 'AbortError'); } catch {}
+    }
+    throw e;
   } finally {
     clearTimeout(timer);
   }

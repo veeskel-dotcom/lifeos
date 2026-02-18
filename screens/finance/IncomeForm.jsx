@@ -157,8 +157,9 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
         )}
 
         <div className="pt-2">
-          <FormButton label={`💚 ${isEdit ? 'Сохранить изменения' : 'Сохранить'}`}
-            onClick={handleSubmit} disabled={!amount || !categoryId} theme={{ ...theme, accent: theme.green }} />
+          <FormButton onClick={handleSubmit} disabled={!amount || !categoryId} size="full" theme={{ ...theme, accent: theme.green }}>
+            {isEdit ? 'Сохранить изменения' : 'Сохранить'}
+          </FormButton>
         </div>
       </div>
       <IOSKeyboardSpacer />

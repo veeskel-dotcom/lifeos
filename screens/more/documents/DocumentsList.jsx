@@ -99,7 +99,7 @@ export default function DocumentsList({ theme, onBack, onAdd, onEdit }) {
 
         {/* File list */}
         {filtered.length === 0 ? (
-          <EmptyState icon="📄" title="Нет документов" subtitle="Добавьте паспорт или чек"
+          <EmptyState iconName="note" iconColor={theme.accent} title="Нет документов" subtitle="Добавьте паспорт или чек"
             actionLabel="＋ Документ" onAction={onAdd} theme={theme} />
         ) : (
           <Card theme={theme} style={{ padding: 0, overflow: 'hidden', marginBottom: 8 }}>

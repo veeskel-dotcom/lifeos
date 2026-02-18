@@ -106,7 +106,7 @@ async function aiCategorize(description, amount) {
       prompt: `Расход: «${description}» ${amount ? amount + '₸' : ''}.
 Определи категорию. Ответ — ОДНО слово из списка: ${CATEGORIES_LIST.join(', ')}.
 Только название категории, ничего больше.`,
-      model: 'fast',
+      model: 'parsing',
       maxTokens: 20,
       temperature: 0,
     });

@@ -4,6 +4,7 @@ import NavHeader from '../../../components/NavHeader';
 import { addSleep, updateSleep } from '../../../services/sleep';
 import IOSKeyboardSpacer from '../../../components/IOSKeyboardSpacer';
 import DatePicker from '../../../components/DatePicker';
+import Ic from '../../../components/Icon';
 
 export default function SleepForm({ theme, onBack, onSave, existing }) {
   const [bedTime, setBedTime] = useState(existing?.bed_time?.slice(11, 16) || '23:00');
@@ -95,12 +96,12 @@ export default function SleepForm({ theme, onBack, onSave, existing }) {
       <Card theme={theme}>
         <div className="flex gap-4">
           <div className="flex-1">
-            <p className="text-xs mb-1" style={{ color: theme.gray1 }}>🌙 Лёг спать</p>
+            <p className="text-xs mb-1 flex items-center gap-1" style={{ color: theme.gray1 }}><Ic name="moon" color={theme.purple || '#AF52DE'} size={14} r={4} raw /> Лёг спать</p>
             <DatePicker value={bedTime} onChange={setBedTime} mode="time" theme={theme} />
           </div>
           <div className="w-px" style={{ background: theme.gray4 }} />
           <div className="flex-1">
-            <p className="text-xs mb-1" style={{ color: theme.gray1 }}>☀️ Проснулся</p>
+            <p className="text-xs mb-1 flex items-center gap-1" style={{ color: theme.gray1 }}><Ic name="flame" color={theme.orange} size={14} r={4} raw /> Проснулся</p>
             <DatePicker value={wakeTime} onChange={setWakeTime} mode="time" theme={theme} />
           </div>
         </div>
@@ -125,8 +126,8 @@ export default function SleepForm({ theme, onBack, onSave, existing }) {
           </span>
         </div>
         <div className="flex justify-between text-xs mt-1" style={{ color: theme.gray2 }}>
-          <span>😫 Ужасно</span>
-          <span>🔥 Отлично</span>
+          <span className="flex items-center gap-0.5"><Ic name="moon" color={theme.red} size={12} r={3} raw /> Ужасно</span>
+          <span className="flex items-center gap-0.5"><Ic name="flame" color={theme.orange} size={12} r={3} raw /> Отлично</span>
         </div>
       </Card>
 

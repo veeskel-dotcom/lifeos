@@ -90,9 +90,10 @@ export async function generateCrossAnalysis(days = 30) {
   );
 
   try {
-    const { processInput } = await import('../ai/index');
+    const { callAI } = await import('../ai/client');
 
-    const prompt = `Проанализируй данные пользователя за ${days} дней.
+    const result = await callAI({
+      prompt: `Проанализируй данные пользователя за ${days} дней.
 Найди корреляции между модулями.
 Выдай 3-5 КОНКРЕТНЫХ инсайтов с цифрами.
 Формат: наблюдение + рекомендация. Одно предложение на каждое.
@@ -102,10 +103,13 @@ export async function generateCrossAnalysis(days = 30) {
 Минимальный эффект: разница > 20%.
 
 Данные:
-${JSON.stringify(meaningful)}`;
+${JSON.stringify(meaningful)}`,
+      model: 'reports',
+      maxTokens: 1000,
+      temperature: 0.3,
+    });
 
-    const result = await processInput(prompt);
-    return { ready: true, insights: result.message, records: meaningful };
+    return { ready: true, insights: result.content, records: meaningful };
   } catch (err) {
     return { ready: true, insights: null, error: err.message };
   }

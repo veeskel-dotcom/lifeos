@@ -2,10 +2,11 @@ import { useLiveQuery } from '../../hooks/useDB';
 import Card from '../../components/Card';
 import ProgressBar from '../../components/ProgressBar';
 import ProgressRing from '../../components/ProgressRing';
-import TabBar from '../../components/TabBar';
 import SkeletonCard from '../../components/SkeletonCard';
+import NavHeader from '../../components/NavHeader';
+import Ic from '../../components/Icon';
 
-export default function HealthHub({ onNavigate, theme }) {
+export default function HealthHub({ onBack, onNavigate, theme }) {
   const data = useLiveQuery(async () => {
     const db = (await import('../../db')).default;
     const today = new Date().toISOString().slice(0, 10);
@@ -62,9 +63,7 @@ export default function HealthHub({ onNavigate, theme }) {
 
   if (!data) return (
     <div style={{ background: theme.bg, minHeight: '100vh' }}>
-      <div className="px-4 pt-14 pb-2">
-        <div className="text-xl font-bold" style={{ color: theme.text }}>Здоровье</div>
-      </div>
+      <NavHeader title="Здоровье" onBack={onBack} theme={theme} />
       <div className="px-4 space-y-3">
         <SkeletonCard theme={theme} />
         <SkeletonCard variant="compact" theme={theme} />
@@ -78,8 +77,8 @@ export default function HealthHub({ onNavigate, theme }) {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: theme.bg }}>
-      <div className="px-5 pt-2 pb-0.5">
-        <div className="font-bold" style={{ color: theme.text, fontSize: 28 }}>Здоровье</div>
+      <NavHeader title="Здоровье" onBack={onBack} theme={theme} />
+      <div className="px-5 pb-0.5">
         <div style={{ color: theme.gray1, fontSize: 13 }}>
           {new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
@@ -128,7 +127,7 @@ export default function HealthHub({ onNavigate, theme }) {
             </div>
             {data.streakDays > 0 && (
               <div className="flex items-center gap-1 mt-0.5">
-                <span className="text-xs font-medium" style={{ color: theme.orange }}>🔥 {data.streakDays} дн</span>
+                <span className="text-xs font-medium inline-flex items-center gap-0.5" style={{ color: theme.orange }}><Ic name="flame" color={theme.orange} size={12} r={3} raw /> {data.streakDays} дн</span>
                 <span className="text-xs" style={{ color: theme.gray3 }}>серия</span>
               </div>
             )}
@@ -143,7 +142,7 @@ export default function HealthHub({ onNavigate, theme }) {
           <div className="flex items-center gap-3">
             <ProgressRing value={data.waterMl} max={data.waterGoal} size={52} strokeWidth={5}
               color={theme.teal || theme.accent} theme={theme}>
-              <span className="text-sm">💧</span>
+              <Ic name="drop" color={theme.teal || theme.accent} size={18} r={5} raw />
             </ProgressRing>
             <div className="flex-1">
               <div className="text-xs" style={{ color: theme.gray2 }}>Вода</div>
@@ -172,8 +171,7 @@ export default function HealthHub({ onNavigate, theme }) {
           <Card theme={theme} style={{ marginTop: 8, padding: '12px 14px' }}
             onClick={() => onNavigate?.('sport')}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                style={{ background: theme.red + '12' }}>🏋️</div>
+              <Ic name="gym" color={theme.red} size={40} r={12} />
               <div className="flex-1">
                 <div className="text-xs" style={{ color: theme.gray2 }}>Последняя тренировка</div>
                 <div style={{ fontSize: 15, fontWeight: 600, color: theme.text }}>
@@ -217,8 +215,7 @@ export default function HealthHub({ onNavigate, theme }) {
           <Card theme={theme} style={{ marginTop: 8, padding: '12px 14px' }}
             onClick={() => onNavigate?.('body-weight')}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                style={{ background: theme.green + '12' }}>⚖️</div>
+              <Ic name="weight" color={theme.green} size={40} r={12} />
               <div className="flex-1">
                 <div className="text-xs" style={{ color: theme.gray2 }}>Вес</div>
                 <div className="text-lg font-bold" style={{ color: theme.text }}>{data.weight} кг</div>
@@ -238,8 +235,7 @@ export default function HealthHub({ onNavigate, theme }) {
         {/* Steps / Activity */}
         <Card theme={theme} style={{ marginTop: 8, padding: '12px 14px' }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-              style={{ background: '#FF2D55' + '12' }}>🔥</div>
+            <Ic name="flame" color="#FF2D55" size={40} r={12} />
             <div className="flex-1">
               <div className="text-sm font-medium" style={{ color: theme.text }}>Активность</div>
               <div className="text-xs" style={{ color: theme.gray2 }}>Шаги · Расстояние</div>
@@ -252,7 +248,6 @@ export default function HealthHub({ onNavigate, theme }) {
         </Card>
       </div>
 
-      <TabBar active="more" onNavigate={onNavigate} theme={theme} />
     </div>
   );
 }

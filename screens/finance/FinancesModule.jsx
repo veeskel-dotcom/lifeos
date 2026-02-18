@@ -21,11 +21,19 @@ import FinanceTools from './FinanceTools';
 import UtilitiesScreen from './UtilitiesScreen';
 import FadeIn from '../../components/FadeIn';
 
-export default function FinancesModule({ theme, onBack, initialView }) {
-  const [view, setView] = useState(initialView || 'overview');
-  const [editItem, setEditItem] = useState(null);
+export default function FinancesModule({ theme, onBack, initialView, mode, editItem: editItemProp, filterCategoryId, filterMonth, filterCategoryName, onNavigate: parentNavigate, onToast }) {
+  // mode prop from App.jsx maps to internal view names
+  const modeToView = {
+    'analytics': 'analytics',
+    'expenses': 'expenses',
+    'expense-form': 'expenseForm',
+    'transfer': 'overview', // TransferForm not yet integrated
+  };
+  const initialScreen = modeToView[mode] || initialView || 'overview';
+  const [view, setView] = useState(initialScreen);
+  const [editItem, setEditItem] = useState(editItemProp || null);
   const [detailId, setDetailId] = useState(null);
-  const [params, setParams] = useState({});
+  const [params, setParams] = useState({ filterCategoryId, filterMonth, filterCategoryName });
   const [filterAccountId, setFilterAccountId] = useState(null);
 
   // Navigation
@@ -107,7 +115,11 @@ export default function FinancesModule({ theme, onBack, initialView }) {
   };
 
   const handleDeleteAccount = async (id) => {
-    await deleteAccount(id);
+    const result = await deleteAccount(id);
+    if (result && !result.deleted) {
+      onToast?.(result.reason || 'Не удалось удалить счёт');
+      return;
+    }
     setView('accounts');
     setEditItem(null);
   };
@@ -141,6 +153,9 @@ export default function FinancesModule({ theme, onBack, initialView }) {
           onBack={goBack}
           onNavigate={navigate}
           filterAccountId={filterAccountId}
+          filterCategoryId={params?.filterCategoryId}
+          filterCategoryName={params?.filterCategoryName}
+          filterMonth={params?.filterMonth}
         />
       );
 
@@ -223,5 +238,9 @@ export default function FinancesModule({ theme, onBack, initialView }) {
     }
   })();
 
-  return <FadeIn key={view}>{content}</FadeIn>;
+  return (
+    <div style={{ minHeight: '100vh', background: theme.bg }}>
+      <FadeIn key={view}>{content}</FadeIn>
+    </div>
+  );
 }

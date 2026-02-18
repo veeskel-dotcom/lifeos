@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Card from '../../components/Card';
+import Ic from '../../components/Icon';
 import {
   collectBriefingData,
   shouldShowBriefing,
@@ -100,7 +101,7 @@ export default function BriefingCard({ theme, onOpenChat }) {
         style={{ borderColor: theme.gray5 }}
       >
         <span className="text-[10px]" style={{ color: theme.gray2 }}>
-          {mode === 'ai' ? '🤖 AI-анализ' : '📊 Обзор дня'}
+          {mode === 'ai' ? <span className="inline-flex items-center gap-1"><Ic name="bot" color={theme.gray2} size={12} r={3} raw /> AI-анализ</span> : <span className="inline-flex items-center gap-1"><Ic name="chart" color={theme.gray2} size={12} r={3} raw /> Обзор дня</span>}
         </span>
         {onOpenChat && (
           <button

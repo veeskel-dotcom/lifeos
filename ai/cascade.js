@@ -311,7 +311,7 @@ async function level3_parseCommand(input, chatHistory) {
   const result = await callAI({
     prompt: input,
     systemPrompt: PARSE_COMMAND_PROMPT(context),
-    model: 'fast',
+    model: 'parsing',
     maxTokens: 300,
     temperature: 0.1,
   });
@@ -339,7 +339,7 @@ async function level4_analysis(input, chatHistory) {
   const result = await callAI({
     prompt: input,
     systemPrompt: ANALYSIS_PROMPT(context),
-    model: 'smart',
+    model: 'analysis',
     maxTokens: 1000,
     temperature: 0.3,
   });

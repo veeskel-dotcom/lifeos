@@ -25,7 +25,7 @@ export default function SportWidget({ theme, onNavigate, data: externalData, siz
   if (!data) return null;
 
   return (
-    <WidgetCard title="Спорт" icon="🏋️" color={color} theme={theme} size={size} onClick={() => onNavigate?.('sport')}>
+    <WidgetCard title="Спорт" iconName="gym" color={color} theme={theme} size={size} onClick={() => onNavigate?.('sport')}>
       <div className="flex items-baseline gap-1">
         <span className="font-bold tabular-nums" style={{ fontSize: size === 'wide' ? 36 : 28, color: theme.text }}>
           {data.thisWeek}

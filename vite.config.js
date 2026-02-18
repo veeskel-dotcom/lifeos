@@ -45,12 +45,13 @@ export default defineConfig({
     }),
   ],
   esbuild: {
-    drop: ['console', 'debugger'],
+    drop: ['debugger'],
+    pure: ['console.log', 'console.debug'], // Keep console.error/warn in production
   },
   build: {
     target: 'es2022',
     outDir: 'dist',
-    sourcemap: false,
+    sourcemap: 'hidden',
     rollupOptions: {
       output: {
         manualChunks: {

@@ -12,6 +12,7 @@ import { getSetting, setSetting } from '../../../db/helpers';
 import { getMoodTrend, logMood, getTodayMood, MOOD_LEVELS } from '../../../services/mood';
 import SkeletonCard from '../../../components/SkeletonCard';
 import ScreenWrapper from '../../../components/ScreenWrapper';
+import Ic from '../../../components/Icon';
 
 const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 
@@ -179,7 +180,7 @@ export default function NotesList({ theme, onBack, onAdd, onEdit }) {
         {/* Search */}
         <div className="relative">
           <FormInput value={search} onChange={setSearch} placeholder="Поиск заметок..." theme={theme} />
-          <span className="absolute left-3 top-2.5 text-sm" style={{ color: theme.gray2 }}>🔍</span>
+          <span className="absolute left-3 top-2.5"><Ic name="target" color={theme.gray2} size={16} r={4} raw /></span>
         </div>
 
         {/* Filters + Sort */}
@@ -267,7 +268,7 @@ export default function NotesList({ theme, onBack, onAdd, onEdit }) {
           <div className="text-center py-8 text-sm" style={{ color: theme.gray2 }}>Загрузка...</div>
         ) : grouped.length === 0 ? (
           <EmptyState
-            icon="📝"
+            iconName="note" iconColor={theme.accent}
             title="Нет заметок"
             subtitle="Создайте первую заметку"
             tip="Дневник + настроение = анализ трендов 📊"
@@ -296,8 +297,8 @@ export default function NotesList({ theme, onBack, onAdd, onEdit }) {
                       <span className="truncate" style={{ fontSize: 15, fontWeight: 600, color: theme.text }}>
                         {note.title || 'Без названия'}
                       </span>
-                      {note.pinned && <span className="text-xs">📌</span>}
-                      {note.hidden && <span className="text-xs">🔒</span>}
+                      {note.pinned && <Ic name="flag" color={theme.orange} size={14} r={3} raw />}
+                      {note.hidden && <Ic name="lock" color={theme.gray2} size={14} r={3} raw />}
                     </div>
                     <div className="mt-0.5 truncate" style={{ fontSize: 13, color: theme.gray2 }}>
                       {getPreview(note.content)}

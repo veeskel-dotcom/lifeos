@@ -8,6 +8,7 @@ import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import ProgressBar from '../../components/ProgressBar';
 import { useToast } from '../../components/ToastProvider';
+import Ic from '../../components/Icon';
 
 import SkeletonList from '../../components/SkeletonList';
 import TutorialTip from '../../components/TutorialTip';
@@ -240,23 +241,20 @@ export default function FinancesOverview({ theme, onNavigate, onBack }) {
               <div style={{ fontSize: 12, fontWeight: 600, color: theme.gray1, padding: '8px 0 4px' }}>РАЗДЕЛЫ</div>
               <Card theme={theme} style={{ padding: 0, overflow: 'hidden' }}>
                 {[
-                  { i: '💰', c: theme.green || '#34C759', n: 'Расходы', d: 'Все операции · фильтры', t: 'expenses' },
-                  { i: '💵', c: theme.accent, n: 'Доходы', d: 'Зарплата, фриланс, дивиденды', t: 'incomes' },
-                  { i: '🏦', c: theme.orange, n: 'Счета', d: `${accounts?.length || 0} счетов`, t: 'accounts' },
-                  { i: '💳', c: theme.red, n: 'Кредиты и ипотека', d: `${credits?.length || 0} кредитов`, t: 'credits' },
-                  { i: '📈', c: theme.purple || '#AF52DE', n: 'Инвестиции', d: 'Портфель и сделки', t: 'invest' },
-                  { i: '🏠', c: theme.teal || '#30B0C7', n: 'ЖКХ', d: 'Счётчики · квитанции', t: 'utilities' },
-                  { i: '↔️', c: theme.green || '#34C759', n: 'Переводы', d: 'Между своими счетами', t: 'transfer' },
-                  { i: '🔄', c: theme.pink || '#FF2D55', n: 'Подписки', d: 'Активные подписки', t: 'subscriptions' },
-                  { i: '📋', c: theme.teal || '#30B0C7', n: 'Бюджеты', d: 'Настройка лимитов', t: 'budgets' },
+                  { iconName: 'money', c: theme.green || '#34C759', n: 'Расходы', d: 'Все операции · фильтры', t: 'expenses' },
+                  { iconName: 'wallet', c: theme.accent, n: 'Доходы', d: 'Зарплата, фриланс, дивиденды', t: 'incomes' },
+                  { iconName: 'wallet', c: theme.orange, n: 'Счета', d: `${accounts?.length || 0} счетов`, t: 'accounts' },
+                  { iconName: 'card', c: theme.red, n: 'Кредиты и ипотека', d: `${credits?.length || 0} кредитов`, t: 'credits' },
+                  { iconName: 'trend', c: theme.purple || '#AF52DE', n: 'Инвестиции', d: 'Портфель и сделки', t: 'invest' },
+                  { iconName: 'home', c: theme.teal || '#30B0C7', n: 'ЖКХ', d: 'Счётчики · квитанции', t: 'utilities' },
+                  { iconName: 'repeat', c: theme.green || '#34C759', n: 'Переводы', d: 'Между своими счетами', t: 'transfer' },
+                  { iconName: 'subscription', c: theme.pink || '#FF2D55', n: 'Подписки', d: 'Активные подписки', t: 'subscriptions' },
+                  { iconName: 'receipt', c: theme.teal || '#30B0C7', n: 'Бюджеты', d: 'Настройка лимитов', t: 'budgets' },
                 ].map((item, i, arr) => (
                   <div key={item.t} onClick={() => onNavigate(item.t)}
                     className="flex items-center cursor-pointer active:opacity-70"
                     style={{ gap: 10, padding: '12px 14px', borderBottom: i < arr.length - 1 ? `0.5px solid ${theme.gray5}` : 'none' }}>
-                    <div className="flex items-center justify-center shrink-0"
-                      style={{ width: 32, height: 32, borderRadius: 9, background: item.c + '15', fontSize: 16 }}>
-                      {item.i}
-                    </div>
+                    <Ic name={item.iconName} color={item.c} size={32} r={9} />
                     <div className="flex-1">
                       <div style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>{item.n}</div>
                       <div style={{ fontSize: 12, color: theme.gray2 }}>{item.d}</div>
@@ -292,7 +290,7 @@ export default function FinancesOverview({ theme, onNavigate, onBack }) {
                     <div key={a.id} className="flex justify-between items-center py-1.5 cursor-pointer active:opacity-70"
                       onClick={() => onNavigate('accountDetail', { detailId: a.id })}>
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">{a.type === 'cash' ? '💵' : a.type === 'card' ? '💳' : '🏦'}</span>
+                        <Ic name={a.type === 'cash' ? 'money' : a.type === 'card' ? 'card' : 'wallet'} color={theme.accent} size={24} r={6} />
                         <div>
                           <span className="text-sm font-medium" style={{ color: theme.text }}>{a.name}</span>
                           {a.bank && <span className="text-xs ml-1.5" style={{ color: theme.gray2 }}>{a.bank}</span>}
@@ -355,8 +353,7 @@ export default function FinancesOverview({ theme, onNavigate, onBack }) {
             {/* ═══ ЖКХ ═══ */}
             <Card theme={theme} style={{ cursor: 'pointer' }} onClick={() => onNavigate('utilities')}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                  style={{ background: (theme.teal || theme.accent) + '12' }}>🏠</div>
+                <Ic name="home" color={theme.teal || theme.accent} size={40} r={12} />
                 <div className="flex-1">
                   <div className="text-sm font-medium" style={{ color: theme.text }}>ЖКХ</div>
                   <div className="text-xs" style={{ color: theme.gray2 }}>Счётчики · квитанции · оплата</div>
@@ -419,28 +416,28 @@ export default function FinancesOverview({ theme, onNavigate, onBack }) {
                 className="py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5"
                 style={{ background: theme.accent, color: '#fff' }}
               >
-                ✏️ Расход
+                <Ic name="edit" color="#fff" size={16} r={4} raw /> Расход
               </button>
               <button
                 onClick={() => onNavigate('incomeForm')}
                 className="py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5"
                 style={{ background: theme.green, color: '#fff' }}
               >
-                💵 Доход
+                <Ic name="wallet" color="#fff" size={16} r={4} raw /> Доход
               </button>
               <button
-                onClick={() => showToast('📸 OCR чеков — скоро')}
+                onClick={() => showToast('OCR чеков — скоро')}
                 className="py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5"
                 style={{ background: theme.card, color: theme.text }}
               >
-                📸 Фото чека
+                <Ic name="camera" color={theme.text} size={16} r={4} raw /> Фото чека
               </button>
               <button
-                onClick={() => showToast('🎤 Голосовой ввод — скоро')}
+                onClick={() => showToast('Голосовой ввод — скоро')}
                 className="py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5"
                 style={{ background: theme.card, color: theme.text }}
               >
-                🎤 Голос
+                <Ic name="mic" color={theme.text} size={16} r={4} raw /> Голос
               </button>
             </div>
           </>

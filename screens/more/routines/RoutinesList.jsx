@@ -7,6 +7,7 @@ import { getTodayRoutines, toggleRoutine, getDailyCompletion, getRoutineLog, get
 import VoiceAddButton from '../../../components/VoiceAddButton';
 import Heatmap from '../../../components/Heatmap';
 import SkeletonCard from '../../../components/SkeletonCard';
+import Ic from '../../../components/Icon';
 
 
 const TYPE_CFG = {
@@ -61,7 +62,7 @@ export default function RoutinesList({ theme, onBack, onAdd }) {
       <div className="flex flex-col gap-3 px-4 pt-2 pb-28">
         <NavHeader title="Рутины" onBack={onBack} theme={theme} />
         <EmptyState
-          icon="🔄"
+          iconName="repeat" iconColor={theme.accent}
           title="Нет рутин"
           subtitle="Создайте утреннюю привычку"
           tip="Выполняйте каждый день — серия 🔥 будет мотивировать"
@@ -109,7 +110,7 @@ export default function RoutinesList({ theme, onBack, onAdd }) {
                 <div>
                   <div className="font-semibold" style={{ color: theme.text, fontSize: 15 }}>{cfg.name}</div>
                   <div className="text-xs" style={{ color: theme.gray2 }}>
-                    {maxStreak > 0 && <><span style={{ color: theme.orange }}>🔥 {maxStreak} дн</span> серия</>}
+                    {maxStreak > 0 && <><Ic name="flame" color={theme.orange} size={14} r={4} raw /> <span style={{ color: theme.orange }}>{maxStreak} дн</span> серия</>}
                   </div>
                 </div>
               </div>
@@ -137,10 +138,10 @@ export default function RoutinesList({ theme, onBack, onAdd }) {
                     textDecoration: done ? 'line-through' : 'none',
                   }}>{r.name}</span>
                   {r.streak > 0 && (
-                    <span className="ml-auto text-[10px]" style={{ color: theme.orange }}>🔥{r.streak}</span>
+                    <span className="ml-auto text-[10px] flex items-center gap-0.5" style={{ color: theme.orange }}><Ic name="flame" color={theme.orange} size={12} r={3} raw />{r.streak}</span>
                   )}
                   {r.time && !done && !r.streak && (
-                    <span className="ml-auto text-[10px]" style={{ color: theme.gray2 }}>⏰ {r.time}</span>
+                    <span className="ml-auto text-[10px] flex items-center gap-0.5" style={{ color: theme.gray2 }}><Ic name="clock" color={theme.gray2} size={12} r={3} raw /> {r.time}</span>
                   )}
                 </button>
               );

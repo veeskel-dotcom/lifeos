@@ -173,8 +173,9 @@ export default function TransferForm({ theme, onBack, onToast }) {
         )}
 
         {/* Submit button */}
-        <FormButton label={loading ? 'Переводим...' : 'Перевести'} onClick={handleSubmit}
-          disabled={loading} loading={loading} theme={theme} />
+        <FormButton onClick={handleSubmit} disabled={loading} size="full" theme={theme}>
+          {loading ? 'Переводим...' : 'Перевести'}
+        </FormButton>
       </div>
     </ScreenWrapper>
   );

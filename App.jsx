@@ -68,6 +68,7 @@ import { loadCurrency } from './utils/currency';
 import { setupLockTimeout } from './security/lockScreen';
 import { verifyPIN } from './security/pin';
 import { authenticateBiometric, isBiometricRegistered } from './security/biometric';
+import { installGlobalHandlers, logNav, logLifecycle, logPerf, flushEarlyBuffer } from './lib/logger';
 
 /* ══════════════════════════════════════
    Root — theme watcher + providers
@@ -82,6 +83,12 @@ export default function App() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+
+  // Sync body/html background with theme to prevent white bars on edges
+  useEffect(() => {
+    document.documentElement.style.background = theme.bg;
+    document.body.style.background = theme.bg;
+  }, [theme]);
 
   return (
     <ToastProvider theme={theme}>
@@ -232,9 +239,21 @@ function AppContent({ theme, setTheme }) {
   const router = useRouter();
   const subScreen = router.current;
   const lastSubRef = useRef(null);
+  const exitTimerRef = useRef(null);
+  const [isExiting, setIsExiting] = useState(false);
 
-  // Keep last subScreen for exit animation
-  if (subScreen) lastSubRef.current = subScreen;
+  // Keep last subScreen for exit animation + delay main content restoration
+  if (subScreen) {
+    lastSubRef.current = subScreen;
+    if (exitTimerRef.current) { clearTimeout(exitTimerRef.current); exitTimerRef.current = null; }
+    if (isExiting) setIsExiting(false);
+  } else if (lastSubRef.current && !isExiting) {
+    setIsExiting(true);
+    exitTimerRef.current = setTimeout(() => {
+      setIsExiting(false);
+      lastSubRef.current = null; // Clear so we don't loop
+    }, 320);
+  }
   const [moreScreen, setMoreScreen] = useState(null);
   const [editItem, setEditItem] = useState(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -256,8 +275,12 @@ function AppContent({ theme, setTheme }) {
 
   /* ── Init ── */
   useEffect(() => {
+    installGlobalHandlers(); // Catch errors for mobile debugging
+    const initStart = Date.now();
     (async () => {
       await initializeDB();
+      await flushEarlyBuffer(); // DB ready — persist buffered logs
+      logLifecycle('DB_READY');
       // T3: запуск data-миграций
       try {
         const { runDataMigrations } = await import('./db/migrations');
@@ -265,7 +288,8 @@ function AppContent({ theme, setTheme }) {
         await runDataMigrations(db);
       } catch (e) { console.warn('[migrations]', e); }
       await loadCurrency();
-      const done = await getSetting('onboarding_done');
+      const done = await getSetting('has_completed_onboarding');
+      logLifecycle('ONBOARDING_CHECK', { done: !!done });
       setOnboarded(!!done);
       const pinEnabled = await getSetting('pin_enabled');
       if (pinEnabled && isStandalone()) setLocked(true);
@@ -295,6 +319,7 @@ function AppContent({ theme, setTheme }) {
         }
       });
       startPeriodicSync();
+      logPerf('INIT_COMPLETE', Date.now() - initStart);
     })();
     return () => { stopPeriodicSync(); unsub(); };
   }, []);
@@ -308,15 +333,24 @@ function AppContent({ theme, setTheme }) {
   }, [locked]);
 
   /* ── Navigation helper (M1.3: backed by History API) ── */
+  const appNavLockRef = useRef(false);
   const navigate = useCallback((screen, data) => {
+    if (appNavLockRef.current) return;
+    appNavLockRef.current = true;
+    setTimeout(() => { appNavLockRef.current = false; }, 200);
+    logNav('OPEN', screen, data ? Object.keys(data) : null);
     router.navigate(screen, data);
   }, [router]);
 
   const goBack = useCallback(() => {
+    if (appNavLockRef.current) return;
+    appNavLockRef.current = true;
+    setTimeout(() => { appNavLockRef.current = false; }, 200);
+    logNav('BACK', subScreen?.screen || 'unknown', { stackDepth: router.depth });
     router.goBack();
     setEditItem(null);
     setMoreScreen(null);
-  }, [router]);
+  }, [router, subScreen]);
 
   /* M1.2: Swipe-back gesture */
   const { overlayStyle } = useSwipeBack(() => {
@@ -591,6 +625,7 @@ function AppContent({ theme, setTheme }) {
         return (
           <TasksList
             theme={theme}
+            onBack={goBack}
             onNavigate={navigate}
             onAdd={() => navigate('task-form')}
             initialView={sub?.view}
@@ -632,7 +667,7 @@ function AppContent({ theme, setTheme }) {
 
       /* Health */
       case 'health':
-        return <HealthHub theme={theme} onNavigate={navigate} />;
+        return <HealthHub theme={theme} onBack={goBack} onNavigate={navigate} />;
 
       /* Nutrition extras */
       case 'shopping':
@@ -662,7 +697,7 @@ function AppContent({ theme, setTheme }) {
 
       /* Calendar as subscreen */
       case 'calendar':
-        return <CalendarScreen theme={theme} onNavigate={navigate} />;
+        return <CalendarScreen theme={theme} onBack={goBack} onNavigate={navigate} />;
 
       /* Global Search */
       case 'search':
@@ -736,19 +771,19 @@ function AppContent({ theme, setTheme }) {
     <ErrorBoundary theme={theme}>
       <div
         className="relative min-h-screen"
-        style={{ background: theme.bg, maxWidth: 430, margin: '0 auto' }}
+        style={{ background: theme.bg, maxWidth: 430, margin: '0 auto', paddingTop: 'env(safe-area-inset-top)' }}
       >
         {/* Offline banner */}
         <OfflineBanner theme={theme} />
         {/* M1.2: Swipe-back visual feedback */}
         {overlayStyle && <div style={overlayStyle} />}
 
-        {/* Main content — parallax shift under subscreen */}
+        {/* Main content — parallax shift under subscreen (isExiting delays snap-back) */}
         <div style={{
-          transform: subScreen ? 'translateX(-30%)' : 'translateX(0)',
+          transform: (subScreen || isExiting) ? 'translateX(-30%)' : 'translateX(0)',
           transition: 'transform 300ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 300ms ease',
-          opacity: subScreen ? 0.5 : 1,
-          pointerEvents: subScreen ? 'none' : 'auto',
+          opacity: (subScreen || isExiting) ? 0.5 : 1,
+          pointerEvents: (subScreen || isExiting) ? 'none' : 'auto',
         }}>
           <Suspense fallback={<div style={{ minHeight: '100vh', background: theme.bg }} />}>
             {renderMainScreen()}
@@ -756,7 +791,7 @@ function AppContent({ theme, setTheme }) {
         </div>
 
         {/* Sub-screen with slide transition */}
-        <TransitionWrapper active={!!subScreen} direction="left">
+        <TransitionWrapper active={!!subScreen} direction="left" bg={theme.bg}>
           <Suspense fallback={<div style={{ minHeight: '100vh', background: theme.bg }} />}>
             {renderSubScreen()}
           </Suspense>
@@ -766,7 +801,12 @@ function AppContent({ theme, setTheme }) {
         {!subScreen && (
           <TabBar
             active={activeTab}
-            onChange={(tab) => { router.reset(); setActiveTab(tab); }}
+            onChange={(tab) => {
+              if (appNavLockRef.current) return;
+              appNavLockRef.current = true;
+              setTimeout(() => { appNavLockRef.current = false; }, 200);
+              logNav('TAB', tab); router.reset(); setActiveTab(tab);
+            }}
             onQuickAdd={() => setQuickAddOpen(true)}
             theme={theme}
           />

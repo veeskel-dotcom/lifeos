@@ -4,6 +4,7 @@ import { processInput } from '../ai/index';
 import VoiceInput from './VoiceInput';
 import { haptic } from '../utils/ios';
 import { getCurrencyCode } from '../utils/currency';
+import Ic from './Icon';
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -42,12 +43,12 @@ export default function QuickAddSheet({ open, onClose, onNavigate, theme, onToas
   }, [open, onClose]);
 
   const actions = [
-    { emoji: '💸', label: 'Расход', action: () => { haptic('light'); onClose(); onNavigate?.('expense-form'); } },
-    { emoji: '💰', label: 'Доход', action: () => { haptic('light'); onClose(); onNavigate?.('income-form'); } },
-    { emoji: '📋', label: 'Задача', action: () => { haptic('light'); onClose(); onNavigate?.('task-form'); } },
-    { emoji: '🍎', label: 'Еда', action: () => { haptic('light'); onClose(); onNavigate?.('food-search'); } },
+    { iconName: 'wallet', color: theme.green || '#34C759', label: 'Расход', action: () => { haptic('light'); onClose(); onNavigate?.('expense-form'); } },
+    { iconName: 'money', color: theme.accent || '#007AFF', label: 'Доход', action: () => { haptic('light'); onClose(); onNavigate?.('income-form'); } },
+    { iconName: 'task', color: theme.orange || '#FF9500', label: 'Задача', action: () => { haptic('light'); onClose(); onNavigate?.('task-form'); } },
+    { iconName: 'leaf', color: theme.green || '#34C759', label: 'Еда', action: () => { haptic('light'); onClose(); onNavigate?.('food-search'); } },
     {
-      emoji: '💧', label: 'Вода', action: async () => {
+      iconName: 'drop', color: theme.teal || '#30B0C7', label: 'Вода', action: async () => {
         const today = new Date().toISOString().slice(0, 10);
         await db.water_log.add({ date: today, amount_ml: 250, ts: Date.now() });
         haptic('success');
@@ -56,11 +57,11 @@ export default function QuickAddSheet({ open, onClose, onNavigate, theme, onToas
       }
     },
     /* O1: Тренировка */
-    { emoji: '🏋️', label: 'Тренировка', action: () => { haptic('light'); onClose(); onNavigate?.('active-workout'); } },
+    { iconName: 'gym', color: theme.red || '#FF3B30', label: 'Тренировка', action: () => { haptic('light'); onClose(); onNavigate?.('active-workout'); } },
     /* O2: Заметка */
-    { emoji: '📝', label: 'Заметка', action: () => { haptic('light'); onClose(); onNavigate?.('note-editor'); } },
+    { iconName: 'note', color: '#FFCC00', label: 'Заметка', action: () => { haptic('light'); onClose(); onNavigate?.('note-editor'); } },
     {
-      emoji: '📸', label: 'Фото', action: () => {
+      iconName: 'camera', color: theme.orange || '#FF9500', label: 'Фото', action: () => {
         haptic('light');
         const input = document.createElement('input');
         input.type = 'file';
@@ -156,13 +157,13 @@ export default function QuickAddSheet({ open, onClose, onNavigate, theme, onToas
       }
     },
     /* Proto S1: Голос */
-    { emoji: '🎤', label: 'Голос', action: () => { haptic('light'); onClose(); onNavigate?.('voice-input'); } },
+    { iconName: 'mic', color: theme.purple || '#AF52DE', label: 'Голос', action: () => { haptic('light'); onClose(); onNavigate?.('voice-input'); } },
     /* Proto S1: Штрих-код */
-    { emoji: '📊', label: 'Штрих-код', action: () => { haptic('light'); onClose(); onNavigate?.('barcode-scanner'); } },
+    { iconName: 'barcode', color: theme.gray1 || '#8E8E93', label: 'Штрих-код', action: () => { haptic('light'); onClose(); onNavigate?.('barcode-scanner'); } },
     /* Proto S1: Рутина */
-    { emoji: '🔁', label: 'Рутина', action: () => { haptic('light'); onClose(); onNavigate?.('routines'); } },
+    { iconName: 'repeat', color: theme.teal || '#30B0C7', label: 'Рутина', action: () => { haptic('light'); onClose(); onNavigate?.('routines'); } },
     /* Proto S1: Сон */
-    { emoji: '🌙', label: 'Сон', action: () => { haptic('light'); onClose(); onNavigate?.('sleep-add'); } },
+    { iconName: 'moon', color: theme.purple || '#AF52DE', label: 'Сон', action: () => { haptic('light'); onClose(); onNavigate?.('sleep-add'); } },
   ];
 
   // AI текстовый ввод
@@ -401,7 +402,7 @@ export default function QuickAddSheet({ open, onClose, onNavigate, theme, onToas
               className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-transform active:scale-95"
               style={{ background: theme.gray6 }}
             >
-              <span className="text-2xl">{a.emoji}</span>
+              <Ic name={a.iconName} color={a.color} size={40} r={12} />
               <span className="text-xs font-medium" style={{ color: theme.text }}>
                 {a.label}
               </span>

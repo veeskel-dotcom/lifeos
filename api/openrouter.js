@@ -1,26 +1,11 @@
 /**
  * openrouter.js — AI-ассистент через OpenRouter.
- * Каскад: Claude Sonnet → Gemini Flash.
- * Rate limiting + cost tracking в IndexedDB.
+ * Модели и тарифы — из utils/constants.js (единый источник правды).
  */
 import { fetchWithRetry, requireOnline } from './_shared';
+import { MODEL_REGISTRY, COST_RATES, AI_LIMITS } from '../utils/constants';
 
-const MODELS = {
-  primary: 'anthropic/claude-sonnet-4-20250514',
-  fallback: 'google/gemini-2.5-flash-preview',
-};
-
-const COST_RATES = {
-  'anthropic/claude-sonnet-4-20250514': { input: 3.0, output: 15.0 },
-  'google/gemini-2.5-flash-preview': { input: 0.15, output: 0.60 },
-};
-
-const LIMITS = {
-  cooldown_ms: 1000,
-  daily_calls: 60,
-  daily_cost_usd: 0.50,
-  monthly_cost_usd: 10.00,
-};
+const FALLBACK_MODEL = MODEL_REGISTRY.parsing;
 
 // In production, calls go through Vercel serverless proxy (no API key in client bundle).
 // In dev, falls back to direct OpenRouter calls if VITE_OPENROUTER_API_KEY is set.
@@ -48,7 +33,7 @@ function getHeaders() {
 }
 
 function estimateCost(model, usage) {
-  const r = COST_RATES[model] || COST_RATES[MODELS.primary];
+  const r = COST_RATES[model] || COST_RATES[FALLBACK_MODEL] || { input: 0.15, output: 0.60 };
   return (usage.prompt_tokens * r.input + usage.completion_tokens * r.output) / 1_000_000;
 }
 
@@ -79,22 +64,21 @@ async function getRateLimitState() {
 }
 
 async function checkRateLimit() {
-  // Cooldown
   const now = Date.now();
-  if (now - lastCallTime < LIMITS.cooldown_ms) {
-    const wait = LIMITS.cooldown_ms - (now - lastCallTime);
+  if (now - lastCallTime < AI_LIMITS.cooldown_ms) {
+    const wait = AI_LIMITS.cooldown_ms - (now - lastCallTime);
     await new Promise(r => setTimeout(r, wait));
   }
   lastCallTime = Date.now();
 
   const state = await getRateLimitState();
-  if (state.dailyCalls >= LIMITS.daily_calls) {
+  if (state.dailyCalls >= AI_LIMITS.daily_calls) {
     throw new Error('Достигнут дневной лимит AI-вызовов');
   }
-  if (state.dailyCost >= LIMITS.daily_cost_usd) {
+  if (state.dailyCost >= AI_LIMITS.daily_cost_cap) {
     throw new Error('Достигнут дневной лимит расходов на AI');
   }
-  if (state.monthlyCost >= LIMITS.monthly_cost_usd) {
+  if (state.monthlyCost >= AI_LIMITS.monthly_cost_cap) {
     throw new Error('Достигнут месячный лимит расходов на AI');
   }
 }
@@ -120,15 +104,17 @@ async function trackUsage(costUsd) {
 
 export async function chatCompletion({
   messages,
-  model = MODELS.primary,
+  model,
   maxTokens = 1000,
   temperature = 0.3,
 }) {
   requireOnline();
   await checkRateLimit();
 
+  const actualModel = model || FALLBACK_MODEL;
+
   const body = {
-    model,
+    model: actualModel,
     messages,
     max_tokens: maxTokens,
     temperature,
@@ -139,20 +125,20 @@ export async function chatCompletion({
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(body),
-    }, { retries: 0, timeoutMs: 10000 });
+    }, { retries: 0, timeoutMs: 30000 });
 
     const content = data.choices?.[0]?.message?.content || '';
     const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
-    const costUsd = estimateCost(model, usage);
+    const costUsd = estimateCost(actualModel, usage);
 
     await trackUsage(costUsd);
 
-    return { content, model: data.model || model, usage, cost_usd: costUsd };
+    return { content, model: data.model || actualModel, usage, cost_usd: costUsd };
   } catch (e) {
-    // Fallback к другой модели
-    if (model === MODELS.primary) {
-      console.warn('[AI] Primary failed, trying fallback:', e.message);
-      return chatCompletion({ messages, model: MODELS.fallback, maxTokens, temperature });
+    // Fallback к Flash если основная модель упала
+    if (actualModel !== FALLBACK_MODEL) {
+      console.warn(`[AI] ${actualModel} failed, trying fallback:`, e.message);
+      return chatCompletion({ messages, model: FALLBACK_MODEL, maxTokens, temperature });
     }
     throw new Error('AI недоступен: ' + e.message);
   }
@@ -162,7 +148,7 @@ export async function chatCompletion({
 
 export async function streamCompletion({
   messages,
-  model = MODELS.primary,
+  model,
   maxTokens = 1000,
   temperature = 0.3,
   onChunk,
@@ -170,11 +156,12 @@ export async function streamCompletion({
   requireOnline();
   await checkRateLimit();
 
+  const actualModel = model || FALLBACK_MODEL;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+  const timer = setTimeout(() => controller.abort(), 30000);
 
   const body = {
-    model,
+    model: actualModel,
     messages,
     max_tokens: maxTokens,
     temperature,
@@ -220,24 +207,21 @@ export async function streamCompletion({
       }
     }
 
-    // Примерный подсчёт токенов для стриминга
     const approxUsage = {
       prompt_tokens: Math.ceil(messages.reduce((s, m) => s + (m.content?.length || 0), 0) / 4),
       completion_tokens: Math.ceil(fullContent.length / 4),
     };
-    const costUsd = estimateCost(model, approxUsage);
+    const costUsd = estimateCost(actualModel, approxUsage);
     await trackUsage(costUsd);
 
-    return { content: fullContent, model, usage: approxUsage, cost_usd: costUsd };
+    return { content: fullContent, model: actualModel, usage: approxUsage, cost_usd: costUsd };
   } catch (e) {
-    if (model === MODELS.primary) {
-      console.warn('[AI] Stream primary failed, trying fallback:', e.message);
-      return streamCompletion({ messages, model: MODELS.fallback, maxTokens, temperature, onChunk });
+    if (actualModel !== FALLBACK_MODEL) {
+      console.warn(`[AI] Stream ${actualModel} failed, trying fallback:`, e.message);
+      return streamCompletion({ messages, model: FALLBACK_MODEL, maxTokens, temperature, onChunk });
     }
     throw new Error('AI недоступен: ' + e.message);
   } finally {
     clearTimeout(timer);
   }
 }
-
-export { MODELS, LIMITS };

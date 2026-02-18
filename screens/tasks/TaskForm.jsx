@@ -6,6 +6,7 @@ import { getAreas } from '../../services/areas';
 import { getActiveProjects } from '../../services/projects';
 import IOSKeyboardSpacer from '../../components/IOSKeyboardSpacer';
 import DatePicker from '../../components/DatePicker';
+import Ic from '../../components/Icon';
 
 const PRIORITIES = [
   { id: 'urgent', label: '🔴 Срочная' },
@@ -104,7 +105,7 @@ export default function TaskForm({ theme, onBack }) {
         <div className="flex gap-2 mb-4">
           <div className="flex items-center gap-2 flex-1 px-3 py-2.5 rounded-xl text-sm"
             style={{ background: theme.gray6, color: theme.text }}>
-            📅
+            <Ic name="calendar" color={theme.accent} size={16} r={4} raw />
             <span className="text-sm flex-1 cursor-pointer"
               onClick={() => setShowDeadlinePicker(true)}
               style={{ color: deadline ? theme.text : theme.gray3 }}>{deadline || 'Дедлайн'}</span>
@@ -112,7 +113,7 @@ export default function TaskForm({ theme, onBack }) {
           {deadline && (
             <label className="flex items-center gap-1 px-3 py-2.5 rounded-xl text-sm"
               style={{ background: theme.gray6, color: theme.text }}>
-              🕐
+              <Ic name="clock" color={theme.accent} size={16} r={4} raw />
               <DatePicker value={deadlineTime} onChange={setDeadlineTime} mode="time" theme={theme} />
             </label>
           )}

@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { addWater, getWaterProgress, getWaterForDay, removeWaterEntry, getWeeklyWaterAvg, getWeeklyWaterData } from '../../services/water';
+import Ic from '../../components/Icon';
 
 const QUICK_AMOUNTS = [150, 250, 350, 500];
 
@@ -23,7 +24,7 @@ function WaterRing({ current, goal, size = 120, theme }) {
           strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-2xl">💧</span>
+        <Ic name="drop" color={color} size={24} r={6} raw />
         <span className="text-xs font-bold tabular-nums mt-0.5" style={{ color: theme.text }}>
           {Math.round(pct * 100)}%
         </span>
@@ -70,7 +71,7 @@ export default function WaterTracker({ date, theme, onUpdate }) {
       {/* Заголовок */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-lg">💧</span>
+          <Ic name="drop" color={theme.accent} size={22} r={6} raw />
           <span className="text-base font-semibold" style={{ color: theme.text }}>Вода</span>
         </div>
         <span className="text-sm" style={{ color: theme.gray1 }}>
@@ -125,10 +126,7 @@ export default function WaterTracker({ date, theme, onUpdate }) {
             {[...entries].reverse().map((e, i) => (
               <div key={e.id} className="flex items-center gap-2.5 px-3 py-2"
                 style={{ borderTop: i > 0 ? `0.5px solid ${theme.gray5}` : 'none' }}>
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: theme.accent + '12' }}>
-                  <span className="text-xs">💧</span>
-                </div>
+                <Ic name="drop" color={theme.accent} size={28} r={8} />
                 <span className="text-sm font-medium flex-1" style={{ color: theme.text }}>{e.amount_ml} мл</span>
                 <span className="text-xs" style={{ color: theme.gray2 }}>{e.time}</span>
                 <button onClick={() => handleRemove(e.id)}

@@ -20,19 +20,19 @@ export const WIDGET_COLORS = {
 };
 
 export const WIDGETS = [
-  { id: 'budget',     name: '💰 Бюджет',     module: 'finance',       sizes: ['wide'],          defaultSize: 'wide',  defaultOrder: 0  },
-  { id: 'tasks',      name: '✅ Задачи',      module: 'tasks',         sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 1  },
-  { id: 'nutrition',  name: '🍎 Питание',     module: 'nutrition',     sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 2  },
-  { id: 'water',      name: '💧 Вода',        module: 'nutrition',     sizes: ['small'],         defaultSize: 'small', defaultOrder: 3  },
-  { id: 'sport',      name: '🏋️ Спорт',      module: 'sport',         sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 4  },
-  { id: 'weight',     name: '⚖️ Вес',        module: 'sport',         sizes: ['small', 'wide'], defaultSize: 'wide',  defaultOrder: 5  },
-  { id: 'payments',   name: '📅 Платежи',     module: 'subscriptions', sizes: ['wide'],          defaultSize: 'wide',  defaultOrder: 6  },
-  { id: 'portfolio',  name: '📈 Портфель',    module: 'invest',        sizes: ['small', 'wide'], defaultSize: 'wide',  defaultOrder: 7  },
-  { id: 'sleep',      name: '😴 Сон',         module: null,            sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 8  },
-  { id: 'routines',   name: '🔄 Привычки',    module: 'routines',      sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 9  },
-  { id: 'goals',      name: '🎯 Цели',        module: null,            sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 10 },
-  { id: 'documents',  name: '📄 Документы',   module: 'documents',     sizes: ['small'],         defaultSize: 'small', defaultOrder: 11 },
-  { id: 'anomalies',  name: '⚠️ Аномалии',   module: null,            sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 12 },
+  { id: 'budget',     name: 'Бюджет',     iconName: 'wallet',  module: 'finance',       sizes: ['wide'],          defaultSize: 'wide',  defaultOrder: 0  },
+  { id: 'tasks',      name: 'Задачи',      iconName: 'task',    module: 'tasks',         sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 1  },
+  { id: 'nutrition',  name: 'Питание',     iconName: 'leaf',    module: 'nutrition',     sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 2  },
+  { id: 'water',      name: 'Вода',        iconName: 'drop',    module: 'nutrition',     sizes: ['small'],         defaultSize: 'small', defaultOrder: 3  },
+  { id: 'sport',      name: 'Спорт',       iconName: 'gym',     module: 'sport',         sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 4  },
+  { id: 'weight',     name: 'Вес',         iconName: 'weight',  module: 'sport',         sizes: ['small', 'wide'], defaultSize: 'wide',  defaultOrder: 5  },
+  { id: 'payments',   name: 'Платежи',     iconName: 'bell',    module: 'subscriptions', sizes: ['wide'],          defaultSize: 'wide',  defaultOrder: 6  },
+  { id: 'portfolio',  name: 'Портфель',    iconName: 'trend',   module: 'invest',        sizes: ['small', 'wide'], defaultSize: 'wide',  defaultOrder: 7  },
+  { id: 'sleep',      name: 'Сон',         iconName: 'moon',    module: null,            sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 8  },
+  { id: 'routines',   name: 'Привычки',    iconName: 'repeat',  module: null,            sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 9  },
+  { id: 'goals',      name: 'Цели',        iconName: 'target',  module: null,            sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 10 },
+  { id: 'documents',  name: 'Документы',   iconName: 'note',    module: 'documents',     sizes: ['small'],         defaultSize: 'small', defaultOrder: 11 },
+  { id: 'anomalies',  name: 'Аномалии',    iconName: 'bell',    module: null,            sizes: ['small', 'wide'], defaultSize: 'small', defaultOrder: 12 },
 ];
 
 /**

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function TransitionWrapper({ children, active, direction = 'left' }) {
+export default function TransitionWrapper({ children, active, direction = 'left', bg }) {
   const [shouldRender, setShouldRender] = useState(active);
   const [animating, setAnimating] = useState(false);
 
@@ -31,6 +31,8 @@ export default function TransitionWrapper({ children, active, direction = 'left'
       transform: `translateX(${translateX})`,
       transition: 'transform 300ms cubic-bezier(0.2, 0.9, 0.3, 1)',
       willChange: 'transform',
+      background: bg || '#000',
+      paddingTop: 'env(safe-area-inset-top)',
     }}>
       {children}
     </div>

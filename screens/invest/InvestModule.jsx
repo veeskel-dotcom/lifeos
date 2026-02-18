@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import NavHeader from '../../components/NavHeader';
 import InvestOverview from './InvestOverview';
 import AssetDetail from './AssetDetail';
@@ -12,38 +12,43 @@ import TaxCalculator from './TaxCalculator';
 import InvestTools from './InvestTools';
 import FadeIn from '../../components/FadeIn';
 
-export default function InvestModule({ theme, onBack, onToast }) {
-  // Internal navigation stack
-  const [screen, setScreen] = useState({ name: 'overview', params: null });
-  const [prevScreen, setPrevScreen] = useState(null);
+export default function InvestModule({ theme, onBack, onToast, onNavigate }) {
+  // Stack-based navigation (not single prevScreen)
+  const [stack, setStack] = useState([{ name: 'overview', params: null }]);
+  const navLockRef = useRef(false);
+
+  const current = stack[stack.length - 1];
 
   const navigate = useCallback((name, params) => {
-    setPrevScreen(screen);
-    setScreen({ name, params });
-  }, [screen]);
-
-  const goToOverview = useCallback(() => {
-    setScreen({ name: 'overview', params: null });
-    setPrevScreen(null);
+    if (navLockRef.current) return;
+    navLockRef.current = true;
+    setTimeout(() => { navLockRef.current = false; }, 150);
+    setStack(s => [...s, { name, params: params ?? null }]);
   }, []);
 
   const goBack = useCallback(() => {
-    if (prevScreen) {
-      setScreen(prevScreen);
-      setPrevScreen(null);
-    } else {
-      goToOverview();
-    }
-  }, [prevScreen, goToOverview]);
+    if (navLockRef.current) return;
+    navLockRef.current = true;
+    setTimeout(() => { navLockRef.current = false; }, 150);
+    setStack(s => {
+      if (s.length > 1) return s.slice(0, -1);
+      return s;
+    });
+    if (stack.length <= 1) onBack?.();
+  }, [stack.length, onBack]);
+
+  const goToOverview = useCallback(() => {
+    setStack([{ name: 'overview', params: null }]);
+  }, []);
 
   const content = (() => {
-  switch (screen.name) {
+  switch (current.name) {
     case 'brokerDetail':
       return (
         <BrokerDetail
-          broker={screen.params}
+          broker={current.params}
           theme={theme}
-          onBack={goToOverview}
+          onBack={goBack}
           onNavigate={navigate}
         />
       );
@@ -51,7 +56,7 @@ export default function InvestModule({ theme, onBack, onToast }) {
     case 'assetDetail':
       return (
         <AssetDetail
-          assetId={screen.params}
+          assetId={current.params}
           theme={theme}
           onBack={goBack}
           onNavigate={navigate}
@@ -62,47 +67,47 @@ export default function InvestModule({ theme, onBack, onToast }) {
       return (
         <TradeForm
           theme={theme}
-          onBack={goToOverview}
-          initialTicker={screen.params || ''}
+          onBack={goBack}
+          initialTicker={current.params || ''}
         />
       );
 
     case 'dividends':
-      return <DividendCalendar theme={theme} onBack={goToOverview} />;
+      return <DividendCalendar theme={theme} onBack={goBack} />;
 
     case 'trades':
-      return <TradesList theme={theme} onBack={goToOverview} onNavigate={navigate} />;
+      return <TradesList theme={theme} onBack={goBack} onNavigate={navigate} />;
 
     case 'networth':
-      return <NetWorthScreen theme={theme} onBack={goToOverview} />;
+      return <NetWorthScreen theme={theme} onBack={goBack} />;
 
     case 'watchlist':
-      return <WatchlistScreen theme={theme} onBack={goToOverview} />;
+      return <WatchlistScreen theme={theme} onBack={goBack} />;
 
     case 'tax':
-      return <TaxCalculator theme={theme} onBack={goToOverview} />;
+      return <TaxCalculator theme={theme} onBack={goBack} />;
 
     case 'invest-tools':
-      return <InvestTools theme={theme} onBack={goToOverview} onToast={onToast} />;
+      return <InvestTools theme={theme} onBack={goBack} onToast={onToast} />;
 
     default:
       return (
-        <div className="flex flex-col h-full">
+        <>
           <NavHeader
             title="Инвестиции"
             onBack={onBack}
             right={
               <div className="flex gap-3">
-                <button onClick={() => navigate('invest-tools')} className="text-sm" style={{ color: theme.accent }}>
+                <button onClick={() => navigate('invest-tools')} style={{ color: theme.accent, minHeight: 44, minWidth: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, background: 'none', border: 'none' }}>
                   🛠
                 </button>
-                <button onClick={() => navigate('tax')} className="text-sm" style={{ color: theme.accent }}>
+                <button onClick={() => navigate('tax')} style={{ color: theme.accent, minHeight: 44, minWidth: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, background: 'none', border: 'none' }}>
                   🧾
                 </button>
-                <button onClick={() => navigate('dividends')} className="text-sm" style={{ color: theme.accent }}>
+                <button onClick={() => navigate('dividends')} style={{ color: theme.accent, minHeight: 44, minWidth: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, background: 'none', border: 'none' }}>
                   💰
                 </button>
-                <button onClick={() => navigate('networth')} className="text-sm" style={{ color: theme.accent }}>
+                <button onClick={() => navigate('networth')} style={{ color: theme.accent, minHeight: 44, minWidth: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, background: 'none', border: 'none' }}>
                   📊
                 </button>
               </div>
@@ -110,10 +115,14 @@ export default function InvestModule({ theme, onBack, onToast }) {
             theme={theme}
           />
           <InvestOverview theme={theme} onNavigate={navigate} />
-        </div>
+        </>
       );
   }
   })();
 
-  return <FadeIn key={screen.name}>{content}</FadeIn>;
+  return (
+    <div style={{ minHeight: '100vh', background: theme.bg }}>
+      <FadeIn key={current.name}>{content}</FadeIn>
+    </div>
+  );
 }

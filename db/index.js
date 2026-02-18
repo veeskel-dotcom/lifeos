@@ -76,4 +76,9 @@ db.version(4).stores({
   utilities: '++id, month, meter_id, [month+meter_id]',
 });
 
+// Wave 9: error logging
+db.version(5).stores({
+  error_log: '++id, ts, level',
+});
+
 export default db;

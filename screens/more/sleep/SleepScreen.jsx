@@ -13,6 +13,7 @@ import {
   getSleepTrend, getSleepAverage, getBedtimeRecommendation,
 } from '../../../services/sleep';
 import { getSetting } from '../../../db/helpers';
+import Ic from '../../../components/Icon';
 
 /* ── Helpers ── */
 
@@ -102,7 +103,7 @@ export default function SleepScreen({ theme, onBack, onAdd }) {
         <NavHeader title="Сон" onBack={onBack} left theme={theme} />
         <div className="flex-1 flex items-center justify-center px-4">
           <EmptyState
-            icon="😴"
+            iconName="sleep" iconColor={theme.purple || '#AF52DE'}
             title="Нет данных о сне"
             subtitle="Добавьте первую запись"
             tip="Отслеживайте качество сна — влияет на всё остальное"
@@ -224,7 +225,7 @@ export default function SleepScreen({ theme, onBack, onAdd }) {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: theme.gray1 }}>
-                  🌙 Рекомендация
+                  <span className="inline-flex items-center gap-1"><Ic name="moon" color={theme.purple || '#AF52DE'} size={14} r={4} raw /> Рекомендация</span>
                 </div>
                 <div className="text-sm" style={{ color: theme.text }}>
                   Ложись в <span className="font-bold text-base">{bedtimeRec.bedtime}</span>
@@ -233,7 +234,7 @@ export default function SleepScreen({ theme, onBack, onAdd }) {
                   Подъём ~{bedtimeRec.wakeAvg} · Цель {bedtimeRec.goalHours}ч сна
                 </div>
               </div>
-              <span className="text-3xl">🛏️</span>
+              <Ic name="sleep" color={theme.purple || '#AF52DE'} size={40} r={10} />
             </div>
           </Card>
         )}

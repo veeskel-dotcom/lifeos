@@ -39,6 +39,7 @@ function imageToBase64(base64) {
 export async function parseReceipt(imageBase64) {
   const result = await callAIVision({
     imageBase64: imageToBase64(imageBase64),
+    model: 'ocr',
     prompt: `Извлеки данные из чека. Верни JSON:
 {
   "store": "название магазина",
@@ -63,6 +64,7 @@ export async function parseReceipt(imageBase64) {
 export async function parseBankStatement(imageBase64) {
   const result = await callAIVision({
     imageBase64: imageToBase64(imageBase64),
+    model: 'ocr',
     prompt: `Извлеки операции из банковской выписки. Верни JSON массив:
 [
   {"date": "YYYY-MM-DD", "description": "...", "amount": 1500, "type": "expense"},
@@ -90,6 +92,7 @@ export async function autoParseImage(imageBase64) {
   // 1. Определяем тип
   const detect = await callAIVision({
     imageBase64: clean,
+    model: 'ocr',
     prompt: `Определи тип финансового документа на фото. Ответь одним словом:
 - receipt (кассовый чек, товарный чек)
 - bank_statement (скриншот банковского приложения, выписка, список операций, остаток)
@@ -126,6 +129,7 @@ export async function autoParseImage(imageBase64) {
 export async function parseCreditDoc(imageBase64) {
   const result = await callAIVision({
     imageBase64: imageToBase64(imageBase64),
+    model: 'ocr',
     prompt: `Извлеки данные кредитного договора. Верни JSON:
 {
   "name": "краткое название кредита",

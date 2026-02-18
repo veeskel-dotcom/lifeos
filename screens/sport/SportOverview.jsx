@@ -7,6 +7,7 @@ import TutorialTip from '../../components/TutorialTip';
 import SkeletonCard from '../../components/SkeletonCard';
 import EmptyState from '../../components/EmptyState';
 import ScreenWrapper from '../../components/ScreenWrapper';
+import Ic from '../../components/Icon';
 
 const TYPE_ICONS = { gym: '🏋️', tennis: '🎾', skiing: '⛷', run: '🏃', swim: '🏊', other: '💪' };
 const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -70,7 +71,7 @@ export default function SportOverview({ theme, onNavigate, onBack }) {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-24">
-        <TutorialTip id="sport_intro" theme={theme} icon="🏋️">
+        <TutorialTip id="sport_intro" theme={theme} icon={<Ic name="gym" color={theme.red} size={20} r={5} raw />}>
           Создайте шаблон тренировки или начните пустую. Прогресс и рекорды отслеживаются автоматически.
         </TutorialTip>
         {templates === undefined ? (
@@ -85,8 +86,7 @@ export default function SportOverview({ theme, onNavigate, onBack }) {
         <div style={{ background: 'linear-gradient(135deg, #FF3B30, #FF6B6B)', borderRadius: 16, padding: 16, color: '#fff', cursor: 'pointer' }}
           onClick={() => setShowStartMenu(!showStartMenu)}>
           <div className="flex items-center" style={{ gap: 10 }}>
-            <div className="flex items-center justify-center shrink-0"
-              style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.3)', fontSize: 22 }}>🏋️</div>
+            <Ic name="gym" color="rgba(255,255,255,0.3)" size={44} r={12} />
             <div className="flex-1">
               <div style={{ fontSize: 16, fontWeight: 600 }}>
                 {templates?.[0] ? `Сегодня: ${templates[0].name}` : 'Начать тренировку'}
@@ -144,7 +144,7 @@ export default function SportOverview({ theme, onNavigate, onBack }) {
                 onClick={() => { setShowStartMenu(false); onNavigate('startWorkout', {}); }}
                 className="w-full text-left py-2 px-3 rounded-xl active:opacity-70" style={{ fontSize: 14, fontWeight: 500, background: theme.gray6, color: theme.text }}
               >
-                📝 Пустая тренировка
+                <Ic name="note" color={theme.text} size={16} r={4} raw /> Пустая тренировка
               </button>
             </div>
           </Card>
@@ -154,20 +154,17 @@ export default function SportOverview({ theme, onNavigate, onBack }) {
         <div style={{ padding: '0 0 4px' }}><span style={{ fontSize: 12, fontWeight: 600, color: theme.gray1 }}>МОДУЛИ</span></div>
         <Card theme={theme} style={{ padding: 0, overflow: 'hidden' }}>
           {[
-            { i: '🤖', c: theme.purple || '#AF52DE', n: 'AI-тренер', d: 'Программа, веса, периодизация', t: 'aiTrainer' },
-            { i: '🕐', c: theme.accent, n: 'История тренировок', d: `${stats.totalWorkouts} за месяц`, t: 'history' },
-            { i: '📈', c: theme.green || '#34C759', n: 'Прогрессия весов', d: 'Графики и рекорды', t: 'progress' },
-            { i: '⚖️', c: theme.purple || '#AF52DE', n: 'Вес тела', d: latestWeight ? `${latestWeight.weight} кг` : '— кг', t: 'bodyWeight' },
-            { i: '📏', c: theme.orange, n: 'Обмеры тела', d: '9 параметров', t: 'measurements' },
-            { i: '🔄', c: theme.teal || '#30B0C7', n: 'Шаблоны тренировок', d: `${templates?.length || 0} шаблонов`, t: 'templateList' },
+            { i: 'bot', c: theme.purple || '#AF52DE', n: 'AI-тренер', d: 'Программа, веса, периодизация', t: 'aiTrainer' },
+            { i: 'clock', c: theme.accent, n: 'История тренировок', d: `${stats.totalWorkouts} за месяц`, t: 'history' },
+            { i: 'trend', c: theme.green || '#34C759', n: 'Прогрессия весов', d: 'Графики и рекорды', t: 'progress' },
+            { i: 'weight', c: theme.purple || '#AF52DE', n: 'Вес тела', d: latestWeight ? `${latestWeight.weight} кг` : '— кг', t: 'bodyWeight' },
+            { i: 'target', c: theme.orange, n: 'Обмеры тела', d: '9 параметров', t: 'measurements' },
+            { i: 'repeat', c: theme.teal || '#30B0C7', n: 'Шаблоны тренировок', d: `${templates?.length || 0} шаблонов`, t: 'templateList' },
           ].map((item, i, arr) => (
             <div key={item.t} onClick={() => onNavigate(item.t)}
               className="flex items-center cursor-pointer active:opacity-70"
               style={{ gap: 10, padding: '13px 14px', borderBottom: i < arr.length - 1 ? `0.5px solid ${theme.gray5}` : 'none' }}>
-              <div className="flex items-center justify-center shrink-0"
-                style={{ width: 36, height: 36, borderRadius: 10, background: item.c + '15', fontSize: 18 }}>
-                {item.i}
-              </div>
+              <Ic name={item.i} color={item.c} size={36} r={10} />
               <div className="flex-1">
                 <div style={{ fontSize: 15, fontWeight: 500, color: theme.text }}>{item.n}</div>
                 <div style={{ fontSize: 12, color: theme.gray2 }}>{item.d}</div>
@@ -184,9 +181,9 @@ export default function SportOverview({ theme, onNavigate, onBack }) {
           </div>
           {(!recentWorkouts || recentWorkouts.length === 0) ? (
             <EmptyState
-              icon="💪" title="Нет тренировок" subtitle="Тренировок пока нет. Начните первую!"
+              icon={<Ic name="gym" color={theme.red} size={48} r={14} />} title="Нет тренировок" subtitle="Тренировок пока нет. Начните первую!"
               tip="Создайте шаблон — тренировка начнётся в 1 тап"
-              actionLabel="💪 Начать" onAction={() => setShowStartMenu(true)} theme={theme}
+              actionLabel="Начать" onAction={() => setShowStartMenu(true)} theme={theme}
             />
           ) : (() => {
             const w = recentWorkouts[0];

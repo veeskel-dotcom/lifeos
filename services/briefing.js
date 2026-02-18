@@ -165,15 +165,18 @@ export function generateTemplateBriefing(data) {
   return lines;
 }
 
-// ═══ AI-обогащённый брифинг (~$0.003) ═══
+// ═══ AI-обогащённый брифинг ═══
 export async function generateAIBriefing(data) {
   try {
-    const { processInput } = await import('../ai/index');
+    const { callAI } = await import('../ai/client');
     const context = JSON.stringify(data);
-    const result = await processInput(
-      `Сгенерируй утренний брифинг. Данные: ${context}. Кратко, 3-5 строк, с эмодзи, конкретные советы. Не выдумывай — только факты из данных.`
-    );
-    return result.message || null;
+    const result = await callAI({
+      prompt: `Сгенерируй утренний брифинг. Данные: ${context}. Кратко, 3-5 строк, конкретные советы. Не выдумывай — только факты из данных.`,
+      model: 'briefing',
+      maxTokens: 500,
+      temperature: 0.3,
+    });
+    return result.content || null;
   } catch {
     return null;
   }

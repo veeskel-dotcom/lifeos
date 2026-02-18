@@ -3,6 +3,7 @@ import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import { getOrCreateSession, addMessage, getRecentMessages, clearHistory, getSessionHistory } from '../../services/chatHistory';
 import IOSKeyboardSpacer from '../../components/IOSKeyboardSpacer';
+import Ic from '../../components/Icon';
 
 const SUGGESTIONS = [
   { icon: '💸', text: 'кофе 350' },
@@ -343,14 +344,14 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
       {showMenu && (
         <div className="absolute top-14 right-4 z-50 rounded-xl py-1 shadow-lg"
           style={{ background: theme.card, border: `0.5px solid ${theme.gray4}` }}>
-          <button onClick={handleNewChat} className="block w-full text-left px-4 py-2.5 text-sm" style={{ color: theme.text }}>
-            💬 Новый разговор
+          <button onClick={handleNewChat} className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm" style={{ color: theme.text }}>
+            <Ic name="edit" color={theme.accent} size={16} r={4} raw /> Новый разговор
           </button>
-          <button onClick={handleShowHistory} className="block w-full text-left px-4 py-2.5 text-sm" style={{ color: theme.text }}>
-            📂 История разговоров
+          <button onClick={handleShowHistory} className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm" style={{ color: theme.text }}>
+            <Ic name="archive" color={theme.accent} size={16} r={4} raw /> История разговоров
           </button>
-          <button onClick={handleClearHistory} className="block w-full text-left px-4 py-2.5 text-sm" style={{ color: theme.red }}>
-            🗑 Очистить всё
+          <button onClick={handleClearHistory} className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm" style={{ color: theme.red }}>
+            <Ic name="trash" color={theme.red} size={16} r={4} raw /> Очистить всё
           </button>
         </div>
       )}
@@ -387,7 +388,7 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
         {/* Empty state */}
         {isEmpty && (
           <div className="flex flex-col items-center pt-12">
-            <div className="text-5xl mb-4">🤖</div>
+            <div className="mb-4"><Ic name="bot" color={theme.accent} size={56} r={16} /></div>
             <p className="text-base font-semibold mb-1" style={{ color: theme.text }}>AI-ассистент LifeOS</p>
             <p className="text-xs mb-6 text-center" style={{ color: theme.gray2 }}>
               Голосом или текстом: «кофе 350», «задача: купить молоко», «вода»
@@ -457,7 +458,7 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
           <button onClick={handleVoice}
             className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
             style={{ background: isListening ? theme.red + '20' : theme.gray6, color: isListening ? theme.red : theme.gray1 }}>
-            {isListening ? '⏹' : '🎤'}
+            {isListening ? '⏹' : <Ic name="mic" color={theme.gray1} size={18} r={5} raw />}
           </button>
           <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}

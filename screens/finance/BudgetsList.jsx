@@ -6,6 +6,7 @@ import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
 import { fmtMoney } from '../../utils/currency';
 import ProgressBar from '../../components/ProgressBar';
+import Ic from '../../components/Icon';
 
 import SkeletonList from '../../components/SkeletonList';
 const MONTHS_FULL = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
@@ -122,7 +123,7 @@ export default function BudgetsList({ theme, onBack, onNavigate }) {
         {/* Over-budget alert */}
         {totalPct >= 90 && totalBudget > 0 && (
           <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ background: (totalPct >= 100 ? theme.red : theme.orange) + '15' }}>
-            <span className="text-lg">{totalPct >= 100 ? '🚨' : '⚠️'}</span>
+            <Ic name={totalPct >= 100 ? 'bell' : 'flame'} color={totalPct >= 100 ? theme.red : theme.orange} size={24} r={6} />
             <span className="text-sm font-medium" style={{ color: totalPct >= 100 ? theme.red : theme.orange }}>
               {totalPct >= 100
                 ? `Бюджет превышен на ${fmtMoney(totalSpent - totalBudget)}`
@@ -177,7 +178,7 @@ export default function BudgetsList({ theme, onBack, onNavigate }) {
           ) : (
             <Card theme={theme} style={{ padding: 0, overflow: 'hidden' }}>
               {visibleCategories?.map((cat, i, arr) => {
-                const statusIcon = cat.pct >= 100 ? '🔴' : cat.pct >= 70 ? '🟡' : '🟢';
+                const statusColor = cat.pct >= 100 ? theme.red : cat.pct >= 70 ? theme.orange : (theme.green || '#34C759');
                 return (
                   <div key={cat.id} onClick={() => onNavigate?.('budgetCategory', { detailId: cat.id, month: selectedMonth })}
                     className="cursor-pointer active:opacity-70"
@@ -186,7 +187,7 @@ export default function BudgetsList({ theme, onBack, onNavigate }) {
                       <div className="flex items-center" style={{ gap: 6 }}>
                         <span style={{ fontSize: 16 }}>{cat.icon}</span>
                         <span style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>{cat.name}</span>
-                        <span style={{ fontSize: 10 }}>{statusIcon}</span>
+                        <div style={{ width: 8, height: 8, borderRadius: 4, background: statusColor, flexShrink: 0 }} />
                       </div>
                       <div className="flex items-baseline tabular-nums" style={{ gap: 4 }}>
                         <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>{cat.spent.toLocaleString('ru-RU')}₽</span>

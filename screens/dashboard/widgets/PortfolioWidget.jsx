@@ -23,7 +23,7 @@ export default function PortfolioWidget({ theme, onNavigate, size = 'wide' }) {
   const changeSign = data.change >= 0 ? '+' : '';
 
   return (
-    <WidgetCard title="Портфель" icon="📈" color={color} theme={theme} size={size} onClick={() => onNavigate?.('invest')}>
+    <WidgetCard title="Портфель" iconName="trend" color={color} theme={theme} size={size} onClick={() => onNavigate?.('invest')}>
       {size === 'wide' ? (
         <div className="flex items-end justify-between">
           <div>

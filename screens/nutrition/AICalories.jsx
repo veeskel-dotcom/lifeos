@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
+import Ic from '../../components/Icon';
 
 const STEPS = [
   { q: 'Рост и вес?', field: 'body', placeholder: '180 см, 78 кг' },
@@ -12,8 +13,7 @@ const STEPS = [
 function BotBubble({ children, theme }) {
   return (
     <div className="flex gap-2 mb-3">
-      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs"
-        style={{ background: theme.purple + '15' }}>🤖</div>
+      <Ic name="bot" color={theme.purple} size={28} r={8} />
       <div className="max-w-[80%] rounded-2xl rounded-bl-sm px-3.5 py-2.5 text-sm leading-5"
         style={{ background: theme.card, boxShadow: theme.shadow, color: theme.text }}>
         {children}

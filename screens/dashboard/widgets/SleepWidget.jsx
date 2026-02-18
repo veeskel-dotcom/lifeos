@@ -30,7 +30,7 @@ export default function SleepWidget({ theme, onNavigate, size = 'small' }) {
   const qualityColor = quality >= 8 ? theme.green : quality >= 6 ? color : quality >= 4 ? theme.orange : theme.red;
 
   return (
-    <WidgetCard title="Сон" icon="😴" color={color} theme={theme} size={size} onClick={() => onNavigate?.('sleep')}>
+    <WidgetCard title="Сон" iconName="moon" color={color} theme={theme} size={size} onClick={() => onNavigate?.('sleep')}>
       <div className="flex items-baseline gap-1">
         <span className="font-bold tabular-nums" style={{ fontSize: size === 'wide' ? 36 : 28, color: theme.text }}>
           {hours || '—'}

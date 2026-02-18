@@ -30,7 +30,7 @@ export default function NutritionWidget({ theme, onNavigate, data: externalData,
   const calPct = goals.calories > 0 ? Math.round((totals.calories / goals.calories) * 100) : 0;
 
   return (
-    <WidgetCard title="Питание" icon="🍎" color={color} theme={theme} size={size} onClick={() => onNavigate?.('nutrition')}>
+    <WidgetCard title="Питание" iconName="leaf" color={color} theme={theme} size={size} onClick={() => onNavigate?.('nutrition')}>
       <div className="flex items-baseline gap-1">
         <span className="font-bold tabular-nums" style={{ fontSize: size === 'wide' ? 36 : 28, color: theme.text }}>
           {totals.calories}

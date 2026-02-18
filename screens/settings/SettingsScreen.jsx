@@ -6,22 +6,25 @@ import { getThemeColors } from '../../theme/colors';
 import NavHeader from '../../components/NavHeader';
 import { resetAllTips } from '../../components/TutorialTip';
 import Card from '../../components/Card';
+import Ic from '../../components/Icon';
 import { getStorageEstimate } from '../../db/backup';
 import ScreenWrapper from '../../components/ScreenWrapper';
 
-function SettingsRow({ label, value, arrow, toggle, onToggle, onClick, theme, danger, icon, iconColor }) {
+function SettingsRow({ label, value, arrow, toggle, onToggle, onClick, theme, danger, icon, iconName, iconColor }) {
   return (
     <div
       className={`flex items-center ${onClick ? 'cursor-pointer active:opacity-70' : ''}`}
       style={{ gap: 10, padding: '12px 14px' }}
       onClick={onClick}
     >
-      {icon && (
+      {iconName ? (
+        <Ic name={iconName} color={iconColor || theme.accent} size={32} r={9} />
+      ) : icon ? (
         <div className="flex items-center justify-center shrink-0"
           style={{ width: 32, height: 32, borderRadius: 9, background: (iconColor || theme.accent) + '18' }}>
           <span style={{ fontSize: 16 }}>{icon}</span>
         </div>
-      )}
+      ) : null}
       <span className="flex-1" style={{ fontSize: 15, fontWeight: 400, color: danger ? theme.red : theme.text }}>
         {label}
       </span>
@@ -56,16 +59,16 @@ export default function SettingsScreen({ theme, onThemeChange, onBack, onNavigat
   const [aiCalls, setAiCalls] = useState(null);
   /* L2: module toggles */
   const ALL_MODULES = [
-    { id: 'finance', label: '💰 Финансы' },
-    { id: 'tasks', label: '📋 Задачи' },
-    { id: 'nutrition', label: '🍎 Питание' },
-    { id: 'sport', label: '🏋️ Спорт' },
-    { id: 'invest', label: '📈 Инвестиции' },
-    { id: 'routines', label: '🔄 Рутины' },
-    { id: 'subscriptions', label: '💳 Подписки' },
-    { id: 'sleep', label: '😴 Сон' },
-    { id: 'notes', label: '📝 Заметки' },
-    { id: 'documents', label: '🪪 Документы' },
+    { id: 'finance', label: 'Финансы' },
+    { id: 'tasks', label: 'Задачи' },
+    { id: 'nutrition', label: 'Питание' },
+    { id: 'sport', label: 'Спорт' },
+    { id: 'invest', label: 'Инвестиции' },
+    { id: 'routines', label: 'Рутины' },
+    { id: 'subscriptions', label: 'Подписки' },
+    { id: 'sleep', label: 'Сон' },
+    { id: 'notes', label: 'Заметки' },
+    { id: 'documents', label: 'Документы' },
   ];
   const [enabledModules, setEnabledModules] = useState(new Set(ALL_MODULES.map(m => m.id)));
 
@@ -121,27 +124,27 @@ export default function SettingsScreen({ theme, onThemeChange, onBack, onNavigat
         </div>
         <Card theme={theme} style={{ padding: 0, overflow: 'hidden' }}>
           <SettingsRow
-            icon="👤" iconColor="#007AFF"
+            iconName="shield" iconColor="#007AFF"
             label="Имя" value={profileData.name || '—'} arrow
             onClick={() => onNavigate('profile')} theme={theme}
           />
           <Divider theme={theme} />
           <SettingsRow
-            icon="💰" iconColor="#34C759"
+            iconName="wallet" iconColor="#34C759"
             label="Месячный бюджет"
             value={budget ? fmtMoney(budget) : '—'}
             arrow onClick={() => onNavigate('profile')} theme={theme}
           />
           <Divider theme={theme} />
           <SettingsRow
-            icon="⚖️" iconColor="#AF52DE"
+            iconName="weight" iconColor="#AF52DE"
             label="Цель по весу"
             value={weightGoal ? `${weightGoal} кг` : '—'}
             arrow onClick={() => onNavigate('profile')} theme={theme}
           />
           <Divider theme={theme} />
           <SettingsRow
-            icon="🔥" iconColor="#FF9500"
+            iconName="flame" iconColor="#FF9500"
             label="Калории/день"
             value={calorieGoal ? `${Number(calorieGoal).toLocaleString('ru-RU')}` : '—'}
             arrow onClick={() => onNavigate('profile')} theme={theme}
@@ -153,10 +156,7 @@ export default function SettingsScreen({ theme, onThemeChange, onBack, onNavigat
         <Card theme={theme} style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
           {/* Row: Тема */}
           <div className="flex items-center" style={{ gap: 10, padding: '12px 14px', borderBottom: `0.5px solid ${theme.gray5}` }}>
-            <div className="flex items-center justify-center shrink-0"
-              style={{ width: 32, height: 32, borderRadius: 9, background: (theme.purple || '#AF52DE') + '18' }}>
-              <span style={{ fontSize: 16 }}>🌙</span>
-            </div>
+            <Ic name="moon" color={theme.purple || '#AF52DE'} size={32} r={9} />
             <span className="flex-1" style={{ fontSize: 15, fontWeight: 400, color: theme.text }}>Тема</span>
             <select
               value={themeMode}
@@ -171,10 +171,7 @@ export default function SettingsScreen({ theme, onThemeChange, onBack, onNavigat
           {/* Tab Bar customizer */}
           <div style={{ padding: '12px 14px', borderBottom: `0.5px solid ${theme.gray5}` }}>
             <div className="flex items-center" style={{ gap: 10, marginBottom: 10 }}>
-              <div className="flex items-center justify-center shrink-0"
-                style={{ width: 32, height: 32, borderRadius: 9, background: (theme.accent) + '18' }}>
-                <span style={{ fontSize: 16 }}>⋯</span>
-              </div>
+              <Ic name="more" color={theme.accent} size={32} r={9} />
               <span style={{ fontSize: 15, color: theme.text }}>Настройка Tab Bar</span>
               <span style={{ fontSize: 12, color: theme.gray2, marginLeft: 'auto' }}>2-4 таба</span>
             </div>
@@ -207,13 +204,13 @@ export default function SettingsScreen({ theme, onThemeChange, onBack, onNavigat
         </div>
         <Card theme={theme} style={{ padding: 0, overflow: 'hidden' }}>
           <SettingsRow
-            icon="🔒" iconColor="#FF3B30"
+            iconName="lock" iconColor="#FF3B30"
             label="Сменить PIN" arrow
             onClick={() => onNavigate('security')} theme={theme}
           />
           <Divider theme={theme} />
           <SettingsRow
-            icon="🛡️" iconColor="#34C759"
+            iconName="shield" iconColor="#34C759"
             label="Face ID / Touch ID" arrow
             onClick={() => onNavigate('security')} theme={theme}
           />
@@ -276,8 +273,13 @@ export default function SettingsScreen({ theme, onThemeChange, onBack, onNavigat
         </div>
         <Card theme={theme} style={{ padding: 0, overflow: 'hidden' }}>
           <SettingsRow
-            label="📊 Статистика использования" arrow
+            iconName="chart" iconColor={theme.orange || '#FF9500'} label="Статистика использования" arrow
             onClick={() => onNavigate('analytics')} theme={theme}
+          />
+          <Divider theme={theme} />
+          <SettingsRow
+            iconName="flag" iconColor={theme.red || '#FF3B30'} label="Логи ошибок" arrow
+            onClick={() => onNavigate('error-log')} theme={theme}
           />
         </Card>
 

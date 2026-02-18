@@ -4,6 +4,7 @@ import Card from '../../components/Card';
 import ConfirmSheet from '../../components/ConfirmSheet';
 import IOSKeyboardSpacer from '../../components/IOSKeyboardSpacer';
 import { haptic } from '../../utils/ios';
+import Ic from '../../components/Icon';
 import {
   getTask,
   updateTask,
@@ -268,33 +269,30 @@ export default function TaskDetail({ taskId, theme, onBack }) {
           <Card theme={theme} style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
             {[
               task.project_id && {
-                icon: '📁', color: theme.accent,
+                iconName: 'archive', color: theme.accent,
                 label: 'Проект',
                 value: projects.find(p => p.id === task.project_id)?.name || 'Проект',
               },
               {
-                icon: '🚩', color: PRIORITY_COLORS[task.priority] || theme.accent,
+                iconName: 'flag', color: PRIORITY_COLORS[task.priority] || theme.accent,
                 label: 'Приоритет',
                 value: PRIORITIES.find(p => p.id === task.priority)?.label?.replace(/^[^ ]+ /, '') || 'Обычный',
               },
               task.deadline && {
-                icon: '📅',
+                iconName: 'calendar',
                 color: task.deadline < new Date().toISOString().split('T')[0] && !isDone ? theme.red : theme.accent,
                 label: 'Дедлайн',
                 value: `${task.deadline}${task.deadline_time ? ' ' + task.deadline_time : ''}`,
               },
               task.recurrence && {
-                icon: '🔔', color: theme.orange,
+                iconName: 'bell', color: theme.orange,
                 label: 'Повтор',
                 value: RECURRENCE_OPTIONS.find(o => o.value === task.recurrence?.type)?.label || '',
               },
             ].filter(Boolean).map((row, i, arr) => (
               <div key={i} className="flex items-center gap-2.5"
                 style={{ padding: '11px 14px', borderBottom: i < arr.length - 1 ? `0.5px solid ${theme.gray5}` : 'none' }}>
-                <div className="flex items-center justify-center shrink-0"
-                  style={{ width: 24, height: 24, borderRadius: 6, background: row.color + '20' }}>
-                  <span style={{ fontSize: 13 }}>{row.icon}</span>
-                </div>
+                <Ic name={row.iconName} color={row.color} size={24} r={6} />
                 <span className="flex-1 text-sm" style={{ color: theme.gray1 }}>{row.label}</span>
                 <span className="text-sm font-medium" style={{ color: theme.text }}>{row.value}</span>
               </div>
@@ -303,7 +301,7 @@ export default function TaskDetail({ taskId, theme, onBack }) {
             {(task.tags || []).length > 0 && (
               <div className="flex items-center gap-2.5"
                 style={{ padding: '11px 14px', borderTop: `0.5px solid ${theme.gray5}` }}>
-                <span style={{ fontSize: 13 }}>🏷</span>
+                <Ic name="flag" color={theme.accent} size={16} r={4} raw />
                 <span className="flex-1 text-sm" style={{ color: theme.gray1 }}>Теги</span>
                 <span className="text-sm" style={{ color: theme.gray2 }}>{(task.tags || []).join(', ')}</span>
               </div>
@@ -442,7 +440,7 @@ export default function TaskDetail({ taskId, theme, onBack }) {
                 <div onClick={() => setShowDeadlinePicker(true)}
                   className="flex items-center gap-2 flex-1 px-3 py-2.5 rounded-xl text-sm cursor-pointer"
                   style={{ background: theme.gray6, color: deadline ? theme.text : theme.gray3 }}>
-                  📅 {deadline || 'Дедлайн'}
+                  <span className="inline-flex items-center gap-1"><Ic name="calendar" color={theme.accent} size={14} r={3} raw /> {deadline || 'Дедлайн'}</span>
                 </div>
                 {deadline && (
                   <DatePicker value={deadlineTime} onChange={setDeadlineTime} mode="time" theme={theme} />
@@ -535,7 +533,7 @@ export default function TaskDetail({ taskId, theme, onBack }) {
               className="w-full py-3 rounded-xl text-sm font-medium mb-4"
               style={{ background: theme.red + '15', color: theme.red, border: 'none', cursor: 'pointer' }}
             >
-              🗑 Удалить задачу
+              <span className="inline-flex items-center gap-1"><Ic name="trash" color={theme.red} size={14} r={4} raw /> Удалить задачу</span>
             </button>
           </>
         )}
@@ -556,7 +554,7 @@ export default function TaskDetail({ taskId, theme, onBack }) {
                     background: task?.project_id === p.id ? theme.accent + '15' : theme.gray6,
                     color: theme.text, border: 'none', cursor: 'pointer',
                   }}>
-                  📁 {p.name}
+                  <span className="inline-flex items-center gap-1"><Ic name="archive" color={theme.accent} size={14} r={3} raw /> {p.name}</span>
                 </button>
               ))}
               {task?.project_id && (
@@ -638,7 +636,7 @@ function CommentsSection({ taskId, comments, theme, onUpdate }) {
         className="flex items-center justify-between w-full text-left"
         style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
         <span className="text-xs font-semibold" style={{ color: theme.gray1 }}>
-          💬 Комментарии {comments.length > 0 && `(${comments.length})`}
+          <span className="inline-flex items-center gap-1"><Ic name="edit" color={theme.gray1} size={12} r={3} raw /> Комментарии {comments.length > 0 && `(${comments.length})`}</span>
         </span>
         <span className="text-xs" style={{ color: theme.gray2 }}>{expanded ? '▼' : '▶'}</span>
       </button>
@@ -708,7 +706,7 @@ function AttachmentsSection({ taskId, attachments, theme, onUpdate }) {
         <button onClick={() => setExpanded(!expanded)}
           className="text-xs font-semibold uppercase tracking-wide"
           style={{ color: theme.gray1, background: 'none', border: 'none', cursor: 'pointer' }}>
-          📎 Вложения ({attachments.length}) {expanded ? '▼' : '▶'}
+          <span className="inline-flex items-center gap-1"><Ic name="download" color={theme.gray1} size={12} r={3} raw /> Вложения ({attachments.length}) {expanded ? '▼' : '▶'}</span>
         </button>
         <button onClick={() => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*,.pdf,.doc,.docx'; inp.onchange = handleAdd; inp.click(); }}
           className="text-xs px-2 py-0.5 rounded"
@@ -722,8 +720,8 @@ function AttachmentsSection({ taskId, attachments, theme, onUpdate }) {
           {a.type?.startsWith('image/') ? (
             <img src={a.data} alt="" className="w-10 h-10 rounded-lg object-cover" />
           ) : (
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-              style={{ background: theme.gray6 }}>📄</div>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ background: theme.gray6 }}><Ic name="note" color={theme.gray2} size={20} r={5} raw /></div>
           )}
           <div className="flex-1 min-w-0">
             <div className="text-xs truncate" style={{ color: theme.text }}>{a.name}</div>

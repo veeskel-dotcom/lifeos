@@ -9,6 +9,7 @@ import ConfirmSheet from '../../components/ConfirmSheet';
 import SkeletonCard from '../../components/SkeletonCard';
 import EmptyState from '../../components/EmptyState';
 import NavHeader from '../../components/NavHeader';
+import Ic from '../../components/Icon';
 
 export default function ShoppingList({ theme, onBack }) {
   const [unchecked, setUnchecked] = useState(new Map());
@@ -32,9 +33,13 @@ export default function ShoppingList({ theme, onBack }) {
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
-    await addItem(input.trim());
-    setInput('');
-    load();
+    try {
+      await addItem(input.trim());
+      setInput('');
+      load();
+    } catch (err) {
+      console.error('[ShoppingList.handleAdd]', err);
+    }
   };
 
   const handleToggle = async (id) => {
@@ -109,7 +114,7 @@ export default function ShoppingList({ theme, onBack }) {
           <button type="button" onClick={handleShare}
             className="px-3 py-2.5 rounded-xl text-sm shrink-0"
             style={{ background: theme.gray6, color: theme.accent, border: 'none' }}>
-            📤
+            <Ic name="share" color={theme.accent} size={18} r={4} raw />
           </button>
         )}
       </form>
@@ -169,7 +174,7 @@ export default function ShoppingList({ theme, onBack }) {
       {!loading && unchecked.size === 0 && checked.length === 0 && (
         <div className="mx-4">
           <EmptyState
-            icon="🛒"
+            icon={<Ic name="cart" color={theme.accent} size={48} r={14} />}
             title="Список пуст"
             subtitle="Добавьте продукты для покупки"
             tip="AI может добавить продукты — скажите «купить молоко»"
@@ -188,8 +193,8 @@ export default function ShoppingList({ theme, onBack }) {
             className="flex items-center gap-2 w-full text-left mb-1.5"
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}
           >
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.gray1 }}>
-              ✅ Куплено ({checked.length})
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.gray1, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Ic name="check" color={theme.green} size={14} r={3} raw /> Куплено ({checked.length})
             </span>
             <span className="text-xs" style={{ color: theme.gray2 }}>
               {showChecked ? '▴' : '▾'}
@@ -234,7 +239,7 @@ export default function ShoppingList({ theme, onBack }) {
       {unchecked.size > 0 && (
         <div className="mx-4 rounded-2xl overflow-hidden" style={{ background: (theme.purple || '#AF52DE') + '06' }}>
           <div className="flex items-center gap-2.5 px-4 py-3">
-            <span className="text-lg">🤖</span>
+            <Ic name="bot" color={theme.purple || '#AF52DE'} size={28} r={8} />
             <div className="flex-1">
               <div className="text-sm font-medium" style={{ color: theme.text }}>
                 Добавить из плана питания?

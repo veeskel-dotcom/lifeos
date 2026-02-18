@@ -8,12 +8,13 @@ import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import FormInput from '../../components/FormInput';
 import DatePicker from '../../components/DatePicker';
+import Ic from '../../components/Icon';
 
 const TABS = [
-  { id: 'import', label: '📥 Импорт' },
-  { id: 'iis', label: '🏛 ИИС' },
-  { id: 'ofz', label: '📜 ОФЗ' },
-  { id: 'frozen', label: '🧊 Заморозка' },
+  { id: 'import', label: 'Импорт', ic: 'download' },
+  { id: 'iis', label: 'ИИС', ic: 'shield' },
+  { id: 'ofz', label: 'ОФЗ', ic: 'receipt' },
+  { id: 'frozen', label: 'Заморозка', ic: 'lock' },
 ];
 
 export default function InvestTools({ theme, onBack, onToast }) {
@@ -32,8 +33,9 @@ export default function InvestTools({ theme, onBack, onToast }) {
               background: tab === t.id ? theme.accent : theme.card,
               color: tab === t.id ? '#fff' : theme.gray1,
               border: 'none', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
             }}>
-            {t.label}
+            <Ic name={t.ic} color={tab === t.id ? '#fff' : theme.gray1} size={14} r={3} raw /> {t.label}
           </button>
         ))}
       </div>
@@ -123,7 +125,7 @@ function BrokerImportPanel({ theme, onToast }) {
             <button onClick={() => { setMode('screenshot'); setTimeout(() => fileRef.current?.click(), 100); }}
               className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left"
               style={{ background: theme.gray6, border: 'none', cursor: 'pointer' }}>
-              <span className="text-2xl">📸</span>
+              <Ic name="camera" color={theme.accent} size={32} r={9} />
               <div>
                 <div className="text-sm font-semibold" style={{ color: theme.text }}>Скриншот</div>
                 <div className="text-[10px]" style={{ color: theme.gray2 }}>Тинькофф, БКС, Freedom, IB</div>
@@ -132,7 +134,7 @@ function BrokerImportPanel({ theme, onToast }) {
             <button onClick={() => setMode('text')}
               className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left"
               style={{ background: theme.gray6, border: 'none', cursor: 'pointer' }}>
-              <span className="text-2xl">📋</span>
+              <Ic name="note" color={theme.accent} size={32} r={9} />
               <div>
                 <div className="text-sm font-semibold" style={{ color: theme.text }}>Текст / копипаста</div>
                 <div className="text-[10px]" style={{ color: theme.gray2 }}>Отчёт брокера или описание позиций</div>
@@ -142,7 +144,7 @@ function BrokerImportPanel({ theme, onToast }) {
         </Card>
         <Card theme={theme}>
           <div className="text-xs" style={{ color: theme.gray2 }}>
-            💡 Примеры текстового ввода:
+            Примеры текстового ввода:
           </div>
           <div className="text-[10px] mt-1 space-y-0.5" style={{ color: theme.gray2 }}>
             <div>• «10 акций Сбера по 260, 5 Газпрома по 155»</div>
@@ -163,11 +165,11 @@ function BrokerImportPanel({ theme, onToast }) {
 
       {mode === 'screenshot' && (
         <Card theme={theme}>
-          <div className="text-sm font-semibold mb-2" style={{ color: theme.text }}>📸 Скриншот портфеля</div>
+          <div className="text-sm font-semibold mb-2" style={{ color: theme.text, display: 'flex', alignItems: 'center', gap: 6 }}><Ic name="camera" color={theme.accent} size={18} r={5} raw /> Скриншот портфеля</div>
           <button onClick={() => fileRef.current?.click()} disabled={loading}
             className="w-full py-3 rounded-xl text-sm font-medium"
             style={{ background: theme.accent + '15', color: theme.accent, border: `1px dashed ${theme.accent}40`, cursor: 'pointer' }}>
-            {loading ? '⏳ Распознаю...' : '📷 Выбрать фото'}
+            {loading ? 'Распознаю...' : 'Выбрать фото'}
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleScreenshot} />
         </Card>
@@ -175,7 +177,7 @@ function BrokerImportPanel({ theme, onToast }) {
 
       {mode === 'text' && (
         <Card theme={theme}>
-          <div className="text-sm font-semibold mb-2" style={{ color: theme.text }}>📋 Текст позиций</div>
+          <div className="text-sm font-semibold mb-2" style={{ color: theme.text, display: 'flex', alignItems: 'center', gap: 6 }}><Ic name="note" color={theme.accent} size={18} r={5} raw /> Текст позиций</div>
           <textarea value={text} onChange={e => setText(e.target.value)}
             placeholder="10 акций Сбера по 260&#10;5 Газпрома по 155&#10;3 ETF TMOS по 6.5"
             rows={5} className="w-full px-3 py-2.5 rounded-xl text-xs outline-none resize-none"
@@ -183,7 +185,7 @@ function BrokerImportPanel({ theme, onToast }) {
           <button onClick={handleText} disabled={loading || !text.trim()}
             className="w-full py-2.5 rounded-xl text-sm font-semibold mt-2"
             style={{ background: text.trim() ? theme.accent : theme.gray4, color: '#fff', border: 'none', cursor: 'pointer' }}>
-            {loading ? '⏳ Распознаю...' : '🤖 Распознать'}
+            {loading ? 'Распознаю...' : 'Распознать'}
           </button>
         </Card>
       )}
@@ -220,12 +222,12 @@ function BrokerImportPanel({ theme, onToast }) {
             <button onClick={handleSave} disabled={loading}
               className="w-full py-2.5 rounded-xl text-sm font-semibold mt-3"
               style={{ background: theme.green, color: '#fff', border: 'none', cursor: 'pointer' }}>
-              {loading ? '⏳ Сохраняю...' : `💾 Сохранить ${preview.positions.length} позиций`}
+              {loading ? 'Сохраняю...' : `Сохранить ${preview.positions.length} позиций`}
             </button>
           )}
           {stats && (
             <div className="text-center py-2 text-xs" style={{ color: theme.green }}>
-              ✅ Добавлено: {stats.added} · Обновлено: {stats.updated}
+              <Ic name="check" color={theme.green} size={14} r={3} raw /> Добавлено: {stats.added} · Обновлено: {stats.updated}
               {stats.skipped > 0 && <span style={{ color: theme.gray2 }}> · Пропущено: {stats.skipped}</span>}
             </div>
           )}

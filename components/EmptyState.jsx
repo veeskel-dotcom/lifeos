@@ -2,17 +2,25 @@
  * EmptyState — пустое состояние с иконкой, текстом, кнопкой.
  * M4.9: tip — подсказка для первых дней, secondaryAction — доп. кнопка.
  */
-export default function EmptyState({ icon, title, subtitle, actionLabel, onAction, tip, secondaryLabel, onSecondary, theme }) {
+import Ic from './Icon';
+
+export default function EmptyState({ icon, iconName, iconColor, title, subtitle, actionLabel, onAction, tip, secondaryLabel, onSecondary, theme }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-      <div className="text-5xl mb-4">{icon}</div>
+      {iconName ? (
+        <div className="mb-4">
+          <Ic name={iconName} color={iconColor || theme.accent} size={56} r={16} />
+        </div>
+      ) : (
+        <div className="text-5xl mb-4">{icon}</div>
+      )}
       <div className="text-lg font-bold mb-1" style={{ color: theme.text }}>{title}</div>
       {subtitle && (
         <div className="text-sm" style={{ color: theme.gray2 }}>{subtitle}</div>
       )}
       {tip && (
         <div className="mt-3 px-4 py-2.5 rounded-xl text-xs leading-relaxed" style={{ background: theme.accent + '12', color: theme.accent }}>
-          💡 {tip}
+          {tip}
         </div>
       )}
       {actionLabel && onAction && (

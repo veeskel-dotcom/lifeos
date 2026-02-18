@@ -3,6 +3,7 @@ import { useAllWorkouts } from '../../hooks/useDB';
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
+import Ic from '../../components/Icon';
 
 import SkeletonList from '../../components/SkeletonList';
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
@@ -140,7 +141,7 @@ export default function WorkoutHistory({ theme, onBack, onSelect }) {
         })()}
 
         {grouped.length === 0 ? (
-          <EmptyState icon="🏋️" title="Нет тренировок" subtitle="Начните первую тренировку" tip="Создайте шаблон для быстрого старта" theme={theme} />
+          <EmptyState icon={<Ic name="gym" color={theme.red} size={48} r={14} />} title="Нет тренировок" subtitle="Начните первую тренировку" tip="Создайте шаблон для быстрого старта" theme={theme} />
         ) : (
           grouped.map(([monthKey, items]) => {
             const [y, m] = monthKey.split('-');

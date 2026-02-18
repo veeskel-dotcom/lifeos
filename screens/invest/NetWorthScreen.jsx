@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
+import Ic from '../../components/Icon';
 import { getNetWorth, getNetWorthHistory, saveSnapshot } from '../../services/networth';
 import { fmtMoney as fmt } from '../../utils/currency';
 
@@ -23,10 +24,10 @@ export default function NetWorthScreen({ theme, onBack }) {
 
   if (!nw) return (
     <div className="flex flex-col h-full">
-      <NavHeader title="Net Worth" onBack={onBack} theme={theme} />
+      <NavHeader title="Чистый капитал" onBack={onBack} theme={theme} />
       <div className="px-4 pt-8">
         <EmptyState
-          icon="📊"
+          icon={<Ic name="chart" color={theme.accent} size={48} r={14} />}
           title="Нет данных"
           subtitle="Добавьте счета и активы"
           tip="Добавьте счета и брокеров для расчёта"
@@ -42,7 +43,7 @@ export default function NetWorthScreen({ theme, onBack }) {
 
   return (
     <div className="flex flex-col h-full">
-      <NavHeader title="Net Worth" onBack={onBack} theme={theme} />
+      <NavHeader title="Чистый капитал" onBack={onBack} theme={theme} />
 
       <div className="flex-1 overflow-auto px-4 pb-8">
         {/* Total */}
@@ -65,7 +66,7 @@ export default function NetWorthScreen({ theme, onBack }) {
                 <YAxis hide domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{ background: theme.card, border: 'none', borderRadius: 8, fontSize: 12 }}
-                  formatter={(v) => [fmt(v), 'Net Worth']}
+                  formatter={(v) => [fmt(v), 'Чистый капитал']}
                 />
                 <Line type="monotone" dataKey="value" stroke={theme.accent} strokeWidth={2} dot={false} />
               </LineChart>
@@ -98,7 +99,7 @@ export default function NetWorthScreen({ theme, onBack }) {
         {/* Bottom line */}
         <Card theme={theme} style={{ padding: 16 }}>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold" style={{ color: theme.text }}>=  Net Worth</span>
+            <span className="text-sm font-semibold" style={{ color: theme.text }}>=  Чистый капитал</span>
             <span className="text-lg font-bold" style={{ color: isPositive ? theme.green : theme.red }}>
               {fmt(nw.total)}
             </span>

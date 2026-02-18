@@ -37,6 +37,7 @@ import { setSetting } from '../../db/helpers';
 import { useToast } from '../../components/ToastProvider';
 import TutorialTip from '../../components/TutorialTip';
 import SkeletonCard from '../../components/SkeletonCard';
+import Ic from '../../components/Icon';
 
 const MEALS = [
   { key: 'breakfast', icon: '🌅', label: 'Завтрак' },
@@ -211,9 +212,9 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
             <span style={{ fontSize: 28, fontWeight: 700, color: theme.text }}>Питание</span>
             {streak >= 1 && (
               <span
-                style={{ fontSize: 12, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, background: theme.orange + '20', color: theme.orange }}
+                style={{ fontSize: 12, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, background: theme.orange + '20', color: theme.orange, display: 'inline-flex', alignItems: 'center', gap: 4 }}
               >
-                🔥 {streak}
+                <Ic name="flame" color={theme.orange} size={14} r={3} raw /> {streak}
               </span>
             )}
           </div>
@@ -221,7 +222,7 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
         </div>
 
         <EmptyState
-          icon="🥗"
+          icon={<Ic name="food" color={theme.green} size={48} r={14} />}
           title="Начните вести дневник"
           subtitle="Добавьте первый приём пищи"
           actionLabel="Добавить завтрак"
@@ -240,7 +241,7 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
             }}
             style={{ width: "100%", padding: 12, borderRadius: 16, fontSize: 14, fontWeight: 500, textAlign: "center", cursor: "pointer", background: theme.card, color: theme.accent, border: `1px solid ${theme.accent}30` }}
           >
-            📋 Скопировать вчерашний день
+            <Ic name="note" color={theme.accent} size={16} r={4} raw /> Скопировать вчерашний день
           </button>
         </div>
 
@@ -280,23 +281,23 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
             <span style={{ fontSize: 28, fontWeight: 700, color: theme.text }}>Питание</span>
             {streak >= 1 && (
               <span
-                style={{ fontSize: 12, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, background: theme.orange + '20', color: theme.orange }}
+                style={{ fontSize: 12, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, background: theme.orange + '20', color: theme.orange, display: 'inline-flex', alignItems: 'center', gap: 4 }}
               >
-                🔥 {streak}
+                <Ic name="flame" color={theme.orange} size={14} r={3} raw /> {streak}
               </span>
             )}
           </div>
           <button
             onClick={() => setShowGoalSheet(true)}
-            style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, background: theme.accent + '15', color: theme.accent, border: 'none', cursor: 'pointer' }}
+            style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, background: theme.accent + '15', color: theme.accent, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
           >
-            ⚙️ Цели
+            <Ic name="gear" color={theme.accent} size={14} r={3} raw /> Цели
           </button>
         </div>
         <div style={{ fontSize: 13, color: theme.gray1, marginTop: 2 }}>{formatDate(date)}</div>
       </div>
 
-      <TutorialTip id="nutrition_intro" theme={theme} icon="🍽">
+      <TutorialTip id="nutrition_intro" theme={theme} icon={<Ic name="food" color={theme.accent} size={20} r={5} raw />}>
         Добавляйте приёмы пищи кнопкой +. Свайпните запись для удаления. Нажмите «Цели» чтобы настроить КБЖУ.
       </TutorialTip>
 
@@ -393,8 +394,8 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
             </p>
           );
           if (r >= 0 && r <= 200) return (
-            <p style={{ fontSize: 12, marginTop: 8, color: theme.green }}>
-              ✅ Цель почти достигнута!
+            <p style={{ fontSize: 12, marginTop: 8, color: theme.green, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Ic name="check" color={theme.green} size={16} r={4} raw /> Цель почти достигнута!
             </p>
           );
           return null;
@@ -413,7 +414,7 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
             }}
             style={{ width: "100%", padding: 12, borderRadius: 16, fontSize: 14, fontWeight: 500, textAlign: "center", cursor: "pointer", background: theme.card, color: theme.accent, border: `1px solid ${theme.accent}30` }}
           >
-            📋 Скопировать вчерашний день
+            <Ic name="note" color={theme.accent} size={16} r={4} raw /> Скопировать вчерашний день
           </button>
         </div>
       )}
@@ -539,7 +540,7 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
                   onClick={() => setPresetSaveMeal(key)}
                   style={{ fontSize: 12, fontWeight: 500, color: theme.accent, background: 'none', border: 'none', cursor: 'pointer' }}
                 >
-                  ⭐ Сохранить как шаблон
+                  <Ic name="star" color={theme.accent} size={14} r={3} raw /> Сохранить как шаблон
                 </button>
               </div>
             )}
@@ -692,15 +693,15 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
         title={`Добавить в ${MEALS.find(m => m.key === activeActionMeal)?.label || ''}`}
         theme={theme}
         actions={[
-          { icon: '🔍', label: 'Поиск продукта', action: () => onOpenSearch?.(activeActionMeal) },
-          { icon: '📷', label: 'Фото еды', action: () => onOpenSearch?.(activeActionMeal, 'photo') },
-          { icon: '📊', label: 'Сканировать штрихкод', action: () => onOpenSearch?.(activeActionMeal, 'barcode') },
-          { icon: '✏️', label: 'Ввести вручную', action: () => onOpenSearch?.(activeActionMeal, 'manual') },
+          { icon: <Ic name="food" color={theme.accent} size={20} r={5} raw />, label: 'Поиск продукта', action: () => onOpenSearch?.(activeActionMeal) },
+          { icon: <Ic name="camera" color={theme.accent} size={20} r={5} raw />, label: 'Фото еды', action: () => onOpenSearch?.(activeActionMeal, 'photo') },
+          { icon: <Ic name="barcode" color={theme.accent} size={20} r={5} raw />, label: 'Сканировать штрихкод', action: () => onOpenSearch?.(activeActionMeal, 'barcode') },
+          { icon: <Ic name="edit" color={theme.accent} size={20} r={5} raw />, label: 'Ввести вручную', action: () => onOpenSearch?.(activeActionMeal, 'manual') },
           {
-            icon: '📋', label: 'Из шаблона', action: async () => {
+            icon: <Ic name="note" color={theme.accent} size={20} r={5} raw />, label: 'Из шаблона', action: async () => {
               const presets = await getMealPresets();
               if (!presets.length) { showToast('Нет сохранённых шаблонов'); return; }
-              setPresetOptions(presets.map(p => ({ value: p.id, label: p.name, icon: '📋' })));
+              setPresetOptions(presets.map(p => ({ value: p.id, label: p.name, icon: <Ic name="note" color={theme.accent} size={16} r={4} raw /> })));
               setPresetPickMeal(activeActionMeal);
             }
           },

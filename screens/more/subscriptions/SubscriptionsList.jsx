@@ -6,6 +6,7 @@ import EmptyState from '../../../components/EmptyState';
 import ConfirmSheet from '../../../components/ConfirmSheet';
 import SkeletonCard from '../../../components/SkeletonCard';
 import { fmtMoney } from '../../../utils/currency';
+import Ic from '../../../components/Icon';
 import {
   getMonthlyTotal,
   getYearlyTotal,
@@ -149,7 +150,7 @@ export default function SubscriptionsList({ theme, onBack, onAdd, onEdit }) {
         <NavHeader title="Подписки" onBack={onBack} left theme={theme} />
         <div className="flex-1 flex items-center justify-center px-4">
           <EmptyState
-            icon="🔄"
+            iconName="subscription" iconColor={theme.accent}
             title="Нет подписок"
             subtitle="Добавьте первую подписку"
             tip="Отслеживайте все подписки — видите сколько тратите в месяц"
@@ -209,7 +210,7 @@ export default function SubscriptionsList({ theme, onBack, onAdd, onEdit }) {
                   {reminders.map((r) => (
                     <div key={r.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span>{r.icon || '💳'}</span>
+                        <span>{r.icon || <Ic name="card" color={theme.accent} size={20} r={5} />}</span>
                         <span className="text-sm" style={{ color: theme.text }}>{r.name}</span>
                       </div>
                       <div className="text-right">
@@ -339,7 +340,7 @@ export default function SubscriptionsList({ theme, onBack, onAdd, onEdit }) {
             {cancelled.length === 0 ? (
               <Card theme={theme}>
                 <div className="text-center py-8">
-                  <div className="text-4xl mb-3">✅</div>
+                  <div className="mb-3"><Ic name="check" color={theme.green} size={48} r={14} /></div>
                   <div className="text-sm" style={{ color: theme.gray1 }}>Нет отменённых подписок</div>
                 </div>
               </Card>
@@ -349,7 +350,7 @@ export default function SubscriptionsList({ theme, onBack, onAdd, onEdit }) {
                   <div key={sub.id || i}>
                     {i > 0 && <div className="mx-4" style={{ borderTop: `0.5px solid ${theme.gray5}` }} />}
                     <div className="flex items-center px-4 py-3" style={{ opacity: 0.6 }}>
-                      <span className="text-xl mr-3">{sub.icon || '💳'}</span>
+                      <span className="mr-3">{sub.icon || <Ic name="card" color={theme.gray2} size={24} r={6} />}</span>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-medium truncate" style={{ color: theme.text }}>
                           {sub.name}

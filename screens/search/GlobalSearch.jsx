@@ -7,6 +7,7 @@ import { useState, useCallback, useRef } from 'react';
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
+import Ic from '../../components/Icon';
 // ALLOWED EXCEPTION: GlobalSearch iterates multiple tables dynamically by name
 import db from '../../db/index';
 
@@ -87,7 +88,7 @@ export default function GlobalSearch({ theme, onBack, onNavigate }) {
       <div className="px-4 pb-24">
         {/* Search input */}
         <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-4" style={{ background: theme.card }}>
-          <span className="text-base" style={{ color: theme.gray2 }}>🔍</span>
+          <Ic name="target" color={theme.gray2} size={18} r={5} raw />
           <FormInput value={query} onChange={handleInput} placeholder="Поиск по всем модулям..." theme={theme} />
           {query && (
             <button onClick={() => { setQuery(''); setResults([]); }}
@@ -102,7 +103,7 @@ export default function GlobalSearch({ theme, onBack, onNavigate }) {
 
         {!searching && query.length >= 2 && results.length === 0 && (
           <div className="text-center py-8">
-            <div className="text-3xl mb-2">🔍</div>
+            <div className="mb-2"><Ic name="target" color={theme.gray2} size={36} r={10} /></div>
             <div className="text-sm" style={{ color: theme.gray2 }}>Ничего не найдено</div>
           </div>
         )}
@@ -137,7 +138,7 @@ export default function GlobalSearch({ theme, onBack, onNavigate }) {
 
         {!query && (
           <EmptyState
-            icon="🔍"
+            iconName="target" iconColor={theme.accent}
             title="Глобальный поиск"
             subtitle="Ищет по задачам, заметкам, расходам, подпискам, документам и событиям"
             tip="Введите от 2 символов. Поиск работает по всем модулям одновременно."

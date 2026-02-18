@@ -26,7 +26,7 @@ export default function WeightWidget({ theme, onNavigate, size = 'wide' }) {
   const deltaLabel = delta === null ? '' : (delta > 0 ? '+' : '') + delta.toFixed(1);
 
   return (
-    <WidgetCard title="Вес" icon="⚖️" color={color} theme={theme} size={size} onClick={() => onNavigate?.('sport')}>
+    <WidgetCard title="Вес" iconName="weight" color={color} theme={theme} size={size} onClick={() => onNavigate?.('sport')}>
       {size === 'wide' ? (
         <div className="flex items-center justify-between">
           <div>

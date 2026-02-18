@@ -28,13 +28,13 @@ function autoCategory(name) {
 
 export async function addItem(name, category, quantity) {
   try {
-    const maxOrder = await db.shopping_list.orderBy('sort_order').last();
+    const count = await db.shopping_list.count();
     const record = {
       name: name.trim(),
       category: category || autoCategory(name),
       quantity: quantity || null,
       checked: false,
-      sort_order: (maxOrder?.sort_order || 0) + 1,
+      sort_order: count + 1,
       created_at: new Date().toISOString(),
     };
     const id = await db.shopping_list.add(record);
@@ -106,7 +106,7 @@ export async function getItems() {
 
   } catch (e) {
     console.error('[shopping.getItems]', e);
-    return [];
+    return { unchecked: new Map(), checked: [] };
   }
 }
 

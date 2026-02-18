@@ -14,6 +14,14 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, errorInfo) {
     console.error(`LifeOS [${this.props.module || 'unknown'}]:`, error, errorInfo);
+    // Persist to logger
+    import('../lib/logger').then(({ logError }) => {
+      logError(`RENDER_CRASH [${this.props.module || 'unknown'}]: ${error?.message}`, [
+        error?.stack || '',
+        'Component stack:',
+        errorInfo?.componentStack || 'none',
+      ].join('\n'));
+    }).catch(() => {});
   }
 
   handleRetry = () => {

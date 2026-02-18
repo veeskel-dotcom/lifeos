@@ -262,7 +262,7 @@ export default function SportModule({ theme, onBack }) {
   };
 
   return (
-    <>
+    <div style={{ minHeight: '100vh', background: theme.bg }}>
       <FadeIn key={view}>{renderView()}</FadeIn>
       <ConfirmSheet
         open={!!confirmDialog}
@@ -273,6 +273,6 @@ export default function SportModule({ theme, onBack }) {
         onConfirm={() => { confirmDialog?.onConfirm?.(); setConfirmDialog(null); }}
         theme={theme}
       />
-    </>
+    </div>
   );
 }

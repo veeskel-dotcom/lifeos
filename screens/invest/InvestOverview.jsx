@@ -6,6 +6,7 @@ import { getPortfolio, getPortfolioValue, getDailyChange } from '../../services/
 import { getDividendYield } from '../../services/dividends';
 import { refreshIfStale } from '../../services/quotes';
 import { fmtMoney } from '../../utils/currency';
+import Ic from '../../components/Icon';
 
 export default function InvestOverview({ theme, onNavigate }) {
   const [assets, setAssets] = useState([]);
@@ -101,10 +102,7 @@ export default function InvestOverview({ theme, onNavigate }) {
                   onClick={() => onNavigate?.('brokerDetail', b.name)}
                   className="flex items-center cursor-pointer"
                   style={{ gap: 10, padding: '14px 14px', borderBottom: i < brokers.length - 1 ? `0.5px solid ${theme.gray5}` : 'none' }}>
-                  <div className="flex items-center justify-center shrink-0"
-                    style={{ width: 40, height: 40, borderRadius: 12, background: (bIsUp ? theme.green : theme.red) + '10' }}>
-                    <span style={{ fontSize: 18 }}>📈</span>
-                  </div>
+                  <Ic name="trend" color={bIsUp ? theme.green : theme.red} size={40} r={12} />
                   <div className="flex-1 min-w-0">
                     <div style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>{b.name}</div>
                     <div style={{ fontSize: 12, color: theme.gray2 }}>
@@ -126,7 +124,7 @@ export default function InvestOverview({ theme, onNavigate }) {
         </>
       ) : !loading ? (
         <EmptyState
-          icon="📈"
+          icon={<Ic name="trend" color={theme.accent} size={48} r={14} />}
           title="Портфель пуст"
           subtitle="Добавьте первую сделку"
           tip="Портфель, дивиденды и налоги — всё в одном месте"
@@ -168,10 +166,7 @@ export default function InvestOverview({ theme, onNavigate }) {
       <div style={{ padding: '0 0 4px', fontSize: 12, fontWeight: 600, color: theme.gray1 }}>ИМПОРТ</div>
       <Card theme={theme} style={{ padding: 0, overflow: 'hidden', marginBottom: 8 }}>
         <div className="flex items-center cursor-pointer" style={{ gap: 10, padding: '12px 14px', borderBottom: `0.5px solid ${theme.gray5}` }}>
-          <div className="flex items-center justify-center shrink-0"
-            style={{ width: 28, height: 28, borderRadius: 7, background: (theme.orange || '#FF9500') + '18' }}>
-            <span style={{ fontSize: 14 }}>📷</span>
-          </div>
+          <Ic name="camera" color={theme.orange || '#FF9500'} size={28} r={7} />
           <div className="flex-1">
             <div style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>Фото отчёта</div>
             <div style={{ fontSize: 12, color: theme.gray2 }}>AI распознает позиции</div>
@@ -179,10 +174,7 @@ export default function InvestOverview({ theme, onNavigate }) {
           <span style={{ color: theme.gray3 }}>→</span>
         </div>
         <div className="flex items-center cursor-pointer" style={{ gap: 10, padding: '12px 14px', borderBottom: `0.5px solid ${theme.gray5}` }}>
-          <div className="flex items-center justify-center shrink-0"
-            style={{ width: 28, height: 28, borderRadius: 7, background: (theme.accent) + '18' }}>
-            <span style={{ fontSize: 14 }}>📤</span>
-          </div>
+          <Ic name="share" color={theme.accent} size={28} r={7} />
           <div className="flex-1">
             <div style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>PDF/Excel от брокера</div>
             <div style={{ fontSize: 12, color: theme.gray2 }}>Загрузить документ</div>
@@ -190,10 +182,7 @@ export default function InvestOverview({ theme, onNavigate }) {
           <span style={{ color: theme.gray3 }}>→</span>
         </div>
         <div className="flex items-center cursor-pointer" style={{ gap: 10, padding: '12px 14px' }}>
-          <div className="flex items-center justify-center shrink-0"
-            style={{ width: 28, height: 28, borderRadius: 7, background: (theme.purple || '#AF52DE') + '18' }}>
-            <span style={{ fontSize: 14 }}>📝</span>
-          </div>
+          <Ic name="edit" color={theme.purple || '#AF52DE'} size={28} r={7} />
           <div className="flex-1">
             <div style={{ fontSize: 14, color: theme.text }}>Добавить счёт вручную</div>
           </div>

@@ -13,6 +13,7 @@
  * API совместим с текущим: navigate(screen, data), goBack()
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { logNav } from '../lib/logger';
 
 /**
  * @param {Function} onStackChange — вызывается при изменении стека,
@@ -22,9 +23,15 @@ export function useRouter(onStackChange) {
   const stackRef = useRef([]);
   const [current, setCurrent] = useState(null);
   const isPopState = useRef(false);
+  const navLockRef = useRef(false);
 
   // ── Push: navigate to a sub-screen ──
   const navigate = useCallback((screen, data) => {
+    // Prevent rapid-tap desync: ignore navigate if one is already in progress
+    if (navLockRef.current) return;
+    navLockRef.current = true;
+    setTimeout(() => { navLockRef.current = false; }, 200);
+
     const entry = { screen, ...(data || {}) };
     stackRef.current = [...stackRef.current, entry];
     setCurrent(entry);
@@ -41,7 +48,11 @@ export function useRouter(onStackChange) {
   }, []);
 
   // ── Pop: go back one level ──
-  const goBack = useCallback(() => {
+  // force=true bypasses navLock (used by popstate handler)
+  const goBack = useCallback((force = false) => {
+    if (!force && navLockRef.current) return;
+    navLockRef.current = true;
+    setTimeout(() => { navLockRef.current = false; }, 200);
     const stack = stackRef.current;
 
     if (stack.length > 0) {
@@ -61,6 +72,7 @@ export function useRouter(onStackChange) {
   // ── Reset: clear stack (tab switch) ──
   const reset = useCallback(() => {
     const depth = stackRef.current.length;
+    logNav('RESET', 'stack', { depth, screens: stackRef.current.map(s => s.screen) });
     stackRef.current = [];
     setCurrent(null);
 
@@ -76,12 +88,16 @@ export function useRouter(onStackChange) {
   // ── popstate listener ──
   useEffect(() => {
     const handler = (e) => {
-      // Проверяем: это наш pushState или внешний?
-      // Если стек пуст — ничего не делаем (не мешаем browser default)
-      if (stackRef.current.length === 0) return;
+      // Если стек пуст — предотвращаем выход из PWA
+      if (stackRef.current.length === 0) {
+        logNav('POPSTATE_EMPTY', 'root', { state: e.state });
+        try { window.history.pushState({ lifeos: true, root: true }, ''); } catch {}
+        return;
+      }
 
+      logNav('POPSTATE', stackRef.current[stackRef.current.length - 1]?.screen || '?', { depth: stackRef.current.length, state: e.state });
       isPopState.current = true;
-      goBack();
+      goBack(true); // force=true: popstate must always execute
 
       // Сбрасываем флаг после microtask
       Promise.resolve().then(() => {

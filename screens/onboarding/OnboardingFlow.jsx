@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { setSetting, setProfile } from '../../db/helpers';
 import { runSeeds } from '../../db/seed';
-import { loadDemoData } from '../../db/demoSeed';
 import Card from '../../components/Card';
 import { isPinBanned, pinStrength, createPIN } from '../../security/pin';
 import { setupEnvelopeEncryption } from '../../security/crypto';
@@ -9,6 +8,7 @@ import { getSymbolForCode, getCurrencyCode } from '../../utils/currency';
 
 import { CURRENCIES } from '../../utils/constants';
 import FormInput from '../../components/FormInput';
+import Ic from '../../components/Icon';
 
 export default function OnboardingFlow({ theme, onComplete }) {
   const [step, setStep] = useState(1);
@@ -116,8 +116,7 @@ export default function OnboardingFlow({ theme, onComplete }) {
       // 5. Mark onboarding complete
       await setSetting('has_completed_onboarding', true);
 
-      // 6. Load demo data so dashboard isn't empty
-      try { await loadDemoData(); } catch (e) { console.warn('Demo seed failed:', e); }
+      // Demo data is available via Settings → Data if needed
 
       if (!recoveryKey) {
         // No recovery key to show, complete immediately
@@ -136,7 +135,7 @@ export default function OnboardingFlow({ theme, onComplete }) {
   if (recoveryKey) {
     return (
       <div className="flex flex-col min-h-screen items-center justify-center px-6" style={{ background: theme.bg }}>
-        <div className="text-5xl mb-4">🔑</div>
+        <div className="mb-4"><Ic name="lock" color={theme.accent} size={56} r={16} /></div>
         <h1 className="text-2xl font-bold mb-2 text-center" style={{ color: theme.text }}>
           Recovery Key
         </h1>
@@ -358,7 +357,7 @@ export default function OnboardingFlow({ theme, onComplete }) {
         {step === 5 && (
           <div className="space-y-4 pt-4">
             <div className="text-center mb-2">
-              <div className="text-4xl mb-2">🔒</div>
+              <div className="mb-2"><Ic name="lock" color={theme.accent} size={48} r={14} /></div>
               <h2 className="text-xl font-bold" style={{ color: theme.text }}>Защита данных</h2>
             </div>
 

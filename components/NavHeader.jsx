@@ -31,7 +31,7 @@ export default function NavHeader({ title, left, right, rightAction, onBack, the
             justifyContent: 'center',
           }}
         >
-          ← {left || ''}
+          ‹ {left || ''}
         </button>
       ) : (
         <span style={{ fontSize: 13, color: theme?.gray1 || '#8E8E93', minWidth: 60 }}>

@@ -15,6 +15,7 @@ import { getDishes, toggleDishFavorite, deleteDish } from '../../services/dishes
 import ScreenWrapper from '../../components/ScreenWrapper';
 import ConfirmSheet from '../../components/ConfirmSheet';
 import SkeletonCard from '../../components/SkeletonCard';
+import Ic from '../../components/Icon';
 
 const SUB_TABS = [
   { key: 'diary', label: 'Дневник' },
@@ -188,7 +189,7 @@ function DishesTab({ theme, onCreateDish }) {
 
       {dishes.length === 0 && loaded && (
         <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-          <div className="text-5xl mb-4">🍳</div>
+          <div className="mb-4"><Ic name="food" color={theme.accent} size={48} r={14} /></div>
           <div className="text-lg font-bold mb-2" style={{ color: theme.text }}>Нет блюд</div>
           <div className="text-sm mb-6" style={{ color: theme.gray1 }}>Создайте первое блюдо из продуктов</div>
           <button
@@ -204,7 +205,7 @@ function DishesTab({ theme, onCreateDish }) {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-semibold" style={{ color: theme.text }}>
-                {dish.is_favorite && '⭐ '}{dish.name}
+                {dish.is_favorite && <><Ic name="star" color={theme.orange} size={14} r={3} raw /> </>}{dish.name}
               </div>
               <div className="text-xs mt-0.5" style={{ color: theme.gray1 }}>
                 {dish.total_calories} ккал · Б {dish.total_protein} · Ж {dish.total_fat} · У {dish.total_carbs}
@@ -220,7 +221,7 @@ function DishesTab({ theme, onCreateDish }) {
                 className="text-sm"
                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}
               >
-                {dish.is_favorite ? '⭐' : '☆'}
+                {dish.is_favorite ? <Ic name="star" color={theme.orange} size={18} r={4} raw /> : '☆'}
               </button>
               <button
                 onClick={() => setConfirmDelete(dish.id)}
