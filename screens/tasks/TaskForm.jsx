@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import NavHeader from '../../components/NavHeader';
 import { addTask } from '../../services/tasks';
 import { createReminder } from '../../services/reminders';
@@ -38,12 +38,18 @@ export default function TaskForm({ theme, onBack }) {
     getActiveProjects().then(setProjects);
   }, []);
 
+  const savingRef = useRef(false);
+  const titleRef = useRef(null);
+  useEffect(() => { const t = setTimeout(() => titleRef.current?.focus(), 350); return () => clearTimeout(t); }, []);
+
   const handleSave = async () => {
+    if (savingRef.current) return;
     const e = {};
     if (!title.trim()) e.title = 'Введите название задачи';
     if (Object.keys(e).length) { setErrors(e); return; }
     setErrors({});
 
+    savingRef.current = true;
     const task = await addTask({
       title: title.trim(),
       description,
@@ -88,7 +94,7 @@ export default function TaskForm({ theme, onBack }) {
           className="w-full text-lg font-semibold outline-none mb-1 rounded-xl px-4 py-3"
           style={{ color: theme.text, background: theme.gray6, border: errors.title ? `1px solid ${theme.red}` : 'none' }}
           placeholder="Название задачи"
-          autoFocus
+          ref={titleRef}
         />
         {errors.title && <span className="text-xs mb-2 block px-1" style={{ color: theme.red }}>{errors.title}</span>}
 

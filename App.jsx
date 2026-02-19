@@ -351,8 +351,8 @@ function AppContent({ theme, setTheme }) {
     router.navigate(screen, data);
   }, [router]);
 
-  // Expose for Playwright smoke tests (harmless in prod)
-  if (typeof window !== 'undefined') window.__LIFEOS_NAV = navigate;
+  // Expose for Playwright smoke tests (dev only)
+  if (typeof window !== 'undefined' && import.meta.env.DEV) window.__LIFEOS_NAV = navigate;
 
   const goBack = useCallback(() => {
     if (appNavLockRef.current) return;

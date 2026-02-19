@@ -26,13 +26,13 @@ export function getCurrencyCode() {
 
 /** Форматированная сумма: 15 000₽ */
 export function fmtMoney(n, symbol) {
-  if (n == null) return `0${symbol || getCurrencySymbol()}`;
+  if (n == null || Number.isNaN(n)) return `0${symbol || getCurrencySymbol()}`;
   return Math.round(n).toLocaleString('ru-RU') + (symbol || getCurrencySymbol());
 }
 
 /** Форматированная сумма с дробными: 15 000.50₽ */
 export function fmtMoneyFrac(n, decimals = 2, symbol) {
-  if (n == null) return `0${symbol || getCurrencySymbol()}`;
+  if (n == null || Number.isNaN(n)) return `0${symbol || getCurrencySymbol()}`;
   return Number(n).toLocaleString('ru-RU', { maximumFractionDigits: decimals }) + (symbol || getCurrencySymbol());
 }
 

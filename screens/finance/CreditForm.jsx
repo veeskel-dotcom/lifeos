@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import IOSKeyboardSpacer from '../../components/IOSKeyboardSpacer';
 import ConfirmSheet from '../../components/ConfirmSheet';
 import { getCurrencySymbol, getCurrencyCode } from '../../utils/currency';
@@ -60,7 +60,9 @@ export default function CreditForm({ credit, onSave, onDelete, onClose, theme })
     }
   };
 
+  const savingRef = useRef(false);
   const handleSubmit = () => {
+    if (savingRef.current) return;
     if (!name || !totalAmount || !remainingAmount) return;
 
     // Compute next_payment_date from payment_day
@@ -86,6 +88,7 @@ export default function CreditForm({ credit, onSave, onDelete, onClose, theme })
       end_date: endDate || null,
     };
     if (credit?.id) data.id = credit.id;
+    savingRef.current = true;
     onSave(data);
   };
 

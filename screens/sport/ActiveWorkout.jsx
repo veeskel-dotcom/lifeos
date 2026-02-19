@@ -109,8 +109,9 @@ export default function ActiveWorkout({ workoutId, workout: initialWorkout, them
       return;
     }
     if (!inputWeight || !inputReps) return;
-    const weight = parseFloat(inputWeight);
-    const reps = parseInt(inputReps);
+    const weight = parseFloat(inputWeight) || 0;
+    const reps = parseInt(inputReps) || 0;
+    if (reps <= 0) return;
 
     await addSet(workoutId, exIdx, { weight, reps, isWarmup: false });
 

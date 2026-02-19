@@ -1,6 +1,6 @@
 import db from '../db/index';
 import { convert } from './currencies';
-import { getSetting } from '../db/helpers';
+import { getSetting, setSetting } from '../db/helpers';
 import { emit } from './triggerBus';
 
 /* ── Helpers ── */
@@ -197,7 +197,7 @@ export async function getMonthlyStats(month) {
 
   } catch (e) {
     console.error('[expenses.getMonthlyStats]', e);
-    return [];
+    return { total: 0, byCategory: [], byDay: [] };
   }
 }
 
@@ -234,7 +234,7 @@ export async function getTodayStats() {
 
   } catch (e) {
     console.error('[expenses.getTodayStats]', e);
-    return [];
+    return { spent: 0, count: 0, dailyLimit: 0 };
   }
 }
 
@@ -261,7 +261,7 @@ export async function getWeeklyStats() {
 
   } catch (e) {
     console.error('[expenses.getWeeklyStats]', e);
-    return [];
+    return { spent: 0, avg: 0 };
   }
 }
 
@@ -397,7 +397,7 @@ export async function getDailyBudgetRemaining() {
     const daily = Math.round(monthly / daysInMonth);
     const today = now.toISOString().slice(0, 10);
     const expenses = await db.expenses.where('date').equals(today).toArray();
-    const spent = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const spent = expenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0);
     return { daily, remaining: daily - spent };
   } catch {
     return null;

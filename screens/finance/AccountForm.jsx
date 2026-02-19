@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import IOSKeyboardSpacer from '../../components/IOSKeyboardSpacer';
 import ConfirmSheet from '../../components/ConfirmSheet';
 import FormInput from '../../components/FormInput';
@@ -47,7 +47,9 @@ export default function AccountForm({ account, onSave, onDelete, onClose, theme 
     }
   }, [account]);
 
+  const savingRef = useRef(false);
   const handleSubmit = () => {
+    if (savingRef.current) return;
     if (!name || !bank || balance === '') return;
     const data = {
       name, bank, type, currency,
@@ -57,6 +59,7 @@ export default function AccountForm({ account, onSave, onDelete, onClose, theme 
       next_payment_date: type === 'credit' && paymentDay ? paymentDay : null,
     };
     if (account?.id) data.id = account.id;
+    savingRef.current = true;
     onSave(data);
   };
 

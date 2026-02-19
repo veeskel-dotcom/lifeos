@@ -66,9 +66,10 @@ function renderMarkdown(text, theme) {
     if (line.startsWith('- '))
       return <p key={i} className="text-sm ml-2" style={{ color: theme.text }}>• {line.slice(2)}</p>;
 
-    // Bold
-    const bold = line.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-    if (bold !== line)
+    // Bold (escape HTML first to prevent XSS)
+    const escaped = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const bold = escaped.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+    if (bold !== escaped)
       return <p key={i} className="text-sm" style={{ color: theme.text }} dangerouslySetInnerHTML={{ __html: bold }} />;
 
     // Empty line

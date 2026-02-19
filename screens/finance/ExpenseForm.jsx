@@ -124,7 +124,9 @@ export default function ExpenseForm({ expense, onSave, onDelete, onClose, theme 
     setCatLoading(false);
   }, [description, amount, categoryId, catLoading]);
 
+  const savingRef = useRef(false);
   const handleSubmit = () => {
+    if (savingRef.current) return;
     /* M3.3: validate */
     const e = {};
     if (!amount || parseFloat(amount) <= 0) e.amount = 'Укажите сумму';
@@ -151,6 +153,7 @@ export default function ExpenseForm({ expense, onSave, onDelete, onClose, theme 
       split_people: isSplit ? splitPeople : null,
     };
     if (expense?.id) data.id = expense.id;
+    savingRef.current = true;
     onSave(data);
   };
 

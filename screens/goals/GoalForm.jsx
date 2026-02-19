@@ -1,7 +1,7 @@
 /**
  * GoalForm — создание новой цели.
  */
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import NavHeader from '../../components/NavHeader';
 import { addGoal, GOAL_TYPES } from '../../services/goals';
 import FormInput from '../../components/FormInput';
@@ -18,7 +18,9 @@ export default function GoalForm({ theme, onBack }) {
 
   const selectedType = GOAL_TYPES.find(t => t.type === type);
 
+  const savingRef = useRef(false);
   const handleSave = async () => {
+    if (savingRef.current) return;
     if (!type) return;
     const e = {};
     const target = parseFloat(targetValue);
@@ -27,6 +29,7 @@ export default function GoalForm({ theme, onBack }) {
     if (Object.keys(e).length) { setErrors(e); return; }
     setErrors({});
 
+    savingRef.current = true;
     await addGoal({
       type,
       title: type === 'custom' ? title : selectedType?.label,

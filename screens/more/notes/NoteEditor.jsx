@@ -21,7 +21,10 @@ function renderMarkdown(md) {
     .replace(/^\- (.+)$/gm, '<li style="margin-left:1.2em;list-style:disc">$1</li>')
     .replace(/^\d+\. (.+)$/gm, '<li style="margin-left:1.2em;list-style:decimal">$1</li>')
     .replace(/^(?:---|___|\*\*\*)$/gm, '<hr style="border:none;border-top:1px solid rgba(128,128,128,0.2);margin:0.8em 0">')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:#007AFF;text-decoration:underline">$1</a>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, (_, text, url) => {
+      const safe = /^(https?:|mailto:|tel:|#|\/)/i.test(url) ? url : '#';
+      return `<a href="${safe}" style="color:#007AFF;text-decoration:underline">${text}</a>`;
+    })
     .replace(/\n/g, '<br>');
 }
 
@@ -270,7 +273,7 @@ export default function NoteEditor({ theme, onBack, onSave, existing }) {
       {/* Proto S3: bottom toolbar */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
-        padding: '10px 16px 30px',
+        padding: '10px 16px', paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 20px))',
         background: theme.card,
         borderTop: `0.5px solid ${theme.gray5}`,
         display: 'flex', gap: 18, justifyContent: 'center',

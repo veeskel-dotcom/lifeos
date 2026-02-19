@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getCurrencySymbol, getCurrencyCode } from '../../utils/currency';
 import { useAccounts } from '../../hooks/useDB';
 import CategoryPicker from './CategoryPicker';
@@ -51,7 +51,9 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
     }
   };
 
+  const savingRef = useRef(false);
   const handleSubmit = () => {
+    if (savingRef.current) return;
     const e = {};
     if (!amount || parseFloat(amount) <= 0) e.amount = 'Укажите сумму';
     if (!categoryId) e.category = 'Выберите категорию';
@@ -72,6 +74,7 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
       created_at: income?.created_at || new Date().toISOString(),
     };
     if (income?.id) data.id = income.id;
+    savingRef.current = true;
     onSave(data);
   };
 
@@ -186,7 +189,7 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
       <IOSKeyboardSpacer />
       <SelectSheet open={showAccountSheet} onClose={() => setShowAccountSheet(false)}
         title="Счёт" options={accounts?.map(a => ({ id: a.id, label: a.name || a.bank })) || []}
-        value={accountId} onSelect={setAccountId} theme={theme} />
+        value={accountId} onSelect={id => setAccountId(Number(id))} theme={theme} />
       <ConfirmSheet
         open={!!confirmDelete}
         onClose={() => setConfirmDelete(null)}
