@@ -120,7 +120,7 @@ export default function InvestModule({ theme, onBack, onToast, onNavigate, initi
             }
             theme={theme}
           />
-          <InvestOverview theme={theme} onNavigate={navigate} />
+          <InvestOverview theme={theme} onNavigate={navigate} onToast={onToast} />
         </>
       );
   }

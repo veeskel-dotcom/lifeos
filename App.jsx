@@ -79,7 +79,12 @@ export default function App() {
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = () => setTheme(getThemeColors('system'));
+    const handler = () => {
+      // Only react to system changes when theme is 'system' (or not set)
+      getSetting('theme').then(saved => {
+        if (!saved || saved === 'system') setTheme(getThemeColors('system'));
+      });
+    };
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
@@ -289,6 +294,11 @@ function AppContent({ theme, setTheme }) {
         await runDataMigrations(db);
       } catch (e) { console.warn('[migrations]', e); }
       await loadCurrency();
+      // A2: Restore saved theme preference
+      const savedTheme = await getSetting('theme');
+      if (savedTheme && savedTheme !== 'system') {
+        setTheme(getThemeColors(savedTheme));
+      }
       const done = await getSetting('has_completed_onboarding');
       logLifecycle('ONBOARDING_CHECK', { done: !!done });
       setOnboarded(!!done);
@@ -628,7 +638,7 @@ function AppContent({ theme, setTheme }) {
         return (
           <SettingsModule
             theme={theme}
-            setTheme={setTheme}
+            onThemeChange={setTheme}
             initialView={sub?.subScreen}
             onBack={goBack}
           />
@@ -651,7 +661,7 @@ function AppContent({ theme, setTheme }) {
       case 'finances':
         return <FinancesModule theme={theme} initialView={sub?.subScreen} onBack={goBack} onNavigate={navigate} onToast={showToast} />;
       case 'invest':
-        return <InvestModule theme={theme} initialView={sub?.subScreen} onBack={goBack} onToast={showToast} />;
+        return <InvestModule theme={theme} initialView={sub?.subScreen} onBack={goBack} onNavigate={navigate} onToast={showToast} />;
       case 'sport':
       case 'body':
         return <SportModule theme={theme} initialView={sub?.subScreen} onBack={goBack} />;

@@ -334,7 +334,7 @@ export default function NotesList({ theme, onBack, onAdd, onEdit }) {
         </button>
 
         {/* Add buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <button
             onClick={onAdd}
             className="flex-1 py-3.5 rounded-xl text-white text-base font-semibold"

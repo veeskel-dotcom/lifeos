@@ -8,7 +8,7 @@ import { refreshIfStale } from '../../services/quotes';
 import { fmtMoney } from '../../utils/currency';
 import Ic from '../../components/Icon';
 
-export default function InvestOverview({ theme, onNavigate }) {
+export default function InvestOverview({ theme, onNavigate, onToast }) {
   const [assets, setAssets] = useState([]);
   const [totalValue, setTotalValue] = useState(0);
   const [dailyChange, setDailyChange] = useState(0);
@@ -165,7 +165,7 @@ export default function InvestOverview({ theme, onNavigate }) {
       {/* ИМПОРТ */}
       <div style={{ padding: '0 0 4px', fontSize: 12, fontWeight: 600, color: theme.gray1 }}>ИМПОРТ</div>
       <Card theme={theme} style={{ padding: 0, overflow: 'hidden', marginBottom: 8 }}>
-        <div className="flex items-center cursor-pointer" style={{ gap: 10, padding: '12px 14px', borderBottom: `0.5px solid ${theme.gray5}` }}>
+        <div className="flex items-center cursor-pointer" onClick={() => onToast?.('📸 Фото-импорт в разработке')} style={{ gap: 10, padding: '12px 14px', borderBottom: `0.5px solid ${theme.gray5}` }}>
           <Ic name="camera" color={theme.orange || '#FF9500'} size={28} r={7} />
           <div className="flex-1">
             <div style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>Фото отчёта</div>
@@ -173,7 +173,7 @@ export default function InvestOverview({ theme, onNavigate }) {
           </div>
           <span style={{ color: theme.gray3 }}>→</span>
         </div>
-        <div className="flex items-center cursor-pointer" style={{ gap: 10, padding: '12px 14px', borderBottom: `0.5px solid ${theme.gray5}` }}>
+        <div className="flex items-center cursor-pointer" onClick={() => onToast?.('📄 Импорт документов в разработке')} style={{ gap: 10, padding: '12px 14px', borderBottom: `0.5px solid ${theme.gray5}` }}>
           <Ic name="share" color={theme.accent} size={28} r={7} />
           <div className="flex-1">
             <div style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>PDF/Excel от брокера</div>
@@ -181,7 +181,7 @@ export default function InvestOverview({ theme, onNavigate }) {
           </div>
           <span style={{ color: theme.gray3 }}>→</span>
         </div>
-        <div className="flex items-center cursor-pointer" style={{ gap: 10, padding: '12px 14px' }}>
+        <div className="flex items-center cursor-pointer" onClick={() => onNavigate?.('tradeForm')} style={{ gap: 10, padding: '12px 14px' }}>
           <Ic name="note" color={theme.purple || '#AF52DE'} size={28} r={7} />
           <div className="flex-1">
             <div style={{ fontSize: 14, color: theme.text }}>Добавить счёт вручную</div>

@@ -64,7 +64,7 @@ export default function NavHeader({ title, left, right, rightAction, onBack, the
           {rightAction.label}
         </button>
       ) : (
-        <span style={{ fontSize: 13, color: theme?.accent || '#007AFF', cursor: 'pointer', minWidth: 60, textAlign: 'right' }}>
+        <span style={{ fontSize: 13, color: theme?.accent || '#007AFF', minWidth: 60, textAlign: 'right' }}>
           {right || ''}
         </span>
       )}

@@ -68,7 +68,14 @@ export default function FinancesModule({ theme, onBack, initialView, mode, editI
       budgets: 'overview',
       utilities: 'overview',
     };
-    setView(backMap[view] || 'overview');
+    const target = backMap[view] || 'overview';
+    // If opened directly in a sub-view (e.g. mode='expenses') and going back
+    // would reach 'overview', exit the module instead
+    if (target === 'overview' && initialScreen !== 'overview') {
+      onBack?.();
+      return;
+    }
+    setView(target);
     setEditItem(null);
     setFilterAccountId(null);
   };

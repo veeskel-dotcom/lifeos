@@ -16,6 +16,7 @@ import ScreenWrapper from '../../components/ScreenWrapper';
 import ConfirmSheet from '../../components/ConfirmSheet';
 import SkeletonCard from '../../components/SkeletonCard';
 import Ic from '../../components/Icon';
+import NavHeader from '../../components/NavHeader';
 
 const SUB_TABS = [
   { key: 'diary', label: 'Дневник' },
@@ -23,7 +24,7 @@ const SUB_TABS = [
   { key: 'shopping', label: 'Покупки' },
 ];
 
-export default function NutritionScreen({ theme }) {
+export default function NutritionScreen({ theme, onBack }) {
   const [subTab, setSubTab] = useState('diary');
   const [overlay, setOverlay] = useState(null);
   // overlay: null | { type: 'search', meal, mode? } | { type: 'manual', meal } | { type: 'dish' }
@@ -101,9 +102,13 @@ export default function NutritionScreen({ theme }) {
   return (
     <ScreenWrapper theme={theme}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-1">
-        <span style={{ fontSize: 28, fontWeight: 700, color: theme.text }}>Питание</span>
-      </div>
+      {onBack ? (
+        <NavHeader title="Питание" onBack={onBack} theme={theme} />
+      ) : (
+        <div className="flex items-center justify-between px-4 pt-3 pb-1">
+          <span style={{ fontSize: 28, fontWeight: 700, color: theme.text }}>Питание</span>
+        </div>
+      )}
 
       {/* Sub-tabs */}
       <div className="flex gap-1 mx-4 mt-1 p-1 rounded-xl" style={{ background: theme.gray6 }}>

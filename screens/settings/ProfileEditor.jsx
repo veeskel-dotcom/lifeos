@@ -83,7 +83,7 @@ export default function ProfileEditor({ theme, onBack }) {
             style={{ background: theme.accent + '15' }}>
             {name ? name.charAt(0).toUpperCase() : '👤'}
           </div>
-          <div className="text-sm mt-2 font-medium cursor-pointer" style={{ color: theme.accent }}>
+          <div className="text-sm mt-2 font-medium" style={{ color: theme.accent }}>
             Изменить фото
           </div>
         </div>
