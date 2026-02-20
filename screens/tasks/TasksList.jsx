@@ -10,6 +10,7 @@ import CalendarView from './CalendarView';
 import TutorialTip from '../../components/TutorialTip';
 import SkeletonCard from '../../components/SkeletonCard';
 import Ic from '../../components/Icon';
+import PullToRefresh from '../../components/PullToRefresh';
 
 const PRIORITY_COLORS = {
   urgent: '#FF3B30',
@@ -160,7 +161,8 @@ export default function TasksList({ theme, onBack, onNavigate, initialView, onTo
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto px-4 pb-24">
+      <PullToRefresh onRefresh={load} theme={theme}>
+      <div className="px-4 pb-24">
 
         <TutorialTip id="tasks_intro" theme={theme} icon={<Ic name="check" color={theme.green} size={20} r={5} />}>
           Фильтры вверху сортируют задачи. Свайпните задачу влево для удаления. Нажмите + для новой задачи.
@@ -283,6 +285,7 @@ export default function TasksList({ theme, onBack, onNavigate, initialView, onTo
         </>
         )}
       </div>
+      </PullToRefresh>
 
       {/* B1.4: Project assign sheet */}
       {assignSheet && (

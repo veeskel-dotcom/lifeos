@@ -6,6 +6,8 @@ import { addWeight, getLatest, getTrend, getGoal, getWeights, setWeightGoal, get
 import FormInput from '../../components/FormInput';
 import DatePicker from '../../components/DatePicker';
 import Ic from '../../components/Icon';
+import EmptyState from '../../components/EmptyState';
+import PullToRefresh from '../../components/PullToRefresh';
 
 
 function MiniChart({ data, goal, theme }) {
@@ -85,33 +87,43 @@ export default function BodyWeightLog({ theme, onBack }) {
     <div className="flex flex-col min-h-screen" style={{ background: theme.bg }}>
       <NavHeader title="Вес тела" onBack={onBack} left="Спорт" theme={theme} />
 
-      <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-4">
+      <PullToRefresh onRefresh={async () => { await new Promise(r => setTimeout(r, 400)); }} theme={theme}>
+      <div className="px-4 pb-24 space-y-4">
         {/* Текущий вес */}
-        <Card theme={theme}>
-          <div style={{ textAlign: 'center', padding: 16 }}>
-            <div style={{ fontSize: 12, color: theme.gray1 }}>Текущий вес</div>
-            <div style={{ color: theme.text, fontSize: 36, fontWeight: 700, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
-              {latest ? `${latest.weight}` : '—'} <span style={{ color: theme.gray2, fontSize: 18, fontWeight: 400 }}>кг</span>
+        {entries && entries.length === 0 ? (
+          <EmptyState
+            icon="⚖️" title="Нет записей"
+            subtitle="Начните отслеживать вес"
+            tip="Записывайте вес утром натощак для точности"
+            theme={theme}
+          />
+        ) : (
+          <Card theme={theme}>
+            <div style={{ textAlign: 'center', padding: 16 }}>
+              <div style={{ fontSize: 12, color: theme.gray1 }}>Текущий вес</div>
+              <div style={{ color: theme.text, fontSize: 36, fontWeight: 700, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+                {latest ? `${latest.weight}` : '—'} <span style={{ color: theme.gray2, fontSize: 18, fontWeight: 400 }}>кг</span>
+              </div>
+              {goal && (
+                <div style={{ color: theme.gray2, fontSize: 14, marginTop: 4 }}>
+                  Цель: {goal} кг
+                  {latest && ` · ${latest.weight > goal ? 'осталось' : 'набрать'} ${Math.abs(latest.weight - goal).toFixed(1)} кг`}
+                </div>
+              )}
+              {trend !== null && (
+                <div style={{ color: trend < 0 ? theme.green : trend > 0 ? theme.orange : theme.gray2, fontSize: 14, marginTop: 4 }}>
+                  Тренд: {trend > 0 ? '+' : ''}{trend} кг/нед
+                </div>
+              )}
+              {/* D3.3: Прогноз */}
+              {prediction?.message && (
+                <div style={{ display: 'inline-block', padding: '6px 12px', background: theme.accent + '15', color: theme.accent, fontSize: 12, marginTop: 8, paddingLeft: 12, paddingRight: 12, borderRadius: 8 }}>
+                  <Ic name="chart" color={theme.accent} size={14} r={3} raw /> {prediction.message}
+                </div>
+              )}
             </div>
-            {goal && (
-              <div style={{ color: theme.gray2, fontSize: 14, marginTop: 4 }}>
-                Цель: {goal} кг
-                {latest && ` · ${latest.weight > goal ? 'осталось' : 'набрать'} ${Math.abs(latest.weight - goal).toFixed(1)} кг`}
-              </div>
-            )}
-            {trend !== null && (
-              <div style={{ color: trend < 0 ? theme.green : trend > 0 ? theme.orange : theme.gray2, fontSize: 14, marginTop: 4 }}>
-                Тренд: {trend > 0 ? '+' : ''}{trend} кг/нед
-              </div>
-            )}
-            {/* D3.3: Прогноз */}
-            {prediction?.message && (
-              <div style={{ display: 'inline-block', padding: '6px 12px', background: theme.accent + '15', color: theme.accent, fontSize: 12, marginTop: 8, paddingLeft: 12, paddingRight: 12, borderRadius: 8 }}>
-                <Ic name="chart" color={theme.accent} size={14} r={3} raw /> {prediction.message}
-              </div>
-            )}
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* Stats row: от начала / цель / осталось */}
         {latest && goal && entries?.length >= 2 && (() => {
@@ -247,6 +259,7 @@ export default function BodyWeightLog({ theme, onBack }) {
           );
         })()}
       </div>
+      </PullToRefresh>
 
       <DatePicker open={showDatePicker} onClose={() => setShowDatePicker(false)} value={date} onChange={setDate} theme={theme} />
     </div>

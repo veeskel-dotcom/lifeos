@@ -32,6 +32,7 @@ const ICONS = {
 
 export default function TabBar({ active, onChange, onQuickAdd, theme, quickOpen }) {
   const lastTap = useRef({});
+  const isDark = theme.card === '#1C1C1E';
 
   const tabs = [
     { id: 'dashboard', icon: 'home', label: 'Главная' },
@@ -69,7 +70,7 @@ export default function TabBar({ active, onChange, onQuickAdd, theme, quickOpen 
       alignItems: 'center',
       height: 80,
       paddingBottom: 'env(safe-area-inset-bottom)',
-      background: 'rgba(255,255,255,0.97)',
+      background: isDark ? 'rgba(28,28,30,0.97)' : 'rgba(255,255,255,0.97)',
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
       borderTop: `0.5px solid ${theme.gray5}`,
@@ -102,7 +103,7 @@ export default function TabBar({ active, onChange, onQuickAdd, theme, quickOpen 
               background: theme.accent,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               marginTop: -16,
-              boxShadow: '0 4px 12px rgba(0,122,255,0.35)',
+              boxShadow: `0 4px 12px ${theme.accent}59`,
               transform: quickOpen ? 'rotate(45deg)' : 'rotate(0deg)',
               transition: 'transform 0.25s ease',
             }}>

@@ -9,6 +9,7 @@ import EmptyState from '../../components/EmptyState';
 import ConfirmSheet from '../../components/ConfirmSheet';
 import InputSheet from '../../components/InputSheet';
 import SkeletonCard from '../../components/SkeletonCard';
+import PullToRefresh from '../../components/PullToRefresh';
 import {
   getGoals, refreshAllGoals, completeGoal, deleteGoal, getProgress, updateGoal,
 } from '../../services/goals';
@@ -76,7 +77,8 @@ export default function GoalsScreen({ theme, onBack, onAdd }) {
         theme={theme}
       />
 
-      <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-3">
+      <PullToRefresh onRefresh={load} theme={theme}>
+      <div className="px-4 pb-24 space-y-3">
         {goals.length === 0 && completed.length === 0 ? (
           <EmptyState
             icon="🎯"
@@ -180,6 +182,7 @@ export default function GoalsScreen({ theme, onBack, onAdd }) {
           </>
         )}
       </div>
+      </PullToRefresh>
 
       <ConfirmSheet
         open={!!confirmDelete}

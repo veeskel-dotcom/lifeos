@@ -4,6 +4,8 @@ import Card from '../../components/Card';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { METRICS, LABELS, COLORS, addMeasurement, getMeasurements } from '../../services/measurements';
 import ScreenWrapper from '../../components/ScreenWrapper';
+import EmptyState from '../../components/EmptyState';
+import PullToRefresh from '../../components/PullToRefresh';
 
 // SVG body silhouette with measurement lines
 function BodySilhouette({ theme }) {
@@ -175,7 +177,20 @@ export default function MeasurementsScreen({ theme, onBack }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-3">
+      <PullToRefresh onRefresh={load} theme={theme}>
+      <div className="px-4 pb-24 space-y-3">
+        {/* Empty state */}
+        {!latest && allMeasurements.length === 0 && (
+          <EmptyState
+            icon="📏" title="Нет обмеров"
+            subtitle="Начните отслеживать параметры тела"
+            tip="Записывайте раз в неделю для отслеживания прогресса"
+            actionLabel="Записать"
+            onAction={() => setShowForm(true)}
+            theme={theme}
+          />
+        )}
+
         {/* Body silhouette + key stats */}
         {latest && (
           <Card theme={theme} style={{ padding: 16 }}>
@@ -313,6 +328,7 @@ export default function MeasurementsScreen({ theme, onBack }) {
           );
         })()}
       </div>
+      </PullToRefresh>
     </ScreenWrapper>
   );
 }

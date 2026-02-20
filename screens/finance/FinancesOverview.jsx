@@ -11,6 +11,7 @@ import { useToast } from '../../components/ToastProvider';
 import Ic from '../../components/Icon';
 
 import SkeletonList from '../../components/SkeletonList';
+import SkeletonCard from '../../components/SkeletonCard';
 import TutorialTip from '../../components/TutorialTip';
 import EmptyState from '../../components/EmptyState';
 import ScreenWrapper from '../../components/ScreenWrapper';
@@ -164,8 +165,10 @@ export default function FinancesOverview({ theme, onNavigate, onBack }) {
           Здесь общая картина финансов. Нажмите на категорию для детализации. Стрелки переключают месяц.
         </TutorialTip>
         {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <span className="text-sm" style={{ color: theme.gray2 }}>Загрузка...</span>
+          <div className="space-y-3">
+            <SkeletonCard variant="default" theme={theme} />
+            <SkeletonCard variant="compact" theme={theme} />
+            <SkeletonList count={4} theme={theme} />
           </div>
         ) : (
           <>
