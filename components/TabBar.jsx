@@ -79,6 +79,8 @@ export default function TabBar({ active, onChange, onQuickAdd, theme, quickOpen 
         <button
           key={tab.id}
           onClick={() => handleTabPress(tab.id)}
+          aria-label={tab.id === 'quick' ? 'Быстрое добавление' : tab.label}
+          aria-current={tab.id !== 'quick' && active === tab.id ? 'page' : undefined}
           style={{
             flex: 1,
             display: 'flex',

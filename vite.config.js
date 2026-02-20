@@ -56,7 +56,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           dexie: ['dexie'],
-          charts: ['recharts'],
         },
       },
     },

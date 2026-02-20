@@ -849,6 +849,7 @@ function AppContent({ theme, setTheme }) {
         {/* Update Prompt */}
         {showUpdatePrompt && (
           <UpdatePrompt
+            visible
             theme={theme}
             onDismiss={() => setShowUpdatePrompt(false)}
           />

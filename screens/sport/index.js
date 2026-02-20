@@ -9,5 +9,4 @@ export { default as TemplateEditor } from './TemplateEditor';
 export { default as BodyWeightLog } from './BodyWeightLog';
 export { default as SportProgress } from './SportProgress';
 export { default as VideoAnalysis } from './VideoAnalysis';
-export { default as WeeklyActivity } from './WeeklyActivity';
 export { default } from "./SportModule";

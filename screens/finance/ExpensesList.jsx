@@ -162,8 +162,8 @@ export default function ExpensesList({ theme, onBack, onNavigate, filterAccountI
         left
         right={
           <div className="flex items-center gap-3">
-            <span onClick={handleExport} style={{ cursor: 'pointer' }}><Ic name="share" color={theme.accent} size={20} r={5} raw /></span>
-            <span onClick={() => setShowSearch(!showSearch)} style={{ cursor: 'pointer' }}><Ic name="target" color={theme.accent} size={20} r={5} raw /></span>
+            <button onClick={handleExport} aria-label="Экспорт" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}><Ic name="share" color={theme.accent} size={20} r={5} raw /></button>
+            <button onClick={() => setShowSearch(!showSearch)} aria-label="Поиск" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}><Ic name="target" color={theme.accent} size={20} r={5} raw /></button>
           </div>
         }
         theme={theme}

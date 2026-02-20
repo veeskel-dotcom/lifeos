@@ -60,7 +60,7 @@ export function ToastProvider({ children, theme }) {
       {/* Toast stack — рендерится поверх всего */}
       <div className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-        <div data-testid="toast-stack" className="flex flex-col items-center gap-2 p-3 pointer-events-auto">
+        <div data-testid="toast-stack" role="status" aria-live="polite" className="flex flex-col items-center gap-2 p-3 pointer-events-auto">
           {toasts.map((toast) => (
             <Toast
               key={toast.id}

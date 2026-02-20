@@ -7,11 +7,15 @@
  * @param {string} label
  * @param {object} theme
  */
+let _fiId = 0;
+
 export default function FormInput({
   value, onChange, placeholder, type = 'text', label, theme,
   inputMode, autoFocus, disabled, maxLength, rows = 3, style: extraStyle,
+  id: externalId,
   ...rest
 }) {
+  const inputId = externalId || (label ? `fi-${++_fiId}` : undefined);
   const baseStyle = {
     width: '100%',
     background: theme.gray6,
@@ -30,12 +34,13 @@ export default function FormInput({
   return (
     <div>
       {label && (
-        <label className="block text-xs font-medium mb-1.5" style={{ color: theme.gray1 }}>
+        <label htmlFor={inputId} className="block text-xs font-medium mb-1.5" style={{ color: theme.gray1 }}>
           {label}
         </label>
       )}
       {type === 'textarea' ? (
         <textarea
+          id={inputId}
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
@@ -47,6 +52,7 @@ export default function FormInput({
         />
       ) : (
         <input
+          id={inputId}
           type={type}
           inputMode={inputMode || (type === 'number' ? 'numeric' : undefined)}
           value={value}

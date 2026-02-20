@@ -10,3 +10,10 @@ Thumbs.db
 .claude/
 
 .vercel
+
+# Test artifacts
+tests/screens/
+tests/screens-all/
+tests/screens-dark/
+tests/_*
+test-results/
