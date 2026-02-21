@@ -61,7 +61,7 @@ export async function getStorageEstimate() {
     return {
       used_mb: (usage / 1024 / 1024).toFixed(1),
       quota_mb: (quota / 1024 / 1024).toFixed(0),
-      percent: ((usage / quota) * 100).toFixed(1),
+      percent: quota > 0 ? ((usage / quota) * 100).toFixed(1) : '0.0',
     };
   }
   return null;

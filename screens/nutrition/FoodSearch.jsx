@@ -24,6 +24,7 @@ export default function FoodSearch({ meal, date, theme, onBack, initialMode }) {
   const [recent, setRecent] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [selected, setSelected] = useState(null); // продукт для ввода порции
   const [filter, setFilter] = useState('all');
   const [grams, setGrams] = useState(100);
@@ -48,13 +49,19 @@ export default function FoodSearch({ meal, date, theme, onBack, initialMode }) {
   // Debounced search
   const handleQueryChange = (val) => {
     setQuery(val);
+    setError('');
     clearTimeout(searchTimer.current);
     if (val.trim().length < 2) { setResults([]); return; }
     searchTimer.current = setTimeout(async () => {
       setLoading(true);
       try {
         const r = await searchProducts(val);
-        setResults(r);
+        setResults(r.results || []);
+      } catch (err) {
+        setResults([]);
+        setError(err.message?.includes('интернет')
+          ? '📡 Поиск недоступен офлайн'
+          : 'Ошибка поиска');
       } finally {
         setLoading(false);
       }
@@ -302,8 +309,13 @@ export default function FoodSearch({ meal, date, theme, onBack, initialMode }) {
           </Section>
         )}
 
+        {/* Ошибка поиска */}
+        {error && !loading && (
+          <p className="text-center text-sm py-4" style={{ color: theme.gray2 }}>{error}</p>
+        )}
+
         {/* Ничего не найдено */}
-        {query.trim().length >= 2 && !loading && results.length === 0 && (
+        {query.trim().length >= 2 && !loading && !error && results.length === 0 && (
           <EmptyState
             icon={<Ic name="food" color={theme.gray2} size={48} r={14} />}
             title="Ничего не найдено"

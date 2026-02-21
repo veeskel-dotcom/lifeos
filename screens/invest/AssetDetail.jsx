@@ -19,18 +19,23 @@ export default function AssetDetail({ assetId, theme, onBack, onNavigate }) {
 
   useEffect(() => {
     if (!assetId) return;
-    load();
+    let mounted = true;
+    (async () => {
+      const a = await getAsset(assetId);
+      if (!mounted || !a) return;
+      setAsset(a);
+      const [q, t, d] = await Promise.all([
+        getQuote(a.ticker),
+        getTrades(a.ticker),
+        getDividends(a.ticker),
+      ]);
+      if (!mounted) return;
+      setQuote(q);
+      setTrades(t);
+      setDividends(d);
+    })();
+    return () => { mounted = false; };
   }, [assetId]);
-
-  const load = async () => {
-    const a = await getAsset(assetId);
-    if (!a) return;
-    setAsset(a);
-    const q = await getQuote(a.ticker);
-    setQuote(q);
-    setTrades(await getTrades(a.ticker));
-    setDividends(await getDividends(a.ticker));
-  };
 
   const handleDelete = async () => {
     await removeAsset(assetId);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import { addTrade } from '../../services/trades';
@@ -35,25 +35,29 @@ export default function TradeForm({ theme, onBack, initialTicker }) {
 
   const total = (parseFloat(quantity) || 0) * (parseFloat(price) || 0);
   const canSave = ticker.trim() && parseFloat(quantity) > 0 && parseFloat(price) > 0;
+  const savingRef = useRef(false);
 
   const handleSave = async () => {
-    if (!canSave) return;
-
-    await addTrade({
-      ticker: ticker.trim().toUpperCase(),
-      name: name.trim() || ticker.trim().toUpperCase(),
-      type,
-      quantity: parseFloat(quantity),
-      price: parseFloat(price),
-      commission: parseFloat(commission) || 0,
-      broker,
-      date,
-      sector: sector || 'Прочее',
-      assetType,
-      currency: tradeCurrency,
-    });
-
-    onBack();
+    if (!canSave || savingRef.current) return;
+    savingRef.current = true;
+    try {
+      await addTrade({
+        ticker: ticker.trim().toUpperCase(),
+        name: name.trim() || ticker.trim().toUpperCase(),
+        type,
+        quantity: parseFloat(quantity),
+        price: parseFloat(price),
+        commission: parseFloat(commission) || 0,
+        broker,
+        date,
+        sector: sector || 'Прочее',
+        assetType,
+        currency: tradeCurrency,
+      });
+      onBack();
+    } finally {
+      savingRef.current = false;
+    }
   };
 
   return (

@@ -93,6 +93,23 @@ export async function deleteCategory(id) {
     if (cat?.is_system) {
       throw new Error('Нельзя удалить системную категорию');
     }
+
+    // Каскад: перенести записи на "Прочее"
+    const fallback = await db.categories
+      .where('module').equals(cat.module)
+      .filter(c => c.is_system && c.name === 'Прочее')
+      .first();
+    const fallbackId = fallback?.id || null;
+
+    const table = cat.module === 'expense' ? db.expenses
+      : cat.module === 'income' ? db.incomes
+      : cat.module === 'subscriptions' ? db.subscriptions
+      : null;
+
+    if (table) {
+      await table.where('category_id').equals(id).modify({ category_id: fallbackId });
+    }
+
     await db.categories.delete(id);
   } catch (e) {
     console.error('[categories.deleteCategory]', e);
