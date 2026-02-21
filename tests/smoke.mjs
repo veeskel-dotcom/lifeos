@@ -68,28 +68,16 @@ async function run() {
 
   console.log(`🚀 LifeOS Full Smoke — ${ALL.length} screens\n`);
 
-  // Skip onboarding
+  // Skip onboarding via app's Dexie instance
   const setupPage = await context.newPage();
   await setupPage.goto(BASE, { waitUntil: 'networkidle', timeout: 30000 });
-  await setupPage.waitForTimeout(2000);
+  await setupPage.waitForTimeout(3000);
   await setupPage.evaluate(async () => {
     try {
-      const req = indexedDB.open('lifeos');
-      await new Promise(resolve => {
-        req.onsuccess = async () => {
-          try {
-            const db = req.result;
-            if (Array.from(db.objectStoreNames).includes('settings')) {
-              const tx = db.transaction('settings', 'readwrite');
-              tx.objectStore('settings').put({ key: 'onboarding_complete', value: 'true' });
-              await new Promise(r => { tx.oncomplete = r; });
-            }
-          } catch {}
-          resolve();
-        };
-        req.onerror = resolve;
-      });
-    } catch {}
+      const mod = await import('/db/index.js');
+      const db = mod.db || mod.default;
+      await db.settings.put({ key: 'has_completed_onboarding', value: true });
+    } catch (e) { /* DB may not be ready yet */ }
   });
   await setupPage.close();
 
