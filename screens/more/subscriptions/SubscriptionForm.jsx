@@ -68,7 +68,7 @@ export default function SubscriptionForm({ theme, onBack, onSave, existing }) {
       icon,
       auto_renew: true,
       is_active: true,
-      remind_days_before: parseInt(remindDays) || 3,
+      remind_days_before: Math.max(0, parseInt(remindDays) || 3),
       tariff_info: tariffInfo.trim() || null,
       is_trial: isTrial,
       trial_end_date: isTrial ? trialEndDate : null,

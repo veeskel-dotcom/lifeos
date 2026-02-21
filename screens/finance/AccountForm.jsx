@@ -50,10 +50,11 @@ export default function AccountForm({ account, onSave, onDelete, onClose, theme 
   const savingRef = useRef(false);
   const handleSubmit = () => {
     if (savingRef.current) return;
-    if (!name || !bank || balance === '') return;
+    const bal = parseFloat(balance);
+    if (!name || !bank || balance === '' || isNaN(bal)) return;
     const data = {
       name, bank, type, currency,
-      balance: parseFloat(balance),
+      balance: bal,
       color,
       limit: type === 'credit' && limit ? parseFloat(limit) : null,
       next_payment_date: type === 'credit' && paymentDay ? paymentDay : null,

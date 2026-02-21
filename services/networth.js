@@ -26,6 +26,9 @@ export async function getNetWorth() {
     const credits = await db.credits.toArray();
     const creditsTotal = credits.reduce((s, c) => s + (c.remaining_amount || 0), 0);
 
+    // Пустая DB — нет финансовых данных
+    if (accounts.length === 0 && portfolio.length === 0 && credits.length === 0) return null;
+
     // Пассивы: кредитные карты (лимит − баланс)
     const creditCards = accounts
       .filter(a => a.type === 'credit')
@@ -49,13 +52,14 @@ export async function getNetWorth() {
 
   } catch (e) {
     console.error('[networth.getNetWorth]', e);
-    return [];
+    return null;
   }
 }
 
 export async function saveSnapshot() {
   try {
     const nw = await getNetWorth();
+    if (!nw) return;
     const today = new Date().toISOString().split('T')[0];
     await db.settings.put({ key: `networth_${today}`, value: nw.total });
 

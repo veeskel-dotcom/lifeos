@@ -55,7 +55,8 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
   const handleSubmit = () => {
     if (savingRef.current) return;
     const e = {};
-    if (!amount || parseFloat(amount) <= 0) e.amount = 'Укажите сумму';
+    const num = parseFloat(amount);
+    if (!amount || isNaN(num) || num <= 0) e.amount = 'Укажите сумму';
     if (!categoryId) e.category = 'Выберите категорию';
     if (Object.keys(e).length) { setErrors(e); return; }
     setErrors({});

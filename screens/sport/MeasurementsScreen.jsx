@@ -16,9 +16,9 @@ function BodySilhouette({ theme }) {
         d="M28 28 Q20 40 16 60 L18 90 L24 90 L28 70 L28 100 L24 140 L30 142 L36 100 L40 100 L44 100 L50 142 L56 140 L52 100 L52 70 L56 90 L62 90 L64 60 Q60 40 52 28 Z"
         fill="none" stroke={theme.gray3} strokeWidth="1.5"
       />
-      <line x1="14" y1="50" x2="66" y2="50" stroke="#007AFF" strokeWidth="1" strokeDasharray="2,2" />
-      <line x1="20" y1="72" x2="60" y2="72" stroke="#34C759" strokeWidth="1" strokeDasharray="2,2" />
-      <line x1="18" y1="88" x2="62" y2="88" stroke="#AF52DE" strokeWidth="1" strokeDasharray="2,2" />
+      <line x1="14" y1="50" x2="66" y2="50" stroke={theme.accent} strokeWidth="1" strokeDasharray="2,2" />
+      <line x1="20" y1="72" x2="60" y2="72" stroke={theme.green} strokeWidth="1" strokeDasharray="2,2" />
+      <line x1="18" y1="88" x2="62" y2="88" stroke={theme.purple || '#AF52DE'} strokeWidth="1" strokeDasharray="2,2" />
     </svg>
   );
 }

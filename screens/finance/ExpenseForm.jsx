@@ -129,7 +129,8 @@ export default function ExpenseForm({ expense, onSave, onDelete, onClose, theme 
     if (savingRef.current) return;
     /* M3.3: validate */
     const e = {};
-    if (!amount || parseFloat(amount) <= 0) e.amount = 'Укажите сумму';
+    const num = parseFloat(amount);
+    if (!amount || isNaN(num) || num <= 0) e.amount = 'Укажите сумму';
     if (!categoryId) e.category = 'Выберите категорию';
     if (Object.keys(e).length) { setErrors(e); return; }
     setErrors({});

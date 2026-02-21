@@ -144,7 +144,7 @@ export default function RoutineForm({ theme, onBack, onSave, existing }) {
             <input
               type="number"
               value={intervalDays}
-              onChange={e => setIntervalDays(parseInt(e.target.value) || 2)}
+              onChange={e => setIntervalDays(Math.max(2, Math.min(365, parseInt(e.target.value) || 2)))}
               className="w-16 text-center py-1 rounded-lg text-sm bg-transparent"
               style={{ color: theme.text, border: `1px solid ${theme.gray4}` }}
               min={2}

@@ -12,7 +12,7 @@
 import { clientsClaim } from 'workbox-core';
 import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheFirst, NetworkFirst, NetworkOnly, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
@@ -88,7 +88,25 @@ registerRoute(
   })
 );
 
-// ─── 7. Push notifications ──────────────────────────────
+// ─── 7. FatSecret food search — SWR, 7 дней ────────────
+registerRoute(
+  ({url}) => url.pathname.startsWith('/api/proxy/fatsecret'),
+  new StaleWhileRevalidate({
+    cacheName: 'fatsecret-api',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 7 * 24 * 60 * 60 }),
+    ],
+  })
+);
+
+// ─── 8. OpenRouter AI — NetworkOnly (не кэшировать) ─────
+registerRoute(
+  ({url}) => url.pathname.startsWith('/api/proxy/openrouter'),
+  new NetworkOnly()
+);
+
+// ─── 9. Push notifications ──────────────────────────────
 self.addEventListener('push', (event) => {
   if (!event.data) return;
   const data = event.data.json();

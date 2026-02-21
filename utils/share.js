@@ -1,7 +1,7 @@
 /**
  * M5.3: Web Share API helper.
  */
-export function canShare() {
+function canShare() {
   return typeof navigator !== 'undefined' && !!navigator.share;
 }
 
@@ -23,27 +23,4 @@ export async function shareText(title, text) {
     if (e.name === 'AbortError') return { shared: false, cancelled: true };
     return { shared: false, error: e.message };
   }
-}
-
-export async function shareJSON(title, data, filename = 'lifeos-export.json') {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const file = new File([blob], filename, { type: 'application/json' });
-
-  if (canShare() && navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ title, files: [file] });
-      return { shared: true };
-    } catch {
-      // fallback below
-    }
-  }
-
-  // Fallback: download
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-  return { shared: false, downloaded: true };
 }
