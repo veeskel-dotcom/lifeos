@@ -153,7 +153,38 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
 
       try {
         const { callAIStream } = await import('../../ai/client');
-        const systemPrompt = 'Ты — LifeOS AI-ассистент. Помогай кратко и по делу. Русский язык.';
+        // Загружаем контекст + память для персонализации
+        let systemPrompt = 'Ты — LifeOS AI-ассистент. Помогай кратко и по делу. Русский язык.';
+        try {
+          const [{ default: ctxDb }, { getMemories }] = await Promise.all([
+            import('../../db/index'),
+            import('../../services/aiMemory'),
+          ]);
+          const { getSetting } = await import('../../db/helpers');
+          const ctxToday = new Date().toISOString().split('T')[0];
+          const ctxMonthStart = ctxToday.slice(0, 8) + '01';
+          const [ctxTasks, ctxExpenses, ctxMems, ctxBudget] = await Promise.all([
+            ctxDb.tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').limit(10).toArray().catch(() => []),
+            ctxDb.expenses.where('date').between(ctxMonthStart, ctxToday + '\uffff', true, true).toArray().catch(() => []),
+            getMemories(20),
+            getSetting('monthly_budget').catch(() => null),
+          ]);
+          const monthSpent = ctxExpenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0);
+          const ctxData = {
+            today: ctxToday,
+            tasks: ctxTasks.slice(0, 5).map(t => t.title),
+            overdue: ctxTasks.filter(t => t.deadline && t.deadline < ctxToday).length,
+            month_spent: monthSpent,
+            budget_remaining: ctxBudget ? ctxBudget - monthSpent : null,
+          };
+          const memLines = ctxMems.map(m => `[${m.category}] ${m.fact}`);
+          systemPrompt = `Ты — LifeOS AI-ассистент. Ты знаешь всё о пользователе.
+
+Данные: ${JSON.stringify(ctxData)}
+${memLines.length ? `\nПамять:\n${memLines.join('\n')}` : ''}
+
+Отвечай кратко, конкретно, с цифрами. Русский язык. Используй данные в ответах.`;
+        } catch { /* fallback to basic prompt */ }
         const userPrompt = history.length
           ? history.map(m => `${m.role}: ${m.content}`).join('\n') + `\nuser: ${msg}`
           : msg;

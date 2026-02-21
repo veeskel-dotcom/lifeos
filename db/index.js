@@ -81,4 +81,9 @@ db.version(5).stores({
   error_log: '++id, ts, level',
 });
 
+// Wave 10: AI память
+db.version(6).stores({
+  ai_memory: '++id, category, created_at',
+});
+
 export default db;

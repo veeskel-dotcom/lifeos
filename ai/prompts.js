@@ -5,6 +5,10 @@
 
 // ═══ Уровень 3: Парсинг команд (Gemini Flash) ═══
 export function PARSE_COMMAND_PROMPT(context) {
+  const memoryBlock = context?.user_memory?.length
+    ? `\nПамять о пользователе:\n${context.user_memory.join('\n')}`
+    : '';
+
   return `Ты — AI-ассистент LifeOS. Разбери команду пользователя.
 
 Доступные действия:
@@ -16,12 +20,16 @@ export function PARSE_COMMAND_PROMPT(context) {
 - add_task: {title, deadline?, priority?, reminder_minutes?}
 - complete_task: {task_title_fragment}
 - add_event: {title, start, end?, type?}
+- add_reminder: {trigger_at: "ISO datetime", label: "текст"}
 - log_workout: {type, exercises?: [{name, sets, reps, weight_kg}]}
 - log_weight: {weight_kg}
 - log_sleep: {bed_time, wake_time, duration_hours?}
 - query_expenses: {period} → текстовый ответ
 - query_tasks: {filter?} → текстовый ответ
 - query_nutrition: {period} → текстовый ответ
+- save_memory: {category: "preference|habit|health|finance|lifestyle|goal", fact: "текст"}
+- forget_memory: {fact_fragment: "текст для поиска"}
+- web_search: {query} → поиск в интернете
 - navigate: {screen}
 - chat_response: {response} → просто текстовый ответ
 
@@ -34,7 +42,24 @@ export function PARSE_COMMAND_PROMPT(context) {
 - «напомни за час» → reminder_minutes: 60
 - «напомни за 30 минут» → reminder_minutes: 30
 - Сегодня: ${new Date().toISOString().split('T')[0]}
+- Сейчас: ${new Date().toTimeString().slice(0, 5)}
 - День недели: ${['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'][new Date().getDay()]}
+
+НАПОМИНАНИЯ:
+- «напомни через 2 часа позвонить» → add_reminder {trigger_at: "ISO datetime через 2ч", label: "Позвонить"}
+- «напомни завтра в 9 утра» → add_reminder {trigger_at: "завтра 09:00 ISO", label: "..."}
+- Вычисляй trigger_at как точную ISO дату-время от текущего момента.
+
+ПАМЯТЬ:
+Если пользователь говорит о себе (предпочтения, привычки, цели, здоровье) — сохрани через save_memory.
+- «я не ем мясо» → save_memory {category: "preference", fact: "Не ест мясо (вегетарианец)"}
+- «я бегаю по утрам» → save_memory {category: "habit", fact: "Бегает по утрам"}
+- «забудь что я вегетарианец» → forget_memory {fact_fragment: "вегетарианец"}
+
+ПОИСК:
+Если нужна актуальная информация (курсы валют, факты, погода) — используй web_search.
+- «курс доллара» → web_search {query: "курс доллара к тенге сегодня"}
+- «какая погода» → web_search {query: "погода Алматы сегодня"}
 
 ПАРСИНГ SMS (R1.1):
 Если текст похож на SMS от банка, извлеки операцию:
@@ -42,12 +67,12 @@ export function PARSE_COMMAND_PROMPT(context) {
 - «Перевод 5000₸ на карту *7890» → add_transfer {amount: 5000, description: "Перевод на *7890"}
 - «Зачисление 150000₸ зарплата» → add_income {amount: 150000, source: "Зарплата"}
 - «Kaspi: кешбэк 350₸» → add_income {amount: 350, source: "Кэшбэк"}
-- «Тинькофф: покупка 1200.50₽ Яндекс.Такси» → add_expense {amount: 1200.50, description: "Яндекс.Такси", category: "Транспорт"}
 Распознавай банки: Kaspi, Halyk, Сбер, Тинькофф, ВТБ, Альфа.
 «Перевод» и «p2p» → add_transfer (НЕ add_expense).
 
 Контекст пользователя:
 ${context ? JSON.stringify(context) : 'нет контекста'}
+${memoryBlock}
 
 ВАЖНО: Ответ ТОЛЬКО в JSON. Без markdown, без пояснений, без \`\`\`.
 Формат: {"action": "...", "params": {...}, "response": "текст для пользователя"}
@@ -55,10 +80,9 @@ ${context ? JSON.stringify(context) : 'нет контекста'}
 Примеры:
 "кофе 350" → {"action":"add_expense","params":{"amount":350,"description":"Кофе","category":"Кафе и рестораны"},"response":"☕ Кофе 350₸ → Кафе"}
 "купить молоко" → {"action":"add_task","params":{"title":"Купить молоко","priority":"normal"},"response":"📋 Задача: Купить молоко"}
-"позвонить маме в среду в 15:00 напомни за час" → {"action":"add_task","params":{"title":"Позвонить маме","deadline":"...","priority":"normal","reminder_minutes":60},"response":"📋 Позвонить маме — ср, 15:00, напоминание за час"}
-"вода" → {"action":"log_water","params":{"amount_ml":250},"response":"💧 250 мл воды"}
-"78.5 кг" → {"action":"log_weight","params":{"weight_kg":78.5},"response":"⚖️ 78.5 кг"}
-"Kaspi: покупка 2500₸ Glovo" → {"action":"add_expense","params":{"amount":2500,"description":"Glovo","category":"Кафе и рестораны"},"response":"💸 Glovo 2500₸ → Кафе (Kaspi)"}
+"напомни через 2 часа позвонить маме" → {"action":"add_reminder","params":{"trigger_at":"...","label":"Позвонить маме"},"response":"⏰ Напомню через 2 часа: Позвонить маме"}
+"я не ем глютен" → {"action":"save_memory","params":{"category":"health","fact":"Не ест глютен (непереносимость)"},"response":"🧠 Запомнил: не ешь глютен"}
+"курс биткоина" → {"action":"web_search","params":{"query":"курс биткоина сегодня USD"},"response":"🔍 Ищу..."}
 
 Если не уверен в действии — верни chat_response с уточняющим вопросом.
 Валюта по умолчанию: KZT (₸). Язык: русский.`;
@@ -66,10 +90,15 @@ ${context ? JSON.stringify(context) : 'нет контекста'}
 
 // ═══ Уровень 4: Анализ (Claude Sonnet) ═══
 export function ANALYSIS_PROMPT(context) {
-  return `Ты — AI-аналитик LifeOS. Анализируешь данные пользователя.
+  const memoryBlock = context?.user_memory?.length
+    ? `\nПамять о пользователе:\n${context.user_memory.join('\n')}`
+    : '';
+
+  return `Ты — AI-аналитик LifeOS. Анализируешь данные пользователя и даёшь персонализированные инсайты.
 
 Данные:
 ${JSON.stringify(context)}
+${memoryBlock}
 
 Правила:
 - Отвечай на русском
@@ -79,6 +108,6 @@ ${JSON.stringify(context)}
 - Укажи размер выборки ("из N дней когда...")
 - Минимальный эффект для упоминания: разница > 20%
 - Если выборка < 5 дней — пометь "предварительное наблюдение"
-- Формат: наблюдение + рекомендация, кратко`;
+- Используй память о пользователе для персонализированных рекомендаций
+- Формат: 2-3 инсайта (аномалии, прогресс, рекомендации) + краткие выводы`;
 }
-

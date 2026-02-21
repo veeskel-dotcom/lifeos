@@ -215,6 +215,35 @@ async function dispatch(action, params) {
       });
     }
 
+    // ── AI-память ──
+    case 'save_memory': {
+      const { addMemory } = await import('../services/aiMemory');
+      return addMemory(params.category || 'lifestyle', params.fact, 'user_said');
+    }
+
+    case 'forget_memory': {
+      const { searchMemory, deleteMemory } = await import('../services/aiMemory');
+      const found = await searchMemory(params.fact_fragment || params.query || '');
+      if (found.length) {
+        await deleteMemory(found[0].id);
+        return { forgotten: found[0].fact };
+      }
+      return { error: 'Не нашёл такого факта в памяти' };
+    }
+
+    // ── Поиск в интернете ──
+    case 'web_search': {
+      const { searchWeb } = await import('../services/webSearch');
+      const result = await searchWeb(params.query);
+      if (result.answer) {
+        return { queryResult: `🔍 ${result.answer}${result.source ? ` (${result.source})` : ''}` };
+      }
+      if (result.topics.length) {
+        return { queryResult: `🔍 ${result.topics.join('. ')}` };
+      }
+      return { queryResult: `🔍 По запросу "${params.query}" точного ответа не найдено` };
+    }
+
     default:
       return { unknown: true, action };
   }

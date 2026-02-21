@@ -298,6 +298,11 @@ function level2_patterns(text) {
     return { action: 'navigate', params: { screen: 'finances' }, message: null };
   }
 
+  // Проактивные инсайты → L4 с полным контекстом
+  if (/^(?:как дела|что нового|подведи итог|итоги|отчёт|отчет|как у меня|обзор|статус|дай сводку)$/i.test(lower)) {
+    return null; // пропускаем L2, routeToLevel отправит в L4
+  }
+
   return null;
 }
 
@@ -357,6 +362,8 @@ function routeToLevel(input) {
     'анализ', 'почему', 'корреляц', 'сравни', 'отчёт', 'отчет',
     'тренд', 'паттерн', 'инсайт', 'рекоменд', 'совет',
     'как улучшить', 'что изменить', 'зависимость',
+    'как дела', 'что нового', 'подведи итог', 'итоги',
+    'как у меня', 'обзор', 'статус', 'дай сводку',
   ];
 
   if (analysisKeywords.some(kw => lower.includes(kw))) {
@@ -400,23 +407,70 @@ function handleAIError(err) {
 async function collectContext() {
   try {
     const db = (await import('../db/index')).default;
+    const { getSetting } = await import('../db/helpers');
     const today = new Date().toISOString().split('T')[0];
+    const monthStart = today.slice(0, 8) + '01';
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-    const [tasks, recentExpenses] = await Promise.all([
-      db.tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').limit(10).toArray().catch(() => []),
+    const [
+      tasks, todayExpenses, monthExpenses, monthIncomes,
+      accounts, lastSleep, lastWorkout, lastWeight,
+      todayMeals, todayWater, goals, routines, routineLog,
+      portfolio, memories, budget
+    ] = await Promise.all([
+      db.tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').limit(20).toArray().catch(() => []),
       db.expenses.where('date').equals(today).toArray().catch(() => []),
+      db.expenses.where('date').between(monthStart, today + '\uffff', true, true).toArray().catch(() => []),
+      db.incomes.where('date').between(monthStart, today + '\uffff', true, true).toArray().catch(() => []),
+      db.accounts.toArray().catch(() => []),
+      db.sleep_log.where('date').equals(yesterday).first().catch(() => null),
+      db.workouts.orderBy('date').reverse().first().catch(() => null),
+      db.body_weight.orderBy('date').reverse().first().catch(() => null),
+      db.food_log.where('date').equals(today).toArray().catch(() => []),
+      db.water_log.where('date').equals(today).toArray().catch(() => []),
+      db.goals.filter(g => g.status === 'active').toArray().catch(() => []),
+      db.routines.toArray().catch(() => []),
+      db.routine_log.where('date').equals(today).toArray().catch(() => []),
+      db.portfolio.toArray().catch(() => []),
+      db.ai_memory.orderBy('created_at').reverse().limit(30).toArray().catch(() => []),
+      getSetting('monthly_budget').catch(() => null),
     ]);
 
-    const todaySpent = recentExpenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0);
+    const todaySpent = todayExpenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0);
+    const monthSpent = monthExpenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0);
+    const monthIncome = monthIncomes.reduce((s, i) => s + (i.amount || 0), 0);
+
+    let daysSinceWorkout = null;
+    if (lastWorkout?.date) {
+      daysSinceWorkout = Math.floor((Date.now() - new Date(lastWorkout.date + 'T00:00:00').getTime()) / 86400000);
+    }
 
     return {
       today,
+      // Задачи
       active_tasks: tasks.slice(0, 5).map(t => t.title),
+      overdue_tasks_count: tasks.filter(t => t.deadline && t.deadline < today).length,
+      // Финансы
       today_expenses_total: todaySpent,
-      recent_expenses: recentExpenses.slice(-3).map(e => ({
-        amount: e.amount_base || e.amount,
-        desc: e.description,
-      })),
+      recent_expenses: todayExpenses.slice(-3).map(e => ({ amount: e.amount_base || e.amount, desc: e.description })),
+      month_expenses_total: monthSpent,
+      month_income_total: monthIncome,
+      budget_remaining: budget ? budget - monthSpent : null,
+      account_balances: accounts.slice(0, 5).map(a => ({ name: a.name, balance: a.balance })),
+      // Здоровье
+      last_sleep: lastSleep ? { duration: lastSleep.duration_hours, bed_time: lastSleep.bed_time } : null,
+      last_workout: lastWorkout ? { type: lastWorkout.type, days_ago: daysSinceWorkout } : null,
+      current_weight: lastWeight?.weight || lastWeight?.value || null,
+      // Питание
+      today_calories: todayMeals.reduce((s, m) => s + (m.calories || m.total_calories || 0), 0),
+      today_water_ml: todayWater.reduce((s, w) => s + (w.amount_ml || 0), 0),
+      // Цели и рутины
+      active_goals: goals.slice(0, 5).map(g => ({ name: g.name || g.title, progress: g.progress || 0 })),
+      routines_today: { done: routineLog.length, total: routines.length },
+      // Портфель
+      portfolio_total_value: portfolio.reduce((s, p) => s + ((p.quantity || 0) * (p.current_price || p.avg_price || 0)), 0) || null,
+      // Память
+      user_memory: memories.map(m => `[${m.category}] ${m.fact}`),
     };
   } catch {
     return null;
