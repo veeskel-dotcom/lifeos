@@ -14,21 +14,22 @@ export const AI_LIMITS = {
 
 // Доступные модели для UI
 export const AVAILABLE_MODELS = [
-  { slug: 'google/gemini-2.5-flash-preview', label: 'Gemini 2.5 Flash', short: 'Flash' },
-  { slug: 'anthropic/claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5', short: 'Sonnet 4.5' },
-  { slug: 'anthropic/claude-opus-4-20250514', label: 'Claude Opus 4', short: 'Opus 4' },
+  { slug: 'google/gemini-2.5-flash',          label: 'Gemini 2.5 Flash',    short: 'Flash' },
+  { slug: 'anthropic/claude-haiku-4.5',       label: 'Claude Haiku 4.5',    short: 'Haiku' },
+  { slug: 'anthropic/claude-sonnet-4.6',      label: 'Claude Sonnet 4.6',   short: 'Sonnet' },
+  { slug: 'anthropic/claude-opus-4.6',        label: 'Claude Opus 4.6',     short: 'Opus' },
 ];
 
 // Задача → модель по умолчанию
 export const MODEL_REGISTRY = {
-  parsing:        'google/gemini-2.5-flash-preview',
-  analysis:       'anthropic/claude-opus-4-20250514',
-  reports:        'anthropic/claude-sonnet-4-5-20250929',
-  briefing:       'anthropic/claude-sonnet-4-5-20250929',
-  ocr:            'anthropic/claude-sonnet-4-5-20250929',
-  food_vision:    'anthropic/claude-sonnet-4-5-20250929',
-  food_disambig:  'google/gemini-2.5-flash-preview',
-  video_analysis: 'anthropic/claude-sonnet-4-5-20250929',
+  parsing:        'google/gemini-2.5-flash',
+  analysis:       'anthropic/claude-opus-4.6',
+  reports:        'anthropic/claude-sonnet-4.6',
+  briefing:       'anthropic/claude-sonnet-4.6',
+  ocr:            'anthropic/claude-sonnet-4.6',
+  food_vision:    'anthropic/claude-sonnet-4.6',
+  food_disambig:  'google/gemini-2.5-flash',
+  video_analysis: 'anthropic/claude-sonnet-4.6',
 };
 
 // Legacy маппинг (fast/smart → новые ключи)
@@ -51,10 +52,10 @@ export const TASK_TYPE_LABELS = {
 
 // Тарифы моделей ($/1M токенов)
 export const COST_RATES = {
-  'google/gemini-2.5-flash-preview':       { input: 0.15, output: 0.60 },
-  'anthropic/claude-sonnet-4-5-20250929':   { input: 3.0,  output: 15.0 },
-  'anthropic/claude-opus-4-20250514':       { input: 15.0, output: 75.0 },
-  'anthropic/claude-sonnet-4-20250514':     { input: 3.0,  output: 15.0 },
+  'google/gemini-2.5-flash':          { input: 0.30,  output: 2.50 },
+  'anthropic/claude-haiku-4.5':       { input: 1.0,   output: 5.0 },
+  'anthropic/claude-sonnet-4.6':      { input: 3.0,   output: 15.0 },
+  'anthropic/claude-opus-4.6':        { input: 5.0,   output: 25.0 },
 };
 
 // Валюты
