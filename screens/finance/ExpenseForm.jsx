@@ -8,6 +8,7 @@ import FormInput from '../../components/FormInput';
 import DatePicker from '../../components/DatePicker';
 import SelectSheet, { SelectTrigger } from '../../components/SelectSheet';
 import { getDailyBudgetRemaining } from '../../services/expenses';
+import VoiceInput from '../../components/VoiceInput';
 
 export default function ExpenseForm({ expense, onSave, onDelete, onClose, theme }) {
   const isEdit = !!expense;
@@ -104,6 +105,29 @@ export default function ExpenseForm({ expense, onSave, onDelete, onClose, theme 
     }
     setOcrLoading(false);
     e.target.value = '';
+  }, []);
+
+  /* Voice → AI парсинг суммы/описания */
+  const handleVoice = useCallback(async (text) => {
+    try {
+      const { callAI } = await import('../../ai/client');
+      const res = await callAI({
+        prompt: `Извлеки сумму и описание расхода из фразы. Верни JSON: {"amount": число, "description": "текст"}.
+Примеры: "кофе триста" → {"amount":300,"description":"Кофе"}, "тысяча двести за бензин" → {"amount":1200,"description":"Бензин"}, "пятьсот" → {"amount":500,"description":""}.
+Фраза: "${text}"
+Только JSON.`,
+        model: 'fast',
+        maxTokens: 100,
+        temperature: 0.1,
+      });
+      const cleaned = res.content.trim().replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+      const parsed = JSON.parse(cleaned);
+      if (parsed.amount) setAmount(String(parsed.amount));
+      if (parsed.description) setDescription(parsed.description);
+    } catch {
+      // Fallback: сырой текст в описание
+      setDescription(text);
+    }
   }, []);
 
   /* A2.3: автокатегоризация при потере фокуса описания */
@@ -213,6 +237,7 @@ export default function ExpenseForm({ expense, onSave, onDelete, onClose, theme 
             >
               <span style={{ fontSize: 22 }}>{ocrLoading ? '⏳' : '📸'}</span>
             </button>
+            <VoiceInput onResult={handleVoice} theme={theme} />
             <input ref={ocrRef} type="file" accept="image/*" capture="environment"
               className="hidden" onChange={handleOCR} />
           </div>

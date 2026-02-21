@@ -36,6 +36,8 @@ export default function CreditForm({ credit, onSave, onDelete, onClose, theme })
   };
   const [endDate, setEndDate] = useState('');
   const [currency, setCurrency] = useState(getCurrencyCode());
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const ocrRef = useRef(null);
 
   useEffect(() => {
     if (credit) {
@@ -58,6 +60,36 @@ export default function CreditForm({ credit, onSave, onDelete, onClose, theme })
       onDelete(confirmDelete);
       setConfirmDelete(null);
     }
+  };
+
+  const handleOCR = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setOcrLoading(true);
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const { parseCreditDoc } = await import('../../services/ocr');
+      const data = await parseCreditDoc(base64);
+      if (data.name) setName(data.name);
+      if (data.type) {
+        const typeMap = { mortgage: 'mortgage', consumer: 'consumer', credit_card: 'card', auto: 'auto' };
+        setType(typeMap[data.type] || 'other');
+      }
+      if (data.original_amount) setTotalAmount(String(data.original_amount));
+      if (data.interest_rate) setRate(String(data.interest_rate));
+      if (data.monthly_payment) setMonthlyPayment(String(data.monthly_payment));
+      if (data.start_date) setStartDate(data.start_date);
+      if (data.end_date) setEndDate(data.end_date);
+    } catch (err) {
+      console.error('[OCR Credit]', err);
+    }
+    setOcrLoading(false);
+    e.target.value = '';
   };
 
   const savingRef = useRef(false);
@@ -146,6 +178,21 @@ export default function CreditForm({ credit, onSave, onDelete, onClose, theme })
             <FormInput type="number" inputMode="decimal" value={totalAmount} onChange={setTotalAmount} placeholder="5000000" theme={theme} />
           </div>
         </div>
+
+        {/* OCR из фото договора */}
+        <button
+          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm active:opacity-70"
+          style={{ background: (theme.purple || '#AF52DE') + '10', border: 'none', cursor: 'pointer' }}
+          onClick={() => ocrRef.current?.click()}
+          disabled={ocrLoading}
+        >
+          <span style={{ fontSize: 16 }}>{ocrLoading ? '⏳' : '📄'}</span>
+          <span style={{ color: theme.purple || '#AF52DE', fontWeight: 500 }}>
+            {ocrLoading ? 'Распознаю...' : 'Заполнить из фото договора'}
+          </span>
+        </button>
+        <input ref={ocrRef} type="file" accept="image/*" capture="environment"
+          className="hidden" onChange={handleOCR} />
 
         {/* Remaining */}
         <div>

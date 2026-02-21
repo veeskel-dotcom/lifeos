@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -6,6 +6,7 @@ import { METRICS, LABELS, COLORS, addMeasurement, getMeasurements } from '../../
 import ScreenWrapper from '../../components/ScreenWrapper';
 import EmptyState from '../../components/EmptyState';
 import PullToRefresh from '../../components/PullToRefresh';
+import { isVoiceSupported, startListening } from '../../ai/voice';
 
 // SVG body silhouette with measurement lines
 function BodySilhouette({ theme }) {
@@ -116,6 +117,7 @@ export default function MeasurementsScreen({ theme, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({});
   const [detailMetric, setDetailMetric] = useState(null);
+  const [voiceLoading, setVoiceLoading] = useState(false);
 
   const load = async () => {
     try {
@@ -138,6 +140,40 @@ export default function MeasurementsScreen({ theme, onBack }) {
     setShowForm(false);
     load();
   };
+
+  const handleVoice = useCallback(() => {
+    if (!isVoiceSupported()) return;
+    setVoiceLoading(true);
+    startListening(
+      () => {}, // interim — не нужен
+      () => { setVoiceLoading(false); },
+      async (text) => {
+        setVoiceLoading(false);
+        if (!text) return;
+        try {
+          const { callAI } = await import('../../ai/client');
+          const res = await callAI({
+            prompt: `Извлеки обмеры тела из фразы. Верни JSON с ключами: biceps, chest, waist, hips, thigh, calf (в сантиметрах, число).
+Русские названия: бицепс=biceps, грудь=chest, талия=waist, бёдра/бедра=hips, бедро=thigh, голень/икра=calf.
+Пропусти те, что не упомянуты. Пример: "талия 85 грудь 105" → {"waist":85,"chest":105}
+Фраза: "${text}"
+Только JSON.`,
+            model: 'fast',
+            maxTokens: 100,
+            temperature: 0.1,
+          });
+          const cleaned = res.content.trim().replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+          const parsed = JSON.parse(cleaned);
+          const newForm = {};
+          METRICS.forEach(m => { if (parsed[m]) newForm[m] = String(parsed[m]); });
+          if (Object.keys(newForm).length > 0) {
+            setForm(newForm);
+            setShowForm(true);
+          }
+        } catch { /* AI недоступен */ }
+      }
+    );
+  }, []);
 
   const getDelta = (metric) => {
     if (!latest?.[metric] || !prev?.[metric]) return null;
@@ -265,6 +301,15 @@ export default function MeasurementsScreen({ theme, onBack }) {
             <span style={{ fontSize: 14 }}>📏</span>
             <span style={{ color: theme.accent, fontSize: 14, fontWeight: 500 }}>Записать</span>
           </button>
+          {isVoiceSupported() && (
+            <button onClick={handleVoice} disabled={voiceLoading}
+              className="flex-1 flex items-center justify-center gap-1.5" style={{ paddingTop: 12, paddingBottom: 12, borderRadius: 12, background: (theme.red || '#FF3B30') + '10' }}>
+              <span style={{ fontSize: 14 }}>{voiceLoading ? '⏳' : '🎤'}</span>
+              <span style={{ color: theme.red || '#FF3B30', fontSize: 14, fontWeight: 500 }}>
+                {voiceLoading ? 'Слушаю...' : 'Голосом'}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Form */}

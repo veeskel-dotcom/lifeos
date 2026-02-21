@@ -9,6 +9,9 @@ import FormInput from '../../components/FormInput';
 import SelectSheet from '../../components/SelectSheet';
 
 const BROKERS = ['Тинькофф Инвестиции', 'БКС', 'Финам', 'Другой'];
+const TRADE_OCR_PROMPT = `Извлеки данные одной сделки из скриншота. Верни JSON:
+{"ticker":"SBER","name":"Сбербанк","type":"buy","quantity":10,"price":260.50,"commission":15,"date":"YYYY-MM-DD","broker":"Тинькофф"}
+type: "buy" для покупки, "sell" для продажи. Только JSON.`;
 /* E6: типы активов */
 const ASSET_TYPES = [
   { v: 'stock', l: '📈 Акция' },
@@ -32,6 +35,38 @@ export default function TradeForm({ theme, onBack, initialTicker }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [sector, setSector] = useState('');
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const ocrRef = useRef(null);
+
+  const handleOCR = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setOcrLoading(true);
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const { callAIVision } = await import('../../ai/client');
+      const result = await callAIVision({ imageBase64: base64, prompt: TRADE_OCR_PROMPT, maxTokens: 500 });
+      const cleaned = result.content.trim().replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+      const data = JSON.parse(cleaned);
+      if (data.ticker) setTicker(data.ticker.toUpperCase());
+      if (data.name) setName(data.name);
+      if (data.type === 'buy' || data.type === 'sell') setType(data.type);
+      if (data.quantity) setQuantity(String(data.quantity));
+      if (data.price) setPrice(String(data.price));
+      if (data.commission) setCommission(String(data.commission));
+      if (data.date) setDate(data.date);
+      if (data.broker && BROKERS.includes(data.broker)) setBroker(data.broker);
+    } catch (err) {
+      console.error('[OCR Trade]', err);
+    }
+    setOcrLoading(false);
+    e.target.value = '';
+  };
 
   const total = (parseFloat(quantity) || 0) * (parseFloat(price) || 0);
   const canSave = ticker.trim() && parseFloat(quantity) > 0 && parseFloat(price) > 0;
@@ -75,6 +110,21 @@ export default function TradeForm({ theme, onBack, initialTicker }) {
           autoFocus
         />
         <FormInput value={name} onChange={setName} placeholder="Название компании (необязательно)" theme={theme} />
+
+        {/* OCR из скриншота */}
+        <button
+          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm mb-4 active:opacity-70"
+          style={{ background: (theme.purple || '#AF52DE') + '10', border: 'none', cursor: 'pointer' }}
+          onClick={() => ocrRef.current?.click()}
+          disabled={ocrLoading}
+        >
+          <span style={{ fontSize: 16 }}>{ocrLoading ? '⏳' : '📸'}</span>
+          <span style={{ color: theme.purple || '#AF52DE', fontWeight: 500 }}>
+            {ocrLoading ? 'Распознаю...' : 'Из скриншота сделки'}
+          </span>
+        </button>
+        <input ref={ocrRef} type="file" accept="image/*" capture="environment"
+          className="hidden" onChange={handleOCR} />
 
         {/* Buy / Sell */}
         <div className="flex gap-2 mb-4">

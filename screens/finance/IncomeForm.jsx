@@ -23,6 +23,8 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
   const [note, setNote] = useState('');
   const [errors, setErrors] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const ocrRef = useRef(null);
 
   const accounts = useAccounts();
 
@@ -49,6 +51,33 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
       onDelete(confirmDelete);
       setConfirmDelete(null);
     }
+  };
+
+  const handleOCR = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setOcrLoading(true);
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const { parseBankStatement } = await import('../../services/ocr');
+      const ops = await parseBankStatement(base64);
+      const inc = ops.find(o => o.type === 'income') || ops[0];
+      if (inc) {
+        if (inc.amount) setAmount(String(Math.abs(inc.amount)));
+        if (inc.description) setDescription(inc.description);
+        if (inc.date) setDate(inc.date);
+      }
+    } catch (err) {
+      console.error('[OCR Income]', err);
+      setErrors(prev => ({ ...prev, ocr: 'Не удалось распознать' }));
+    }
+    setOcrLoading(false);
+    e.target.value = '';
   };
 
   const savingRef = useRef(false);
@@ -105,14 +134,26 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
         {/* Amount — proto S5 hero */}
         <div>
           <label style={{ fontSize: 12, fontWeight: 500, color: theme.gray2, marginBottom: 4, display: 'block' }}>Сумма</label>
-          <div className="flex items-center"
-            style={{ background: theme.gray5, borderRadius: 10, padding: '12px 14px' }}>
-            <span style={{ fontSize: 13, color: theme.gray2 }}>{getCurrencySymbol()}</span>
-            <input type="number" inputMode="decimal" value={amount}
-              onChange={e => setAmount(e.target.value)} placeholder="0" autoFocus={!isEdit}
-              className="hero-input flex-1 bg-transparent outline-none tabular-nums"
-              style={{ fontSize: 22, fontWeight: 700, color: theme.text, border: 'none', marginLeft: 4, width: '100%' }}
-            />
+          <div className="flex items-center" style={{ gap: 8 }}>
+            <div className="flex items-center flex-1"
+              style={{ background: theme.gray5, borderRadius: 10, padding: '12px 14px' }}>
+              <span style={{ fontSize: 13, color: theme.gray2 }}>{getCurrencySymbol()}</span>
+              <input type="number" inputMode="decimal" value={amount}
+                onChange={e => setAmount(e.target.value)} placeholder="0" autoFocus={!isEdit}
+                className="hero-input flex-1 bg-transparent outline-none tabular-nums"
+                style={{ fontSize: 22, fontWeight: 700, color: theme.text, border: 'none', marginLeft: 4, width: '100%' }}
+              />
+            </div>
+            <button
+              className="flex items-center justify-center shrink-0"
+              style={{ width: 48, height: 48, borderRadius: 14, background: (theme.purple || '#AF52DE') + '12', border: 'none', cursor: 'pointer' }}
+              onClick={() => ocrRef.current?.click()}
+              disabled={ocrLoading}
+            >
+              <span style={{ fontSize: 22 }}>{ocrLoading ? '⏳' : '📸'}</span>
+            </button>
+            <input ref={ocrRef} type="file" accept="image/*" capture="environment"
+              className="hidden" onChange={handleOCR} />
           </div>
           {errors.amount && <p className="text-xs mt-1" style={{ color: theme.red }}>{errors.amount}</p>}
         </div>

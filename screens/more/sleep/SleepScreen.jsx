@@ -14,6 +14,7 @@ import {
 } from '../../../services/sleep';
 import { getSetting } from '../../../db/helpers';
 import Ic from '../../../components/Icon';
+import { isVoiceSupported, startListening } from '../../../ai/voice';
 
 /* ── Helpers ── */
 
@@ -41,6 +42,9 @@ export default function SleepScreen({ theme, onBack, onAdd }) {
   const [loaded, setLoaded] = useState(false);
   const [sleepTarget, setSleepTarget] = useState(7);
   const [voiceOverlay, setVoiceOverlay] = useState(false);
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceResult, setVoiceResult] = useState(null);
+  const [voiceError, setVoiceError] = useState('');
 
   /* H1 — 30-day trend data */
   const [sleepTrend, setSleepTrend] = useState([]);
@@ -79,6 +83,53 @@ export default function SleepScreen({ theme, onBack, onAdd }) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const startVoice = useCallback(() => {
+    if (!isVoiceSupported()) return;
+    setVoiceOverlay(true);
+    setVoiceListening(true);
+    setVoiceResult(null);
+    setVoiceError('');
+    startListening(
+      () => {}, // interim
+      () => { setVoiceListening(false); },
+      async (text) => {
+        setVoiceListening(false);
+        if (!text) { setVoiceError('Не удалось распознать'); return; }
+        try {
+          const { callAI } = await import('../../../ai/client');
+          const res = await callAI({
+            prompt: `Извлеки время сна из фразы. Верни JSON: {"bedtime": "HH:MM", "waketime": "HH:MM"}.
+Примеры: "лёг в двенадцать встал в семь" → {"bedtime":"00:00","waketime":"07:00"}, "уснул в одиннадцать тридцать проснулся в шесть" → {"bedtime":"23:30","waketime":"06:00"}, "с десяти до пяти" → {"bedtime":"22:00","waketime":"05:00"}.
+Время сна обычно вечер/ночь, пробуждение — утро.
+Фраза: "${text}"
+Только JSON.`,
+            model: 'fast',
+            maxTokens: 100,
+            temperature: 0.1,
+          });
+          const cleaned = res.content.trim().replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+          const parsed = JSON.parse(cleaned);
+          if (parsed.bedtime && parsed.waketime) {
+            setVoiceResult(parsed);
+          } else {
+            setVoiceError('Не удалось разобрать время');
+          }
+        } catch {
+          setVoiceError('Ошибка распознавания');
+        }
+      }
+    );
+  }, []);
+
+  const calcDuration = (bed, wake) => {
+    if (!bed || !wake) return null;
+    const [bh, bm] = bed.split(':').map(Number);
+    const [wh, wm] = wake.split(':').map(Number);
+    let mins = (wh * 60 + wm) - (bh * 60 + bm);
+    if (mins <= 0) mins += 24 * 60;
+    return { hours: Math.floor(mins / 60), minutes: mins % 60, total: +(mins / 60).toFixed(1) };
+  };
 
   const hasSleepData = weekData && weekData.some(d => d.duration > 0);
 
@@ -424,7 +475,7 @@ export default function SleepScreen({ theme, onBack, onAdd }) {
           <Card theme={theme} style={{ marginTop: 6, padding: '12px 14px' }}>
             <div className="flex gap-2">
               <button
-                onClick={() => setVoiceOverlay(true)}
+                onClick={startVoice}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl active:opacity-70"
                 style={{ background: (theme.red || '#FF3B30') + '10' }}
               >
@@ -449,61 +500,91 @@ export default function SleepScreen({ theme, onBack, onAdd }) {
 
       </div>
 
-      {/* Voice overlay (proto S2) */}
-      {voiceOverlay && (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 30,
-          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <div style={{ color: '#fff', fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Говорите...</div>
-          <div style={{ position: 'relative', marginBottom: 24 }}>
-            <div style={{ position: 'absolute', inset: -12, borderRadius: 999, background: (theme.red || '#FF3B30') + '20', animation: 'voicePulse 1.5s infinite' }} />
-            <div className="flex items-center justify-center"
-              style={{ width: 80, height: 80, borderRadius: 40, background: theme.red || '#FF3B30', position: 'relative' }}>
-              <svg width={36} height={36} viewBox="0 0 24 24">
-                <g fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="2" width="6" height="11" rx="3" />
-                  <path d="M5 10a7 7 0 0014 0" />
-                  <line x1="12" y1="17" x2="12" y2="21" />
-                  <line x1="8" y1="21" x2="16" y2="21" />
-                </g>
-              </svg>
+      {/* Voice overlay (proto S2) — real speech recognition + AI */}
+      {voiceOverlay && (() => {
+        const dur = voiceResult ? calcDuration(voiceResult.bedtime, voiceResult.waketime) : null;
+        return (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 30,
+            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <div style={{ color: '#fff', fontSize: 20, fontWeight: 600, marginBottom: 24 }}>
+              {voiceListening ? 'Говорите...' : voiceResult ? 'Распознано' : voiceError || 'Обработка...'}
             </div>
+            {voiceListening && (
+              <div style={{ position: 'relative', marginBottom: 24 }}>
+                <div style={{ position: 'absolute', inset: -12, borderRadius: 999, background: (theme.red || '#FF3B30') + '20', animation: 'voicePulse 1.5s infinite' }} />
+                <div className="flex items-center justify-center"
+                  style={{ width: 80, height: 80, borderRadius: 40, background: theme.red || '#FF3B30', position: 'relative' }}>
+                  <svg width={36} height={36} viewBox="0 0 24 24">
+                    <g fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="2" width="6" height="11" rx="3" />
+                      <path d="M5 10a7 7 0 0014 0" />
+                      <line x1="12" y1="17" x2="12" y2="21" />
+                      <line x1="8" y1="21" x2="16" y2="21" />
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            )}
+            {voiceListening && (
+              <div style={{ color: '#fff', fontSize: 13, opacity: 0.6, marginBottom: 24 }}>
+                «лёг в двенадцать, встал в семь»
+              </div>
+            )}
+            {!voiceListening && !voiceResult && !voiceError && (
+              <div style={{ color: '#fff', fontSize: 14, opacity: 0.7, marginBottom: 24 }}>Анализирую...</div>
+            )}
+            {voiceResult && dur && (
+              <div style={{ width: 280, background: theme.card, borderRadius: 16, padding: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: theme.text, marginBottom: 6 }}>Распознано:</div>
+                <div className="flex justify-between" style={{ marginBottom: 4 }}>
+                  <span style={{ fontSize: 14, color: theme.text }}>Лёг</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>{voiceResult.bedtime}</span>
+                </div>
+                <div className="flex justify-between" style={{ marginBottom: 4 }}>
+                  <span style={{ fontSize: 14, color: theme.text }}>Встал</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>{voiceResult.waketime}</span>
+                </div>
+                <div className="flex justify-between" style={{ borderTop: `0.5px solid ${theme.gray5}`, paddingTop: 6, marginBottom: 10 }}>
+                  <span style={{ fontSize: 14, color: theme.text }}>Итого</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: theme.purple || '#AF52DE' }}>{dur.hours}ч {dur.minutes > 0 ? `${dur.minutes}мин` : ''}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => { setVoiceOverlay(false); setVoiceResult(null); }}
+                    className="flex-1 py-2.5 rounded-xl text-sm"
+                    style={{ background: theme.gray5, color: theme.gray1, textAlign: 'center', border: 'none', cursor: 'pointer' }}>
+                    Отмена
+                  </button>
+                  <button onClick={() => { setVoiceOverlay(false); onAdd?.({ bedtime: voiceResult.bedtime, waketime: voiceResult.waketime, duration: dur.total }); setVoiceResult(null); }}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: theme.purple || '#AF52DE', textAlign: 'center', border: 'none', cursor: 'pointer' }}>
+                    Сохранить
+                  </button>
+                </div>
+              </div>
+            )}
+            {(voiceError || (!voiceListening && !voiceResult)) && (
+              <div className="flex gap-2" style={{ marginTop: 16 }}>
+                <button onClick={() => { setVoiceOverlay(false); setVoiceError(''); setVoiceResult(null); }}
+                  className="px-6 py-2.5 rounded-xl text-sm"
+                  style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                  Закрыть
+                </button>
+                {voiceError && (
+                  <button onClick={startVoice}
+                    className="px-6 py-2.5 rounded-xl text-sm font-semibold"
+                    style={{ background: theme.red || '#FF3B30', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                    Повторить
+                  </button>
+                )}
+              </div>
+            )}
+            <style>{`@keyframes voicePulse { 0%,100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.3); opacity: 0; } }`}</style>
           </div>
-          <div style={{ color: '#fff', fontSize: 13, opacity: 0.6, marginBottom: 24 }}>
-            «лёг в двенадцать, встал в семь»
-          </div>
-          <div style={{ width: 280, background: theme.card, borderRadius: 16, padding: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: theme.text, marginBottom: 6 }}>Распознано:</div>
-            <div className="flex justify-between" style={{ marginBottom: 4 }}>
-              <span style={{ fontSize: 14, color: theme.text }}>Лёг</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>00:00</span>
-            </div>
-            <div className="flex justify-between" style={{ marginBottom: 4 }}>
-              <span style={{ fontSize: 14, color: theme.text }}>Встал</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>7:00</span>
-            </div>
-            <div className="flex justify-between" style={{ borderTop: `0.5px solid ${theme.gray5}`, paddingTop: 6, marginBottom: 10 }}>
-              <span style={{ fontSize: 14, color: theme.text }}>Итого</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: theme.purple || '#AF52DE' }}>7ч 00мин</span>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setVoiceOverlay(false)}
-                className="flex-1 py-2.5 rounded-xl text-sm"
-                style={{ background: theme.gray5, color: theme.gray1, textAlign: 'center' }}>
-                Отмена
-              </button>
-              <button onClick={() => { setVoiceOverlay(false); onAdd?.(); }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
-                style={{ background: theme.purple || '#AF52DE', textAlign: 'center' }}>
-                Сохранить
-              </button>
-            </div>
-          </div>
-          <style>{`@keyframes voicePulse { 0%,100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.3); opacity: 0; } }`}</style>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

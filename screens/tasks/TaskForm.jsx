@@ -7,6 +7,7 @@ import { getActiveProjects } from '../../services/projects';
 import IOSKeyboardSpacer from '../../components/IOSKeyboardSpacer';
 import DatePicker from '../../components/DatePicker';
 import Ic from '../../components/Icon';
+import VoiceInput from '../../components/VoiceInput';
 
 const PRIORITIES = [
   { id: 'urgent', label: '🔴 Срочная' },
@@ -88,14 +89,17 @@ export default function TaskForm({ theme, onBack }) {
 
       <div className="flex-1 overflow-auto px-4 pb-8">
         {/* Title */}
-        <input
-          value={title}
-          onChange={e => { setTitle(e.target.value); setErrors(prev => ({...prev, title: null})); }}
-          className="w-full text-lg font-semibold outline-none mb-1 rounded-xl px-4 py-3"
-          style={{ color: theme.text, background: theme.gray6, border: errors.title ? `1px solid ${theme.red}` : 'none' }}
-          placeholder="Название задачи"
-          ref={titleRef}
-        />
+        <div className="flex gap-2 items-center mb-1">
+          <input
+            value={title}
+            onChange={e => { setTitle(e.target.value); setErrors(prev => ({...prev, title: null})); }}
+            className="flex-1 text-lg font-semibold outline-none rounded-xl px-4 py-3"
+            style={{ color: theme.text, background: theme.gray6, border: errors.title ? `1px solid ${theme.red}` : 'none' }}
+            placeholder="Название задачи"
+            ref={titleRef}
+          />
+          <VoiceInput onResult={(text) => { setTitle(text); setErrors(prev => ({...prev, title: null})); }} theme={theme} />
+        </div>
         {errors.title && <span className="text-xs mb-2 block px-1" style={{ color: theme.red }}>{errors.title}</span>}
 
         {/* Description */}

@@ -33,6 +33,8 @@ export default function AccountForm({ account, onSave, onDelete, onClose, theme 
   const [color, setColor] = useState('#FFD60A');
   const [limit, setLimit] = useState('');
   const [paymentDay, setPaymentDay] = useState('');
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const ocrRef = useRef(null);
 
   useEffect(() => {
     if (account) {
@@ -46,6 +48,31 @@ export default function AccountForm({ account, onSave, onDelete, onClose, theme 
       setPaymentDay(account.next_payment_date || '');
     }
   }, [account]);
+
+  const handleOCR = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setOcrLoading(true);
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const { parseBankStatement } = await import('../../services/ocr');
+      const ops = await parseBankStatement(base64);
+      if (ops.length > 0) {
+        // Берём наибольшую сумму как баланс
+        const max = ops.reduce((a, b) => Math.abs(b.amount) > Math.abs(a.amount) ? b : a, ops[0]);
+        setBalance(String(Math.abs(max.amount)));
+      }
+    } catch (err) {
+      console.error('[OCR Account]', err);
+    }
+    setOcrLoading(false);
+    e.target.value = '';
+  };
 
   const savingRef = useRef(false);
   const handleSubmit = () => {
@@ -125,6 +152,20 @@ export default function AccountForm({ account, onSave, onDelete, onClose, theme 
 
         <FormInput label="Баланс" type="number" inputMode="decimal" value={balance}
           onChange={setBalance} placeholder="0" prefix={getSymbolForCode(currency)} theme={theme} />
+
+        <button
+          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm active:opacity-70"
+          style={{ background: (theme.purple || '#AF52DE') + '10', border: 'none', cursor: 'pointer' }}
+          onClick={() => ocrRef.current?.click()}
+          disabled={ocrLoading}
+        >
+          <span style={{ fontSize: 16 }}>{ocrLoading ? '⏳' : '📸'}</span>
+          <span style={{ color: theme.purple || '#AF52DE', fontWeight: 500 }}>
+            {ocrLoading ? 'Распознаю...' : 'Баланс из скриншота'}
+          </span>
+        </button>
+        <input ref={ocrRef} type="file" accept="image/*" capture="environment"
+          className="hidden" onChange={handleOCR} />
 
         {/* Color picker */}
         <div className="mb-3">
