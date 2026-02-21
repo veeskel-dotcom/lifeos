@@ -74,10 +74,3 @@ export function startListening(onResult, onError, onEnd) {
 
   return recognition; // для .stop()
 }
-
-// ═══ Остановить распознавание ═══
-export function stopListening(recognition) {
-  try {
-    recognition?.stop();
-  } catch { /* already stopped */ }
-}

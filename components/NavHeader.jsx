@@ -15,6 +15,7 @@ export default function NavHeader({ title, left, right, rightAction, onBack, the
       {onBack ? (
         <button
           onClick={onBack}
+          aria-label="Назад"
           style={{
             background: 'none',
             border: 'none',

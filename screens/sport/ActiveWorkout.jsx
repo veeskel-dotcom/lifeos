@@ -75,18 +75,19 @@ export default function ActiveWorkout({ workoutId, workout: initialWorkout, them
   // Load "last time" data for exercises
   useEffect(() => {
     if (!workout?.exercises) return;
-    workout.exercises.forEach(async (ex) => {
+    Promise.all(workout.exercises.map(async (ex) => {
       if (lastData[ex.exercise_id]) return;
-      const last = await getLastWorkoutForExercise(ex.exercise_id);
-      if (last) {
-        setLastData(prev => ({ ...prev, [ex.exercise_id]: last }));
-        // Prefill input from last workout
-        if (last.sets.length > 0 && !inputWeight) {
-          setInputWeight(String(last.sets[0].weight));
-          setInputReps(String(last.sets[0].reps));
+      try {
+        const last = await getLastWorkoutForExercise(ex.exercise_id);
+        if (last) {
+          setLastData(prev => ({ ...prev, [ex.exercise_id]: last }));
+          if (last.sets.length > 0 && !inputWeight) {
+            setInputWeight(String(last.sets[0].weight));
+            setInputReps(String(last.sets[0].reps));
+          }
         }
-      }
-    });
+      } catch { /* не критично */ }
+    }));
   }, [workout?.exercises]);
 
   const refreshWorkout = useCallback(async () => {

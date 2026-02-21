@@ -41,6 +41,10 @@ export default function FoodSearch({ meal, date, theme, onBack, initialMode }) {
     if (initialMode === 'barcode') barcodeRef.current?.click();
   }, [initialMode]);
 
+  useEffect(() => {
+    return () => clearTimeout(searchTimer.current);
+  }, []);
+
   // Debounced search
   const handleQueryChange = (val) => {
     setQuery(val);

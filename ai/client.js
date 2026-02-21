@@ -99,6 +99,8 @@ export async function callAIStream({
   const isDev = import.meta.env.DEV;
   if (isDev && !import.meta.env.VITE_OPENROUTER_API_KEY) throw new Error('API_KEY_MISSING');
 
+  if (!navigator.onLine) throw new Error('OFFLINE');
+
   const limits = await checkLimits();
   if (limits.blocked) throw new Error(`LIMIT_REACHED:${limits.reason}`);
 

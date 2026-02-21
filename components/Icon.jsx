@@ -376,5 +376,3 @@ export default function Ic({ name, color, size = 36, r = 10, raw = false, classN
     </div>
   );
 }
-
-export { PATHS };

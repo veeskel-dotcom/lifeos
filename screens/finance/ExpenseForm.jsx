@@ -200,7 +200,7 @@ export default function ExpenseForm({ expense, onSave, onDelete, onClose, theme 
               style={{ background: theme.gray5, borderRadius: 12, padding: '12px 14px' }}>
               <input type="number" inputMode="decimal" value={amount}
                 onChange={e => setAmount(e.target.value)} placeholder="0"
-                className="flex-1 bg-transparent outline-none tabular-nums"
+                className="hero-input flex-1 bg-transparent outline-none tabular-nums"
                 style={{ fontSize: 28, fontWeight: 700, color: theme.text, border: 'none', width: '100%' }}
               />
               <span style={{ fontSize: 18, fontWeight: 500, color: theme.gray2 }}>{getCurrencySymbol()}</span>

@@ -7,5 +7,5 @@ export { processInput } from './cascade';
 export { callAI, callAIStream, callAIVision, isAIAvailable, getAIStatus } from './client';
 export { trackUsage, checkLimits, getLimitsStatus } from './cost';
 export { saveCorrection, findCorrection, getAllCorrections } from './corrections';
-export { isVoiceSupported, startListening, stopListening } from './voice';
+export { isVoiceSupported, startListening } from './voice';
 export { executeAction } from './execute';

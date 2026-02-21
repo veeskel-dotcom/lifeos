@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { BarChart, Bar, XAxis, ResponsiveContainer } from 'recharts';
 import Card from '../../components/Card';
 import ChipBar from '../../components/ChipBar';
 import EmptyState from '../../components/EmptyState';
@@ -209,14 +208,23 @@ export default function TasksList({ theme, onBack, onNavigate, initialView, onTo
                 <div className="text-[10px]" style={{ color: theme.gray2 }}>всего</div>
               </div>
             </div>
-            {prodStats.byDay && prodStats.byDay.length > 0 && (
-              <ResponsiveContainer width="100%" height={60}>
-                <BarChart data={prodStats.byDay}>
-                  <XAxis dataKey="label" tick={{ fontSize: 9, fill: theme.gray2 }} axisLine={false} tickLine={false} />
-                  <Bar dataKey="count" fill={theme.accent} radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            {prodStats.byDay && prodStats.byDay.length > 0 && (() => {
+              const maxCount = Math.max(...prodStats.byDay.map(d => d.count), 1);
+              const barW = Math.floor(100 / prodStats.byDay.length) - 2;
+              return (
+                <svg width="100%" height="60" viewBox={`0 0 ${prodStats.byDay.length * 14} 60`} preserveAspectRatio="none">
+                  {prodStats.byDay.map((d, i) => {
+                    const h = Math.max(2, (d.count / maxCount) * 44);
+                    return (
+                      <g key={i}>
+                        <rect x={i * 14 + 2} y={44 - h} width={10} height={h} rx={3} fill={theme.accent} />
+                        <text x={i * 14 + 7} y={57} textAnchor="middle" fontSize="7" fill={theme.gray2}>{d.label}</text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              );
+            })()}
           </Card>
         )}
 

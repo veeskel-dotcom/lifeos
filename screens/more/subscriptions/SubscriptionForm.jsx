@@ -164,7 +164,7 @@ export default function SubscriptionForm({ theme, onBack, onSave, existing }) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0"
-            className="w-full text-2xl font-bold mt-1 bg-transparent outline-none tabular-nums"
+            className="hero-input w-full text-2xl font-bold mt-1 bg-transparent outline-none tabular-nums"
             style={{ color: theme.accent }}
           />
           {errors.amount && <span className="text-xs mt-1 block" style={{ color: theme.red }}>{errors.amount}</span>}

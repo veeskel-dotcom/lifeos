@@ -191,7 +191,10 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
       if (session) await addMessage(session.session_id, 'assistant', finalMsg.content);
 
     } catch (err) {
-      pushAssistantMsg(`❌ ${err.message || 'Ошибка'}`);
+      const msg = err.message === 'OFFLINE' ? '📡 Нет подключения к интернету'
+        : err.message?.startsWith('LIMIT_REACHED') ? '⚠️ Достигнут лимит AI вызовов'
+        : `❌ ${err.message || 'Ошибка'}`;
+      pushAssistantMsg(msg);
     }
 
     setIsLoading(false);

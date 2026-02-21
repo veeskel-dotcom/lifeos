@@ -110,7 +110,7 @@ export default function IncomeForm({ income, onSave, onDelete, onClose, theme })
             <span style={{ fontSize: 13, color: theme.gray2 }}>{getCurrencySymbol()}</span>
             <input type="number" inputMode="decimal" value={amount}
               onChange={e => setAmount(e.target.value)} placeholder="0" autoFocus={!isEdit}
-              className="flex-1 bg-transparent outline-none tabular-nums"
+              className="hero-input flex-1 bg-transparent outline-none tabular-nums"
               style={{ fontSize: 22, fontWeight: 700, color: theme.text, border: 'none', marginLeft: 4, width: '100%' }}
             />
           </div>

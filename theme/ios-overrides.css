@@ -10,7 +10,7 @@
 }
 
 /* Fix iOS input zoom (font-size < 16px triggers zoom) */
-input, select, textarea {
+input:not(.hero-input), select, textarea:not(.hero-input) {
   font-size: 16px !important;
 }
 

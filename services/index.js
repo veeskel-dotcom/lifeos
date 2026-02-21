@@ -79,5 +79,4 @@ export {
 export {
   exportExpensesCSV,
   exportIncomesCSV,
-  downloadBlob,
 } from './export';

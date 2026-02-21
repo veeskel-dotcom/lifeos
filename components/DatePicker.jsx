@@ -94,7 +94,7 @@ export default function DatePicker({ open, onClose, value, onSelect, theme }) {
     >
       <div
         className="w-full max-w-md rounded-t-2xl px-4 pt-4 pb-8"
-        style={{ background: theme.card, animation: 'slideUp 0.25s ease-out' }}
+        style={{ background: theme.card, animation: 'slideUp 0.25s ease-out', willChange: 'transform' }}
       >
         {/* Month/Year nav */}
         <div className="flex items-center justify-between mb-4">
@@ -164,7 +164,6 @@ export default function DatePicker({ open, onClose, value, onSelect, theme }) {
           </button>
         </div>
       </div>
-      <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
     </div>
   );
 }

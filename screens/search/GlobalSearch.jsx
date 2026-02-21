@@ -3,7 +3,7 @@ import FormInput from '../../components/FormInput';
  * M2.1: GlobalSearch — кросс-модульный поиск.
  * Ищет по: задачам, заметкам, расходам, подпискам, документам, событиям.
  */
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
@@ -25,6 +25,10 @@ export default function GlobalSearch({ theme, onBack, onNavigate }) {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const debounceRef = useRef(null);
+
+  useEffect(() => {
+    return () => clearTimeout(debounceRef.current);
+  }, []);
 
   const doSearch = useCallback(async (q) => {
     if (!q || q.length < 2) { setResults([]); return; }

@@ -96,19 +96,3 @@ export async function exportIncomesCSV(filters = {}) {
     throw e;
   }
 }
-
-// ─── Скачивание ─────────────────────────────────────────
-
-/**
- * Триггер скачивания Blob как файла.
- * @param {Blob} blob
- * @param {string} filename
- */
-export function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}

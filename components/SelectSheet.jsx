@@ -60,7 +60,8 @@ export default function SelectSheet({ open, onClose, title, options = [], select
     >
       <div
         className="w-full max-w-md rounded-t-2xl overflow-hidden"
-        style={{ background: theme.card, maxHeight: '60vh', animation: 'slideUp 0.25s ease-out' }}
+        role="dialog" aria-modal="true" aria-label={title || 'Выбор'}
+        style={{ background: theme.card, maxHeight: '60vh', animation: 'slideUp 0.25s ease-out', willChange: 'transform' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
@@ -112,7 +113,6 @@ export default function SelectSheet({ open, onClose, title, options = [], select
           ))}
         </div>
       </div>
-      <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
     </div>
   );
 }

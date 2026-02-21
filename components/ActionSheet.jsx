@@ -31,7 +31,7 @@ export default function ActionSheet({ open, onClose, title, actions = [], theme 
       className="fixed inset-0 z-50 flex items-end justify-center"
       style={{ background: 'rgba(0,0,0,0.4)', WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
     >
-      <div className="w-full max-w-md mx-4 mb-4" style={{ animation: 'slideUp 0.25s ease-out' }}>
+      <div className="w-full max-w-md mx-4 mb-4" role="dialog" aria-modal="true" aria-label={title || 'Действия'} style={{ animation: 'slideUp 0.25s ease-out', willChange: 'transform' }}>
         <div className="rounded-2xl overflow-hidden mb-2" style={{ background: theme.card }}>
           {title && (
             <div className="px-4 pt-4 pb-2 text-center">
@@ -65,7 +65,6 @@ export default function ActionSheet({ open, onClose, title, actions = [], theme 
           Отмена
         </button>
       </div>
-      <style>{`@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
     </div>
   );
 }

@@ -37,7 +37,8 @@ export default function ConfirmSheet({ open, onClose, title, message, confirmLab
     >
       <div
         className="w-full max-w-md mx-4 mb-4 animate-slide-up"
-        style={{ animation: 'slideUp 0.25s ease-out' }}
+        role="dialog" aria-modal="true" aria-label={title || 'Подтверждение'}
+        style={{ animation: 'slideUp 0.25s ease-out', willChange: 'transform' }}
       >
         {/* Main card */}
         <div className="rounded-2xl overflow-hidden mb-2" style={{ background: theme.card }}>
@@ -69,7 +70,6 @@ export default function ConfirmSheet({ open, onClose, title, message, confirmLab
           Отмена
         </button>
       </div>
-      <style>{`@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
     </div>
   );
 }

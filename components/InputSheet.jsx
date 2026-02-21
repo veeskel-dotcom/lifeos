@@ -48,7 +48,8 @@ export default function InputSheet({
     >
       <div
         className="w-full max-w-md rounded-t-2xl px-4 pt-4 pb-8"
-        style={{ background: theme.card, animation: 'slideUp 0.25s ease-out' }}
+        role="dialog" aria-modal="true" aria-label={title || 'Ввод'}
+        style={{ background: theme.card, animation: 'slideUp 0.25s ease-out', willChange: 'transform' }}
       >
         {title && (
           <p className="text-base font-semibold mb-3" style={{ color: theme.text }}>{title}</p>
@@ -81,7 +82,6 @@ export default function InputSheet({
           </button>
         </div>
       </div>
-      <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
     </div>
   );
 }
