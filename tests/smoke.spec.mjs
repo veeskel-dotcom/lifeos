@@ -38,27 +38,13 @@ const SCREENS = [
 async function loadApp(page) {
   await page.goto(BASE, { waitUntil: 'networkidle', timeout: 30000 });
 
-  // Skip onboarding by setting flag in IndexedDB
+  // Skip onboarding by setting flag via app's Dexie instance
   await page.evaluate(async () => {
-    // Open Dexie DB directly
-    const req = indexedDB.open('lifeos');
-    await new Promise((resolve, reject) => {
-      req.onsuccess = async () => {
-        try {
-          const db = req.result;
-          const tx = db.transaction('settings', 'readwrite');
-          const store = tx.objectStore('settings');
-          store.put({ key: 'onboarding_complete', value: 'true' });
-          await new Promise(r => { tx.oncomplete = r; });
-        } catch (e) { /* DB may not be ready yet */ }
-        resolve();
-      };
-      req.onerror = resolve; // continue anyway
-      req.onupgradeneeded = () => {
-        // Don't interfere with Dexie schema
-        resolve();
-      };
-    });
+    try {
+      const mod = await import('/db/index.js');
+      const db = mod.db || mod.default;
+      await db.settings.put({ key: 'has_completed_onboarding', value: true });
+    } catch (e) { /* DB may not be ready yet */ }
   });
 
   // Reload after setting onboarding flag
