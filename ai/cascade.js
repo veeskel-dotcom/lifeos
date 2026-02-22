@@ -36,13 +36,13 @@ export async function processInput(input, chatHistory) {
   if (level2) return applyPolicy({ ...level2, level: 2 });
 
   // ═══ Уровень 3-4: API ═══
-  const targetLevel = routeToLevel(text);
+  const { level: targetLevel, topics } = routeToLevel(text);
 
   try {
     if (targetLevel === 'level4') {
-      return applyPolicy({ ...(await level4_analysis(text, chatHistory)), level: 4 });
+      return applyPolicy({ ...(await level4_analysis(text, chatHistory, topics)), level: 4 });
     }
-    return applyPolicy({ ...(await level3_parseCommand(text, chatHistory)), level: 3 });
+    return applyPolicy({ ...(await level3_parseCommand(text, chatHistory, topics)), level: 3 });
   } catch (err) {
     return handleAIError(err);
   }
@@ -319,6 +319,23 @@ function level2_patterns(text) {
     return { action: 'navigate', params: { screen: 'finances' }, message: null };
   }
 
+  // ═══ Аналитика (строгие паттерны — только целевые запросы) ═══
+  if (/^(?:аномалии|покажи аномалии|есть аномалии|отклонения)\s*\??$/i.test(lower)) {
+    return { action: 'query_anomalies', params: {}, message: null };
+  }
+  if (/^(?:корреляции|покажи корреляции|связи между модулями|зависимости|что связано)\s*\??$/i.test(lower)) {
+    return { action: 'query_correlations', params: {}, message: null };
+  }
+  if (/^(?:сводка|брифинг|что важно|что нужно знать)\s*(?:сегодня)?\s*\??$/i.test(lower)) {
+    return { action: 'query_briefing', params: {}, message: null };
+  }
+  if (/^(?:полный анализ|кросс-анализ|все инсайты|глубокий анализ)\s*\??$/i.test(lower)) {
+    return { action: 'query_cross_analysis', params: {}, message: null };
+  }
+  if (/^(?:что (?:ты )?(?:обо мне )?(?:знаешь|помнишь)|моя память|что в памяти)\s*\??$/i.test(lower)) {
+    return { action: 'query_memory', params: {}, message: null };
+  }
+
   // Проактивные инсайты → L4 с полным контекстом
   if (/^(?:как дела|что нового|подведи итог|итоги|отчёт|отчет|как у меня|обзор|статус|дай сводку)$/i.test(lower)) {
     return null; // пропускаем L2, routeToLevel отправит в L4
@@ -349,8 +366,8 @@ function level2_patterns(text) {
 // УРОВЕНЬ 3: API Fast — парсинг команд (~$0.001)
 // ═══════════════════════════════════════════
 
-async function level3_parseCommand(input, chatHistory) {
-  const context = await collectContext('L3');
+async function level3_parseCommand(input, chatHistory, topics) {
+  const context = await collectContext('L3', topics);
 
   const result = await callAI({
     prompt: input,
@@ -384,8 +401,8 @@ async function level3_parseCommand(input, chatHistory) {
 // УРОВЕНЬ 4: API Smart — анализ (~$0.005)
 // ═══════════════════════════════════════════
 
-async function level4_analysis(input, chatHistory) {
-  const context = await collectContext('L4');
+async function level4_analysis(input, chatHistory, topics) {
+  const context = await collectContext('L4', topics);
 
   const result = await callAI({
     prompt: input,
@@ -412,11 +429,24 @@ function routeToLevel(input) {
     'как у меня', 'обзор', 'статус', 'дай сводку',
   ];
 
-  if (analysisKeywords.some(kw => lower.includes(kw))) {
-    return 'level4';
+  // Определяем тему запроса для умного контекста
+  const topics = new Set();
+  const TOPIC_KW = {
+    finance:   ['расход', 'доход', 'бюджет', 'трат', 'деньг', 'счёт', 'зарплат', '₸', '₽', 'экономи', 'перевод'],
+    tasks:     ['задач', 'дело', 'планир', 'сделать', 'дедлайн'],
+    health:    ['сон', 'спал', 'вес ', 'здоров', 'настроен', 'mood'],
+    nutrition: ['еда', 'калори', 'ккал', 'белок', 'питани', 'ел ', 'пил ', 'вода', 'диет'],
+    sport:     ['тренир', 'спорт', 'зал', 'бег', 'упражнен'],
+    invest:    ['акци', 'портфель', 'дивиденд', 'инвестиц', 'биржа'],
+  };
+  for (const [topic, keywords] of Object.entries(TOPIC_KW)) {
+    if (keywords.some(kw => lower.includes(kw))) topics.add(topic);
   }
+  if (topics.size === 0) topics.add('all');
+  topics.add('memory');
 
-  return 'level3';
+  const level = analysisKeywords.some(kw => lower.includes(kw)) ? 'level4' : 'level3';
+  return { level, topics: [...topics] };
 }
 
 // ═══════════════════════════════════════════
@@ -450,7 +480,7 @@ function handleAIError(err) {
 // Контекст для промптов
 // ═══════════════════════════════════════════
 
-async function collectContext(tier = 'L4') {
+async function collectContext(tier = 'L4', topics = ['all']) {
   try {
     const db = (await import('../db/index')).default;
     const today = new Date().toISOString().split('T')[0];
@@ -468,74 +498,98 @@ async function collectContext(tier = 'L4') {
       };
     }
 
-    // L4: полный контекст для анализа (~1500 токенов)
+    // L4: умный контекст — грузим только по темам
     const { getSetting } = await import('../db/helpers');
     const monthStart = today.slice(0, 8) + '01';
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const loadAll = topics.includes('all');
+    const has = (t) => loadAll || topics.includes(t);
 
-    const [
-      tasks, todayExpenses, monthExpenses, monthIncomes,
-      accounts, lastSleep, lastWorkout, lastWeight,
-      todayMeals, todayWater, goals, routines, routineLog,
-      portfolio, memories, budget
-    ] = await Promise.all([
+    // Всегда: tasks + memory
+    const baseQueries = [
       db.tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').limit(20).toArray().catch(() => []),
-      db.expenses.where('date').equals(today).toArray().catch(() => []),
-      db.expenses.where('date').between(monthStart, today + '\uffff', true, true).toArray().catch(() => []),
-      db.incomes.where('date').between(monthStart, today + '\uffff', true, true).toArray().catch(() => []),
-      db.accounts.toArray().catch(() => []),
-      db.sleep_log.where('date').equals(yesterday).first().catch(() => null),
-      db.workouts.orderBy('date').reverse().first().catch(() => null),
-      db.body_weight.orderBy('date').reverse().first().catch(() => null),
-      db.food_log.where('date').equals(today).toArray().catch(() => []),
-      db.water_log.where('date').equals(today).toArray().catch(() => []),
-      db.goals.filter(g => g.status === 'active').toArray().catch(() => []),
-      db.routines.toArray().catch(() => []),
-      db.routine_log.where('date').equals(today).toArray().catch(() => []),
-      db.portfolio.toArray().catch(() => []),
       db.ai_memory.orderBy('created_at').reverse().limit(30).toArray().catch(() => []),
-      getSetting('monthly_budget').catch(() => null),
-    ]);
+    ];
+    // Условные запросы
+    const conditionalQueries = {
+      todayExpenses: has('finance') ? db.expenses.where('date').equals(today).toArray().catch(() => []) : [],
+      monthExpenses: has('finance') ? db.expenses.where('date').between(monthStart, today + '\uffff', true, true).toArray().catch(() => []) : [],
+      monthIncomes: has('finance') ? db.incomes.where('date').between(monthStart, today + '\uffff', true, true).toArray().catch(() => []) : [],
+      accounts: has('finance') ? db.accounts.toArray().catch(() => []) : [],
+      budget: has('finance') ? getSetting('monthly_budget').catch(() => null) : null,
+      lastSleep: has('health') ? db.sleep_log.where('date').equals(yesterday).first().catch(() => null) : null,
+      lastWeight: has('health') ? db.body_weight.orderBy('date').reverse().first().catch(() => null) : null,
+      lastWorkout: has('sport') ? db.workouts.orderBy('date').reverse().first().catch(() => null) : null,
+      todayMeals: has('nutrition') ? db.food_log.where('date').equals(today).toArray().catch(() => []) : [],
+      todayWater: has('nutrition') ? db.water_log.where('date').equals(today).toArray().catch(() => []) : [],
+      goals: loadAll ? db.goals.filter(g => g.status === 'active').toArray().catch(() => []) : [],
+      routines: loadAll ? db.routines.toArray().catch(() => []) : [],
+      routineLog: loadAll ? db.routine_log.where('date').equals(today).toArray().catch(() => []) : [],
+      portfolio: has('invest') ? db.portfolio.toArray().catch(() => []) : [],
+    };
 
+    // Параллельное выполнение
+    const [tasks, memories] = await Promise.all(baseQueries);
+    const cq = {};
+    const entries = Object.entries(conditionalQueries);
+    const values = await Promise.all(entries.map(([, v]) => Promise.resolve(v)));
+    entries.forEach(([k], i) => { cq[k] = values[i]; });
+
+    const todayExpenses = cq.todayExpenses || [];
+    const monthExpenses = cq.monthExpenses || [];
+    const monthIncomes = cq.monthIncomes || [];
     const todaySpent = todayExpenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0);
     const monthSpent = monthExpenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0);
     const monthIncome = monthIncomes.reduce((s, i) => s + (i.amount || 0), 0);
 
     let daysSinceWorkout = null;
-    if (lastWorkout?.date) {
-      daysSinceWorkout = Math.floor((Date.now() - new Date(lastWorkout.date + 'T00:00:00').getTime()) / 86400000);
+    if (cq.lastWorkout?.date) {
+      daysSinceWorkout = Math.floor((Date.now() - new Date(cq.lastWorkout.date + 'T00:00:00').getTime()) / 86400000);
     }
 
-    return {
+    const ctx = {
       today,
-      // Задачи
       active_tasks: tasks.slice(0, 5).map(t => t.title),
       overdue_tasks_count: tasks.filter(t => t.deadline && t.deadline < today).length,
-      // Финансы
-      today_expenses_total: todaySpent,
-      recent_expenses: todayExpenses.slice(-3).map(e => ({ amount: e.amount_base || e.amount, desc: e.description })),
-      month_expenses_total: monthSpent,
-      month_income_total: monthIncome,
-      budget_remaining: budget ? budget - monthSpent : null,
-      account_balances: accounts.slice(0, 5).map(a => ({ name: a.name, balance: a.balance })),
-      // Здоровье
-      last_sleep: lastSleep ? { duration: lastSleep.duration_hours, bed_time: lastSleep.bed_time } : null,
-      last_workout: lastWorkout ? { type: lastWorkout.type, days_ago: daysSinceWorkout } : null,
-      current_weight: lastWeight?.weight || lastWeight?.value || null,
-      // Питание
-      today_calories: todayMeals.reduce((s, m) => s + (m.calories || m.total_calories || 0), 0),
-      today_water_ml: todayWater.reduce((s, w) => s + (w.amount_ml || 0), 0),
-      // Цели и рутины
-      active_goals: goals.slice(0, 5).map(g => ({ name: g.name || g.title, progress: g.progress || 0 })),
-      routines_today: { done: routineLog.length, total: routines.length },
-      // Портфель
-      portfolio_total_value: portfolio.reduce((s, p) => s + ((p.quantity || 0) * (p.current_price || p.avg_price || 0)), 0) || null,
-      // Память
       user_memory: memories.map(m => `[${m.category}] ${m.fact}`),
     };
+
+    // Финансы
+    if (has('finance')) {
+      ctx.today_expenses_total = todaySpent;
+      ctx.recent_expenses = todayExpenses.slice(-3).map(e => ({ amount: e.amount_base || e.amount, desc: e.description }));
+      ctx.month_expenses_total = monthSpent;
+      ctx.month_income_total = monthIncome;
+      ctx.budget_remaining = cq.budget ? cq.budget - monthSpent : null;
+      ctx.account_balances = (cq.accounts || []).slice(0, 5).map(a => ({ name: a.name, balance: a.balance }));
+    }
+    // Здоровье
+    if (has('health')) {
+      ctx.last_sleep = cq.lastSleep ? { duration: cq.lastSleep.duration_hours, bed_time: cq.lastSleep.bed_time } : null;
+      ctx.current_weight = cq.lastWeight?.weight || cq.lastWeight?.value || null;
+    }
+    // Спорт
+    if (has('sport')) {
+      ctx.last_workout = cq.lastWorkout ? { type: cq.lastWorkout.type, days_ago: daysSinceWorkout } : null;
+    }
+    // Питание
+    if (has('nutrition')) {
+      ctx.today_calories = (cq.todayMeals || []).reduce((s, m) => s + (m.calories || m.total_calories || 0), 0);
+      ctx.today_water_ml = (cq.todayWater || []).reduce((s, w) => s + (w.amount_ml || 0), 0);
+    }
+    // Цели и рутины (только при all)
+    if (loadAll) {
+      ctx.active_goals = (cq.goals || []).slice(0, 5).map(g => ({ name: g.name || g.title, progress: g.progress || 0 }));
+      ctx.routines_today = { done: (cq.routineLog || []).length, total: (cq.routines || []).length };
+    }
+    // Портфель
+    if (has('invest')) {
+      ctx.portfolio_total_value = (cq.portfolio || []).reduce((s, p) => s + ((p.quantity || 0) * (p.current_price || p.avg_price || 0)), 0) || null;
+    }
+
+    return ctx;
   } catch (err) {
     console.error('[collectContext]', err);
-    // Вернуть минимальный контекст вместо null
     return { today: new Date().toISOString().split('T')[0] };
   }
 }

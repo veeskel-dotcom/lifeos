@@ -8,6 +8,7 @@ const ACTION_ALLOWLIST = [
   'add_event', 'add_reminder', 'add_to_shopping_list',
   'add_routine', 'add_note',
   'query_expenses', 'query_tasks', 'query_nutrition',
+  'query_anomalies', 'query_correlations', 'query_briefing', 'query_cross_analysis', 'query_memory',
   'save_memory', 'forget_memory', 'web_search',
   'navigate', 'answer', 'undo_last',
 ];

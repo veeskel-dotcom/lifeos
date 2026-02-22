@@ -31,6 +31,11 @@ export function PARSE_COMMAND_PROMPT(context) {
 - query_expenses: {period} → текстовый ответ
 - query_tasks: {filter?} → текстовый ответ
 - query_nutrition: {period} → текстовый ответ
+- query_anomalies: {} → необычные отклонения от нормы
+- query_correlations: {} → связи между модулями (сон↔продуктивность и т.д.)
+- query_briefing: {} → сводка дня (задачи, бюджет, здоровье)
+- query_cross_analysis: {} → глубокий AI-анализ данных за 30 дней
+- query_memory: {} → что AI помнит о пользователе
 - save_memory: {category: "preference|habit|health|finance|lifestyle|goal", fact: "текст"}
 - forget_memory: {fact_fragment: "текст для поиска"}
 - web_search: {query} → поиск в интернете

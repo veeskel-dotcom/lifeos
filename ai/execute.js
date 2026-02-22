@@ -4,7 +4,91 @@
  */
 
 // Действия, для которых НЕ сохраняем undo
-const NO_UNDO_ACTIONS = ['query_expenses', 'query_tasks', 'query_nutrition', 'navigate', 'web_search', 'chat_response', 'undo_last', 'forget_memory', 'complete_task', 'log_workout', 'add_to_shopping_list'];
+const NO_UNDO_ACTIONS = ['query_expenses', 'query_tasks', 'query_nutrition', 'query_anomalies', 'query_correlations', 'query_briefing', 'query_cross_analysis', 'query_memory', 'navigate', 'web_search', 'chat_response', 'undo_last', 'forget_memory', 'complete_task', 'log_workout', 'add_to_shopping_list'];
+
+// ═══ Follow-up подсказки после действий ($0) ═══
+export async function getFollowUpSuggestions(action, params) {
+  const suggestions = [];
+  try {
+    switch (action) {
+      case 'add_expense':
+      case 'add_expense_quick': {
+        const desc = (params?.description || '').toLowerCase();
+        if (['кафе', 'ресторан', 'обед', 'кофе', 'завтрак', 'ужин'].some(k => desc.includes(k))) {
+          suggestions.push({ icon: '🍽', label: 'Записать еду', prompt: `ел ${params.description || ''}` });
+        }
+        suggestions.push({ icon: '📊', label: 'Траты сегодня', prompt: 'сколько сегодня' });
+        suggestions.push({ icon: '💸', label: 'Ещё расход', prompt: '' });
+        break;
+      }
+      case 'add_income':
+        suggestions.push({ icon: '📊', label: 'Баланс', prompt: 'сколько на счетах' });
+        break;
+      case 'add_transfer':
+        suggestions.push({ icon: '📊', label: 'Траты сегодня', prompt: 'сколько сегодня' });
+        break;
+      case 'add_task':
+        suggestions.push({ icon: '⏰', label: 'Напомнить', prompt: `напомни ${params?.title || ''} через 2 часа` });
+        suggestions.push({ icon: '📋', label: 'Все задачи', prompt: 'задачи на сегодня' });
+        break;
+      case 'complete_task':
+        suggestions.push({ icon: '📋', label: 'Ещё задачи', prompt: 'задачи на сегодня' });
+        break;
+      case 'log_food':
+      case 'add_food':
+        suggestions.push({ icon: '💧', label: 'Записать воду', prompt: 'вода' });
+        suggestions.push({ icon: '📊', label: 'Калории сегодня', prompt: 'что я ел сегодня' });
+        break;
+      case 'log_water':
+        suggestions.push({ icon: '💧', label: 'Ещё воду', prompt: 'вода' });
+        break;
+      case 'log_weight':
+        suggestions.push({ icon: '📈', label: 'Тренд веса', prompt: 'как мой вес' });
+        break;
+      case 'log_sleep':
+        suggestions.push({ icon: '📊', label: 'Анализ сна', prompt: 'как мой сон за неделю' });
+        suggestions.push({ icon: '🍽', label: 'Завтрак', prompt: 'завтрак' });
+        break;
+      case 'log_mood':
+        suggestions.push({ icon: '📊', label: 'Тренд настроения', prompt: 'как моё настроение' });
+        break;
+      case 'log_workout':
+        suggestions.push({ icon: '⚖️', label: 'Записать вес', prompt: 'вес' });
+        break;
+      case 'add_event':
+        suggestions.push({ icon: '⏰', label: 'Напоминание', prompt: `напомни ${params?.title || ''} за час` });
+        suggestions.push({ icon: '📅', label: 'Открой календарь', prompt: 'открой календарь' });
+        break;
+      case 'add_reminder':
+        suggestions.push({ icon: '📋', label: 'Мои задачи', prompt: 'задачи на сегодня' });
+        break;
+      case 'add_to_shopping_list':
+        suggestions.push({ icon: '🛒', label: 'Ещё в список', prompt: 'открой покупки' });
+        break;
+      case 'add_routine':
+        suggestions.push({ icon: '🔄', label: 'Мои рутины', prompt: 'открой рутины' });
+        break;
+      case 'add_note':
+        suggestions.push({ icon: '📝', label: 'Мои заметки', prompt: 'открой заметки' });
+        break;
+      case 'save_memory':
+        suggestions.push({ icon: '🧠', label: 'Что помнишь?', prompt: 'что ты обо мне знаешь' });
+        break;
+      case 'query_expenses':
+        suggestions.push({ icon: '📉', label: 'Сравнить', prompt: 'сравни с прошлой неделей' });
+        suggestions.push({ icon: '💡', label: 'Где сэкономить?', prompt: 'на чём сэкономить' });
+        break;
+      case 'query_anomalies':
+        suggestions.push({ icon: '📊', label: 'Корреляции', prompt: 'корреляции' });
+        suggestions.push({ icon: '📋', label: 'Полный анализ', prompt: 'полный анализ' });
+        break;
+      case 'query_correlations':
+        suggestions.push({ icon: '🔍', label: 'Аномалии', prompt: 'аномалии' });
+        break;
+    }
+  } catch { /* not critical */ }
+  return suggestions.slice(0, 3);
+}
 
 export async function executeAction(action, params) {
   if (!action || action === 'chat_response' || action === 'error') {
@@ -213,6 +297,44 @@ async function dispatch(action, params) {
       const totals = await getDailyTotals(date);
       const label = params.period === 'yesterday' ? 'Вчера' : 'Сегодня';
       return { queryResult: `${label}: ${totals.calories || 0} ккал (Б${totals.protein || 0} Ж${totals.fat || 0} У${totals.carbs || 0})` };
+    }
+
+    // ── Аналитика ──
+    case 'query_anomalies': {
+      const { detectAnomalies } = await import('../services/anomalies');
+      const anomalies = await detectAnomalies();
+      if (!anomalies.length) return { queryResult: '✅ Всё в пределах нормы — аномалий не обнаружено' };
+      return { queryResult: `🔍 Обнаружено ${anomalies.length} аномалий:\n${anomalies.map(a => `${a.icon} ${a.title}: ${a.message}`).join('\n')}` };
+    }
+
+    case 'query_correlations': {
+      const { findCorrelations } = await import('../services/correlations');
+      const corrs = await findCorrelations(30);
+      if (!corrs.length) return { queryResult: '📊 Мало данных для корреляций (нужна минимум неделя)' };
+      return { queryResult: `📊 Корреляции (30 дней):\n${corrs.map(c => `${c.icon} ${c.text} (r=${c.correlation.toFixed(2)})`).join('\n')}` };
+    }
+
+    case 'query_briefing': {
+      const { collectBriefingData, generateTemplateBriefing, getGreeting } = await import('../services/briefing');
+      const data = await collectBriefingData();
+      const lines = generateTemplateBriefing(data);
+      return { queryResult: lines.length ? `${getGreeting()}!\n${lines.join('\n')}` : `${getGreeting()}! Всё спокойно — нет срочных уведомлений.` };
+    }
+
+    case 'query_cross_analysis': {
+      const { generateCrossAnalysis } = await import('../services/crossAnalysis');
+      const analysisResult = await generateCrossAnalysis(30);
+      if (!analysisResult.ready) return { queryResult: `📊 ${analysisResult.message}` };
+      return { queryResult: analysisResult.insights || '📊 Анализ выполнен, но инсайтов не найдено' };
+    }
+
+    case 'query_memory': {
+      const { getMemories } = await import('../services/aiMemory');
+      const mems = await getMemories(30);
+      if (!mems.length) return { queryResult: '🧠 Пока пусто. Расскажи о себе, и я запомню!' };
+      const bycat = {};
+      mems.forEach(m => (bycat[m.category] ??= []).push(m.fact));
+      return { queryResult: `🧠 Что я помню:\n${Object.entries(bycat).map(([c, facts]) => `**${c}**: ${facts.join('; ')}`).join('\n')}` };
     }
 
     // ── Рутины ──

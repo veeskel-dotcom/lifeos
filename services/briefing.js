@@ -182,6 +182,44 @@ export async function generateAIBriefing(data) {
   }
 }
 
+// ═══ Проактивные подсказки при открытии чата ($0) ═══
+export async function generateProactiveNudges() {
+  try {
+    const data = await collectBriefingData();
+    const nudges = [];
+
+    if (data.overdueTasks > 0) {
+      nudges.push({ icon: '⚠️', text: `${data.overdueTasks} просроченных задач`, prompt: 'задачи просроченные', priority: 10 });
+    }
+    if (data.budgetUsedPercent > 80) {
+      nudges.push({ icon: '💰', text: `Бюджет: ${data.budgetUsedPercent}%`, prompt: 'сколько потратил', priority: 8 });
+    }
+    if (data.daysSinceWorkout >= 3 && data.daysSinceWorkout < 999) {
+      nudges.push({ icon: '🏋️', text: `${data.daysSinceWorkout} дн без тренировки`, prompt: 'запиши тренировку', priority: 6 });
+    }
+    if (data.lastSleep?.duration && data.lastSleep.duration < 6.5) {
+      nudges.push({ icon: '😴', text: `Вчера ${data.lastSleep.duration}ч сна`, prompt: 'как мой сон', priority: 7 });
+    }
+    const hour = new Date().getHours();
+    if (hour >= 14 && data.todayWater < data.waterGoal * 0.3) {
+      nudges.push({ icon: '💧', text: 'Мало воды сегодня', prompt: 'вода 500', priority: 5 });
+    }
+    if (hour >= 7 && hour <= 11 && data.todayCalories === 0) {
+      nudges.push({ icon: '🍳', text: 'Записать завтрак?', prompt: '', priority: 3 });
+    }
+    if (data.todayTasks > 0) {
+      nudges.push({ icon: '📋', text: `${data.todayTasks} задач на сегодня`, prompt: 'задачи на сегодня', priority: 4 });
+    }
+    if (data.expiringDocs > 0) {
+      nudges.push({ icon: '📄', text: `${data.expiringDocs} документов истекают`, prompt: 'сводка', priority: 5 });
+    }
+
+    return nudges.sort((a, b) => b.priority - a.priority).slice(0, 4);
+  } catch {
+    return [];
+  }
+}
+
 // ═══ Приветствие по времени дня ═══
 export function getGreeting() {
   const h = new Date().getHours();

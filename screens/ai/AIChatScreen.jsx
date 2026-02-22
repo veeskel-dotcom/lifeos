@@ -28,6 +28,8 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
   /* K6: Correction */
   const [correcting, setCorrecting] = useState(null); // {msgIndex, originalInput}
   const [correctionText, setCorrectionText] = useState('');
+  /* Proactive nudges */
+  const [dynamicSuggestions, setDynamicSuggestions] = useState([]);
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -40,7 +42,16 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
   const initSession = async () => {
     const sess = await getOrCreateSession(lastMsgTime.current);
     setSession(sess);
-    if (sess?.messages?.length) setMessages(sess.messages);
+    if (sess?.messages?.length) {
+      setMessages(sess.messages);
+    } else {
+      // Проактивные подсказки для пустого чата
+      try {
+        const { generateProactiveNudges } = await import('../../services/briefing');
+        const nudges = await generateProactiveNudges();
+        if (nudges.length > 0) setDynamicSuggestions(nudges);
+      } catch {}
+    }
 
     // Derived memories: раз в неделю
     try {
@@ -72,6 +83,9 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
     setMessages(prev => [...prev, userMsg]);
     if (session) await addMessage(session.session_id, 'user', msg);
 
+    // Авто-извлечение фактов из текста (fire-and-forget, $0)
+    import('../../services/aiMemory').then(m => m.extractAndSaveFromText(msg)).catch(() => {});
+
     setIsLoading(true);
 
     try {
@@ -88,16 +102,22 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
 
       // ── Шаг 2a: Multi-action ──
       if (result.actions?.length > 0) {
-        const { executeAction } = await import('../../ai/execute');
-        let ok = 0, fail = 0;
+        const { executeAction, getFollowUpSuggestions } = await import('../../ai/execute');
+        let ok = 0, fail = 0, lastAction = null;
         for (const act of result.actions) {
           try {
             const exec = await executeAction(act.action, act.params);
-            if (exec.executed) ok++; else fail++;
+            if (exec.executed) { ok++; lastAction = act; } else fail++;
           } catch { fail++; }
         }
         const displayMsg = result.message || `Выполнено ${ok}/${ok + fail}`;
-        pushAssistantMsg(displayMsg);
+        const multiMsg = { role: 'assistant', content: displayMsg, timestamp: new Date().toISOString() };
+        // Follow-up от последнего успешного действия
+        if (lastAction) {
+          try { multiMsg.suggestedActions = await getFollowUpSuggestions(lastAction.action, lastAction.params); } catch {}
+        }
+        setMessages(prev => [...prev, multiMsg]);
+        if (session) await addMessage(session.session_id, 'assistant', displayMsg);
         setIsLoading(false);
         return;
       }
@@ -142,6 +162,11 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
             action: result.action,
             params: result.params,
           };
+          // Follow-up suggestions
+          try {
+            const { getFollowUpSuggestions } = await import('../../ai/execute');
+            assistantMsg.suggestedActions = await getFollowUpSuggestions(result.action, result.params);
+          } catch {}
           setMessages(prev => [...prev, assistantMsg]);
           if (session) await addMessage(session.session_id, 'assistant', displayMsg, { action: result.action });
         } else {
@@ -459,13 +484,22 @@ ${summaries.length ? `\nПредыдущие разговоры:\n${summaries.jo
               Голосом или текстом: «кофе 350», «задача: купить молоко», «вода»
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
-              {SUGGESTIONS.map((s, i) => (
-                <button key={i} onClick={() => handleSend(s.text)}
-                  className="px-3 py-2 rounded-xl text-xs font-medium"
-                  style={{ background: theme.accent + '12', color: theme.accent }}>
-                  {s.icon} {s.text}
-                </button>
-              ))}
+              {(dynamicSuggestions.length > 0
+                ? dynamicSuggestions.map((s, i) => (
+                    <button key={i} onClick={() => s.prompt ? handleSend(s.prompt) : inputRef.current?.focus()}
+                      className="px-3 py-2 rounded-xl text-xs font-medium"
+                      style={{ background: theme.accent + '12', color: theme.accent }}>
+                      {s.icon} {s.text}
+                    </button>
+                  ))
+                : SUGGESTIONS.map((s, i) => (
+                    <button key={i} onClick={() => handleSend(s.text)}
+                      className="px-3 py-2 rounded-xl text-xs font-medium"
+                      style={{ background: theme.accent + '12', color: theme.accent }}>
+                      {s.icon} {s.text}
+                    </button>
+                  ))
+              )}
             </div>
           </div>
         )}
@@ -683,6 +717,8 @@ function actionLabel(action) {
     add_note: 'Заметка сохранена', navigate: 'Навигация', undo_last: 'Отмена',
     save_memory: 'Запомнил', forget_memory: 'Забыл', web_search: 'Поиск',
     query_expenses: 'Расходы', query_tasks: 'Задачи', query_nutrition: 'Питание',
+    query_anomalies: 'Аномалии', query_correlations: 'Корреляции',
+    query_briefing: 'Сводка', query_cross_analysis: 'Анализ', query_memory: 'Память',
   };
   return map[action] || action;
 }
