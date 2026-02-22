@@ -55,7 +55,7 @@ export async function collectDailyRecords(days = 30) {
       expenses: expenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0),
       weight_kg: weight?.weight || null,
       water_ml: water.reduce((s, w) => s + (w.amount_ml || 0), 0) || null,
-      mood: mood?.score || null,
+      mood: mood?.value || mood?.score || null,
     });
   }
 

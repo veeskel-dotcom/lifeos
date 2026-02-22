@@ -4,7 +4,7 @@
  */
 
 // Действия, для которых НЕ сохраняем undo
-const NO_UNDO_ACTIONS = ['query_expenses', 'query_tasks', 'query_nutrition', 'navigate', 'web_search', 'chat_response', 'undo_last', 'forget_memory', 'complete_task'];
+const NO_UNDO_ACTIONS = ['query_expenses', 'query_tasks', 'query_nutrition', 'navigate', 'web_search', 'chat_response', 'undo_last', 'forget_memory', 'complete_task', 'log_workout', 'add_to_shopping_list'];
 
 export async function executeAction(action, params) {
   if (!action || action === 'chat_response' || action === 'error') {
@@ -129,8 +129,8 @@ async function dispatch(action, params) {
     case 'log_sleep': {
       const { addSleep } = await import('../services/sleep');
       return addSleep({
-        bed_time: params.bed_time || null,
-        wake_time: params.wake_time || null,
+        bedtime: params.bed_time || params.bedtime || null,
+        waketime: params.wake_time || params.waketime || null,
         duration_hours: params.duration_hours || null,
         date: today,
       });
