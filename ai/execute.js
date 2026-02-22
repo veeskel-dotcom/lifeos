@@ -3,6 +3,9 @@
  * Каскад возвращает {action, params} → executeAction записывает данные.
  */
 
+// Действия, для которых НЕ сохраняем undo
+const NO_UNDO_ACTIONS = ['query_expenses', 'query_tasks', 'query_nutrition', 'navigate', 'web_search', 'chat_response', 'undo_last', 'forget_memory', 'complete_task'];
+
 export async function executeAction(action, params) {
   if (!action || action === 'chat_response' || action === 'error') {
     return { executed: false };
@@ -10,6 +13,22 @@ export async function executeAction(action, params) {
 
   try {
     const result = await dispatch(action, params);
+
+    // Сохранить для undo (только записывающие действия с ID)
+    // Некоторые сервисы возвращают число (id), другие — объект {id, ...}
+    const resultId = typeof result === 'number' ? result : result?.id;
+    if (resultId && !NO_UNDO_ACTIONS.includes(action)) {
+      try {
+        const { setSetting } = await import('../db/helpers');
+        await setSetting('last_ai_action', JSON.stringify({
+          action,
+          resultId,
+          description: result?.description || params.description || params.title || params.name || '',
+          ts: Date.now(),
+        }));
+      } catch { /* undo tracking not critical */ }
+    }
+
     return { executed: true, action, result };
   } catch (err) {
     console.error(`[execute] ${action}:`, err);
@@ -242,6 +261,58 @@ async function dispatch(action, params) {
         return { queryResult: `🔍 ${result.topics.join('. ')}` };
       }
       return { queryResult: `🔍 По запросу "${params.query}" точного ответа не найдено` };
+    }
+
+    // ── Undo ──
+    case 'undo_last': {
+      const { getSetting, setSetting } = await import('../db/helpers');
+      const raw = await getSetting('last_ai_action');
+      if (!raw) return { queryResult: '↩️ Нечего отменять' };
+      const last = JSON.parse(raw);
+      if (Date.now() - last.ts > 300000) return { queryResult: '↩️ Прошло больше 5 минут, отмена невозможна' };
+      const deleteMap = {
+        add_expense:       ['expenses',  'deleteExpense'],
+        add_expense_quick: ['expenses',  'deleteExpense'],
+        add_income:        ['incomes',   'deleteIncome'],
+        add_task:          ['tasks',     'deleteTask'],
+        log_food:          ['nutrition',  'deleteMeal'],
+        add_food:          ['nutrition',  'deleteMeal'],
+        log_water:         ['water',     'removeWaterEntry'],
+        add_event:         ['events',    'deleteEvent'],
+        add_reminder:      ['reminders', 'deleteReminder'],
+        add_note:          ['notes',     'deleteNote'],
+        add_routine:       ['routines',  'deleteRoutine'],
+        save_memory:       ['aiMemory',  'deleteMemory'],
+        log_weight:        ['bodyweight','deleteWeight'],
+        log_sleep:         ['sleep',     'deleteSleep'],
+        log_mood:          ['mood',      'deleteMood'],
+      };
+      const entry = deleteMap[last.action];
+      if (!entry) return { queryResult: `↩️ Отмена для «${last.action}» не поддерживается` };
+      const [svcName, funcName] = entry;
+      try {
+        const svcMap = {
+          expenses:  () => import('../services/expenses'),
+          incomes:   () => import('../services/incomes'),
+          tasks:     () => import('../services/tasks'),
+          nutrition:  () => import('../services/nutrition'),
+          water:     () => import('../services/water'),
+          events:    () => import('../services/events'),
+          reminders: () => import('../services/reminders'),
+          notes:     () => import('../services/notes'),
+          routines:  () => import('../services/routines'),
+          aiMemory:  () => import('../services/aiMemory'),
+          bodyweight:() => import('../services/bodyweight'),
+          sleep:     () => import('../services/sleep'),
+          mood:      () => import('../services/mood'),
+        };
+        const svc = await svcMap[svcName]();
+        await svc[funcName](last.resultId);
+        await setSetting('last_ai_action', null);
+        return { queryResult: `↩️ Отменено: ${last.description || last.action}` };
+      } catch (e) {
+        return { queryResult: `↩️ Ошибка отмены: ${e.message}` };
+      }
     }
 
     default:

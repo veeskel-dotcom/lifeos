@@ -28,6 +28,15 @@ export async function logMood(value, note = '') {
   }
 }
 
+export async function deleteMood(id) {
+  try {
+    await db.mood_log.delete(id);
+  } catch (e) {
+    console.error('[mood.deleteMood]', e);
+    throw e;
+  }
+}
+
 export async function getMoodTrend(days = 30) {
   try {
     const since = new Date();

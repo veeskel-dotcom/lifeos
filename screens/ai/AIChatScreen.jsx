@@ -41,6 +41,17 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
     const sess = await getOrCreateSession(lastMsgTime.current);
     setSession(sess);
     if (sess?.messages?.length) setMessages(sess.messages);
+
+    // Derived memories: раз в неделю
+    try {
+      const { getSetting, setSetting } = await import('../../db/helpers');
+      const lastDerived = await getSetting('last_derived_memories');
+      if (!lastDerived || Date.now() - lastDerived > 7 * 86400000) {
+        const { generateDerivedMemories } = await import('../../services/derivedMemories');
+        generateDerivedMemories().catch(() => {});
+        await setSetting('last_derived_memories', Date.now());
+      }
+    } catch { /* derived memories not critical */ }
   };
 
   // ── Autoscroll ──
@@ -75,7 +86,23 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
       const history = session ? await getRecentMessages(session.session_id, 10) : [];
       const result = await ai.processInput(msg, history);
 
-      // ── Шаг 2: Выполнение действия ──
+      // ── Шаг 2a: Multi-action ──
+      if (result.actions?.length > 0) {
+        const { executeAction } = await import('../../ai/execute');
+        let ok = 0, fail = 0;
+        for (const act of result.actions) {
+          try {
+            const exec = await executeAction(act.action, act.params);
+            if (exec.executed) ok++; else fail++;
+          } catch { fail++; }
+        }
+        const displayMsg = result.message || `Выполнено ${ok}/${ok + fail}`;
+        pushAssistantMsg(displayMsg);
+        setIsLoading(false);
+        return;
+      }
+
+      // ── Шаг 2b: Выполнение действия ──
       if (result.action && result.action !== 'chat_response' && result.action !== 'error') {
 
         // Подтверждение для крупных сумм
@@ -161,13 +188,15 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
             import('../../services/aiMemory'),
           ]);
           const { getSetting } = await import('../../db/helpers');
+          const { getSessionHistory: getSessHist } = await import('../../services/chatHistory');
           const ctxToday = new Date().toISOString().split('T')[0];
           const ctxMonthStart = ctxToday.slice(0, 8) + '01';
-          const [ctxTasks, ctxExpenses, ctxMems, ctxBudget] = await Promise.all([
+          const [ctxTasks, ctxExpenses, ctxMems, ctxBudget, recentSessions] = await Promise.all([
             ctxDb.tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').limit(10).toArray().catch(() => []),
             ctxDb.expenses.where('date').between(ctxMonthStart, ctxToday + '\uffff', true, true).toArray().catch(() => []),
             getMemories(20),
             getSetting('monthly_budget').catch(() => null),
+            getSessHist().catch(() => []),
           ]);
           const monthSpent = ctxExpenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0);
           const ctxData = {
@@ -178,10 +207,12 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
             budget_remaining: ctxBudget ? ctxBudget - monthSpent : null,
           };
           const memLines = ctxMems.map(m => `[${m.category}] ${m.fact}`);
+          const summaries = recentSessions.filter(s => s.summary).slice(0, 3).map(s => s.summary);
           systemPrompt = `Ты — LifeOS AI-ассистент. Ты знаешь всё о пользователе.
 
 Данные: ${JSON.stringify(ctxData)}
 ${memLines.length ? `\nПамять:\n${memLines.join('\n')}` : ''}
+${summaries.length ? `\nПредыдущие разговоры:\n${summaries.join('\n')}` : ''}
 
 Отвечай кратко, конкретно, с цифрами. Русский язык. Используй данные в ответах.`;
         } catch { /* fallback to basic prompt */ }
@@ -649,7 +680,8 @@ function actionLabel(action) {
     log_water: 'Вода записана', log_workout: 'Тренировка',
     log_weight: 'Вес записан', log_sleep: 'Сон записан',
     add_to_shopping_list: 'В список покупок', add_routine: 'Рутина создана',
-    add_note: 'Заметка сохранена', navigate: 'Навигация',
+    add_note: 'Заметка сохранена', navigate: 'Навигация', undo_last: 'Отмена',
+    save_memory: 'Запомнил', forget_memory: 'Забыл', web_search: 'Поиск',
     query_expenses: 'Расходы', query_tasks: 'Задачи', query_nutrition: 'Питание',
   };
   return map[action] || action;

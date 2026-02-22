@@ -15,6 +15,12 @@ export async function getOrCreateSession(lastMessageTime) {
       if (latest) return latest;
     }
 
+    // Таймаут — сжать предыдущую сессию (фоном)
+    const existing = await db.ai_conversations.orderBy('created_at').reverse().first();
+    if (existing && existing.messages.length >= 4 && !existing.summary) {
+      summarizeSession(existing).catch(() => {});
+    }
+
     const session = {
       session_id: generateSessionId(),
       messages: [],
@@ -27,6 +33,31 @@ export async function getOrCreateSession(lastMessageTime) {
   } catch (e) {
     console.error('[chatHistory.getOrCreateSession]', e);
     return null;
+  }
+}
+
+/**
+ * Сжать сессию в 1-2 предложения через AI (Flash, ~$0.0001)
+ */
+async function summarizeSession(session) {
+  if (!session || session.summary || session.messages.length < 4) return;
+
+  const userMsgs = session.messages
+    .filter(m => m.role === 'user')
+    .map(m => m.content)
+    .slice(-10)
+    .join('; ');
+
+  try {
+    const { callAI } = await import('../ai/client');
+    const result = await callAI({
+      prompt: `Резюмируй в 1-2 предложениях что делал пользователь: ${userMsgs}`,
+      model: 'parsing',
+      maxTokens: 100,
+    });
+    await db.ai_conversations.update(session.id, { summary: result.content });
+  } catch (e) {
+    console.error('[summarizeSession]', e);
   }
 }
 

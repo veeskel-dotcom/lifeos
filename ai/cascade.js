@@ -52,6 +52,22 @@ export async function processInput(input, chatHistory) {
  * Валидация и подтверждение действия через policy.js
  */
 async function applyPolicy(result) {
+  // Multi-action: валидация каждого действия в массиве
+  if (result.actions?.length > 0) {
+    const validated = [];
+    for (const act of result.actions) {
+      try {
+        const v = await validateAction(act.action, act.params || {});
+        if (v.valid) validated.push(act);
+      } catch { /* skip invalid */ }
+    }
+    if (validated.length === 0) {
+      return { ...result, actions: undefined, action: 'error', message: '⚠️ Ни одно действие не прошло валидацию' };
+    }
+    return { ...result, actions: validated };
+  }
+
+  // Single action
   if (!result.action || result.action === 'chat_response' || result.action === 'error') {
     return result;
   }
@@ -112,6 +128,11 @@ function level1_regex(text) {
   if (waterMatch) {
     const ml = parseInt(waterMatch[1]) || 250;
     return { action: 'log_water', params: { amount_ml: ml }, message: `💧 ${ml} мл воды записано` };
+  }
+
+  // Undo: "отмени", "назад", "undo"
+  if (/^(?:отмени|отменить|undo|назад|верни|откатить|откати)$/i.test(lower)) {
+    return { action: 'undo_last', params: {}, message: null };
   }
 
   return null;
@@ -329,18 +350,25 @@ function level2_patterns(text) {
 // ═══════════════════════════════════════════
 
 async function level3_parseCommand(input, chatHistory) {
-  const context = await collectContext();
+  const context = await collectContext('L3');
 
   const result = await callAI({
     prompt: input,
     systemPrompt: PARSE_COMMAND_PROMPT(context),
     model: 'parsing',
-    maxTokens: 300,
+    maxTokens: 400,
     temperature: 0.1,
   });
 
   try {
     const parsed = JSON.parse(result.content);
+    // Multi-action support
+    if (parsed.actions && Array.isArray(parsed.actions)) {
+      return {
+        actions: parsed.actions,
+        message: parsed.response || result.content,
+      };
+    }
     return {
       action: parsed.action || 'chat_response',
       params: parsed.params || null,
@@ -357,7 +385,7 @@ async function level3_parseCommand(input, chatHistory) {
 // ═══════════════════════════════════════════
 
 async function level4_analysis(input, chatHistory) {
-  const context = await collectContext();
+  const context = await collectContext('L4');
 
   const result = await callAI({
     prompt: input,
@@ -422,11 +450,26 @@ function handleAIError(err) {
 // Контекст для промптов
 // ═══════════════════════════════════════════
 
-async function collectContext() {
+async function collectContext(tier = 'L4') {
   try {
     const db = (await import('../db/index')).default;
-    const { getSetting } = await import('../db/helpers');
     const today = new Date().toISOString().split('T')[0];
+
+    // L3: минимальный контекст для парсинга (~200 токенов)
+    if (tier === 'L3') {
+      const [memories, tasks] = await Promise.all([
+        db.ai_memory.orderBy('created_at').reverse().limit(15).toArray().catch(() => []),
+        db.tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').limit(5).toArray().catch(() => []),
+      ]);
+      return {
+        today,
+        active_tasks: tasks.map(t => t.title),
+        user_memory: memories.map(m => `[${m.category}] ${m.fact}`),
+      };
+    }
+
+    // L4: полный контекст для анализа (~1500 токенов)
+    const { getSetting } = await import('../db/helpers');
     const monthStart = today.slice(0, 8) + '01';
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 

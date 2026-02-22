@@ -25,6 +25,15 @@ export async function addWeight(date, weight, notes) {
   }
 }
 
+export async function deleteWeight(id) {
+  try {
+    await db.body_weight.delete(id);
+  } catch (e) {
+    console.error('[bodyweight.deleteWeight]', e);
+    throw e;
+  }
+}
+
 export async function getWeights(days = 30) {
   try {
     const cutoff = new Date();

@@ -5,11 +5,11 @@ import db from '../db/index';
 const ACTION_ALLOWLIST = [
   'add_expense', 'add_expense_quick', 'add_income', 'add_transfer', 'add_task', 'complete_task',
   'log_food', 'add_food', 'log_water', 'log_workout', 'log_weight', 'log_mood', 'log_sleep',
-  'add_event', 'add_reminder', 'add_to_shopping_list', 'check_shopping_item',
+  'add_event', 'add_reminder', 'add_to_shopping_list',
   'add_routine', 'add_note',
   'query_expenses', 'query_tasks', 'query_nutrition',
   'save_memory', 'forget_memory', 'web_search',
-  'navigate', 'answer',
+  'navigate', 'answer', 'undo_last',
 ];
 
 const VALIDATION_RULES = {

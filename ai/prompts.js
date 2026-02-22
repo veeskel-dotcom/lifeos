@@ -34,8 +34,14 @@ export function PARSE_COMMAND_PROMPT(context) {
 - save_memory: {category: "preference|habit|health|finance|lifestyle|goal", fact: "текст"}
 - forget_memory: {fact_fragment: "текст для поиска"}
 - web_search: {query} → поиск в интернете
+- undo_last: {} → отменить последнее действие
 - navigate: {screen}
 - chat_response: {response} → просто текстовый ответ
+
+МУЛЬТИ-ДЕЙСТВИЯ:
+Если в команде 2-3 разных действия — верни массив:
+{"actions": [{"action":"...", "params":{...}}, {"action":"...", "params":{...}}], "response":"текст"}
+Максимум 3 действия. Если одно действие — используй обычный формат.
 
 РАЗБОР ДАТ (B2.1):
 - «в понедельник» «во вторник» → вычисли ближайшую дату (формат YYYY-MM-DD)
@@ -87,6 +93,8 @@ ${memoryBlock}
 "напомни через 2 часа позвонить маме" → {"action":"add_reminder","params":{"trigger_at":"...","label":"Позвонить маме"},"response":"⏰ Напомню через 2 часа: Позвонить маме"}
 "я не ем глютен" → {"action":"save_memory","params":{"category":"health","fact":"Не ест глютен (непереносимость)"},"response":"🧠 Запомнил: не ешь глютен"}
 "курс биткоина" → {"action":"web_search","params":{"query":"курс биткоина сегодня USD"},"response":"🔍 Ищу..."}
+"отмени" → {"action":"undo_last","params":{},"response":"↩️ Отменяю последнее действие..."}
+"кофе 350 и задачу купить хлеб" → {"actions":[{"action":"add_expense","params":{"amount":350,"description":"Кофе","category":"Кафе"}},{"action":"add_task","params":{"title":"Купить хлеб","priority":"normal"}}],"response":"☕ Кофе 350₸ + 📋 Купить хлеб"}
 
 Если не уверен в действии — верни chat_response с уточняющим вопросом.
 Валюта по умолчанию: KZT (₸). Язык: русский.`;
