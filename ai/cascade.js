@@ -303,6 +303,24 @@ function level2_patterns(text) {
     return null; // пропускаем L2, routeToLevel отправит в L4
   }
 
+  // L2 web search: курс, погода → сразу web_search без API
+  const searchMatch = text.match(/^(?:курс|цена|котировка|стоимость)\s+(.+)$/i);
+  if (searchMatch) {
+    return { action: 'web_search', params: { query: text }, message: '🔍 Ищу...' };
+  }
+  if (/^(?:погода|температура)\s*/i.test(lower)) {
+    return { action: 'web_search', params: { query: text }, message: '🔍 Ищу...' };
+  }
+
+  // Настроение: "настроение 7", "mood 8"
+  const moodMatch = text.match(/^(?:настроение|mood)\s+(\d{1,2})(?:\s+(.+))?$/i);
+  if (moodMatch) {
+    const score = parseInt(moodMatch[1]);
+    if (score >= 1 && score <= 10) {
+      return { action: 'log_mood', params: { score, note: moodMatch[2] || '' }, message: `${score >= 7 ? '😊' : score >= 4 ? '😐' : '😔'} Настроение ${score}/10` };
+    }
+  }
+
   return null;
 }
 
@@ -472,8 +490,10 @@ async function collectContext() {
       // Память
       user_memory: memories.map(m => `[${m.category}] ${m.fact}`),
     };
-  } catch {
-    return null;
+  } catch (err) {
+    console.error('[collectContext]', err);
+    // Вернуть минимальный контекст вместо null
+    return { today: new Date().toISOString().split('T')[0] };
   }
 }
 

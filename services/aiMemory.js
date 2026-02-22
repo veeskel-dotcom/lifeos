@@ -2,6 +2,8 @@ import db from '../db/index';
 
 // ═══ AI Memory — долгосрочная память ассистента ═══
 
+let addLock = false; // простой мьютекс для предотвращения дубликатов
+
 export async function getMemories(limit = 30) {
   try {
     return await db.ai_memory
@@ -16,12 +18,20 @@ export async function getMemories(limit = 30) {
 }
 
 export async function addMemory(category, fact, source = 'user_said') {
+  // Простой мьютекс: предотвращает дубликаты при параллельных вызовах
+  if (addLock) {
+    await new Promise(r => setTimeout(r, 100));
+    if (addLock) return { id: null, updated: false, skipped: true };
+  }
+  addLock = true;
+
   try {
     // Дедупликация: ищем похожий факт
     const existing = await findSimilar(fact);
     if (existing) {
       await db.ai_memory.update(existing.id, {
         fact,
+        category,
         updated_at: new Date().toISOString(),
       });
       return { id: existing.id, updated: true };
@@ -36,10 +46,20 @@ export async function addMemory(category, fact, source = 'user_said') {
       created_at: now,
       updated_at: now,
     });
+
+    // Ограничиваем общее кол-во: удаляем старые если > 100
+    const total = await db.ai_memory.count();
+    if (total > 100) {
+      const oldest = await db.ai_memory.orderBy('created_at').limit(total - 100).toArray();
+      await db.ai_memory.bulkDelete(oldest.map(m => m.id));
+    }
+
     return { id, updated: false };
   } catch (e) {
     console.error('[aiMemory.addMemory]', e);
     throw e;
+  } finally {
+    addLock = false;
   }
 }
 
@@ -81,16 +101,22 @@ async function findSimilar(newFact) {
   const newWords = extractWords(newFact);
   if (newWords.length === 0) return null;
 
+  let bestMatch = null;
+  let bestScore = 0;
+
   for (const m of all) {
     const oldWords = extractWords(m.fact);
     if (oldWords.length === 0) continue;
     const common = newWords.filter(w => oldWords.includes(w)).length;
     const similarity = common / Math.max(newWords.length, oldWords.length);
-    if (similarity > 0.6) return m;
+    if (similarity > 0.6 && similarity > bestScore) {
+      bestMatch = m;
+      bestScore = similarity;
+    }
   }
-  return null;
+  return bestMatch;
 }
 
 function extractWords(text) {
-  return text.toLowerCase().replace(/[^\wа-яё]/gi, ' ').split(/\s+/).filter(w => w.length > 2);
+  return text.toLowerCase().replace(/[^a-zа-яё0-9]/gi, ' ').split(/\s+/).filter(w => w.length > 2);
 }

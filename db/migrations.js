@@ -8,7 +8,7 @@
  */
 import { getSetting, setSetting } from './helpers';
 
-export const CURRENT_VERSION = 3;
+export const CURRENT_VERSION = 6;
 
 // ═══ История миграций ═══
 
@@ -64,6 +64,27 @@ const MIGRATIONS = [
         }
       }
     },
+  },
+  {
+    version: 4,
+    name: 'add_utilities',
+    description: 'Добавлена таблица utilities (ЖКХ)',
+    date: '2025-02-10',
+    run: async () => { /* schema-only, no data migration */ },
+  },
+  {
+    version: 5,
+    name: 'add_error_log',
+    description: 'Добавлена таблица error_log',
+    date: '2025-02-15',
+    run: async () => { /* schema-only, no data migration */ },
+  },
+  {
+    version: 6,
+    name: 'add_ai_memory',
+    description: 'Добавлена таблица ai_memory для долгосрочной памяти AI',
+    date: '2025-02-22',
+    run: async () => { /* schema-only, no data migration */ },
   },
 ];
 

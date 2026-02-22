@@ -287,7 +287,7 @@ ${memLines.length ? `\nПамять:\n${memLines.join('\n')}` : ''}
     }
     try {
       const voice = await import('../../ai/voice');
-      if (!voice.isVoiceSupported()) { return; return; }
+      if (!voice.isVoiceSupported()) return;
 
       setIsListening(true);
       recognitionRef.current = voice.startListening(

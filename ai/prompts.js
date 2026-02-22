@@ -24,6 +24,10 @@ export function PARSE_COMMAND_PROMPT(context) {
 - log_workout: {type, exercises?: [{name, sets, reps, weight_kg}]}
 - log_weight: {weight_kg}
 - log_sleep: {bed_time, wake_time, duration_hours?}
+- log_mood: {score: 1-10, note?}
+- add_routine: {name, type?: "morning|evening|daily", frequency?: "daily|weekly"}
+- add_note: {content}
+- add_to_shopping_list: {items: ["молоко", "хлеб"]} или {item: "молоко"}
 - query_expenses: {period} → текстовый ответ
 - query_tasks: {filter?} → текстовый ответ
 - query_nutrition: {period} → текстовый ответ

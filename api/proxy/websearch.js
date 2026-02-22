@@ -42,16 +42,22 @@ export default async function handler(req, res) {
   try {
     const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
     const upstream = await fetch(url);
+
+    if (!upstream.ok) {
+      return res.status(502).json({ error: `DuckDuckGo returned ${upstream.status}` });
+    }
+
     const data = await upstream.json();
+    const topics = Array.isArray(data.RelatedTopics) ? data.RelatedTopics : [];
 
     return res.status(200).json({
       answer: data.Answer || null,
       abstract: data.Abstract || null,
       abstract_source: data.AbstractSource || null,
       abstract_url: data.AbstractURL || null,
-      related_topics: (data.RelatedTopics || []).slice(0, 5).map(t => ({
-        text: t.Text || null,
-        url: t.FirstURL || null,
+      related_topics: topics.slice(0, 5).map(t => ({
+        text: t?.Text || null,
+        url: t?.FirstURL || null,
       })),
     });
   } catch (e) {
