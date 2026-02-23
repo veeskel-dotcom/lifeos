@@ -10,15 +10,25 @@ export function generateSessionId() {
 
 export async function getOrCreateSession(lastMessageTime) {
   try {
+    const latest = await db.ai_conversations.orderBy('created_at').reverse().first();
+
+    // Активная сессия в пределах таймаута
     if (lastMessageTime && (Date.now() - lastMessageTime) < SESSION_TIMEOUT_MS) {
-      const latest = await db.ai_conversations.orderBy('created_at').reverse().first();
       if (latest) return latest;
     }
 
+    // Первый маунт (lastMessageTime === null) — вернуть последнюю сессию если она свежая
+    if (!lastMessageTime && latest?.messages?.length > 0) {
+      const lastMsg = latest.messages[latest.messages.length - 1];
+      const lastTs = lastMsg?.timestamp ? new Date(lastMsg.timestamp).getTime() : 0;
+      if (lastTs && (Date.now() - lastTs) < SESSION_TIMEOUT_MS) {
+        return latest;
+      }
+    }
+
     // Таймаут — сжать предыдущую сессию (фоном)
-    const existing = await db.ai_conversations.orderBy('created_at').reverse().first();
-    if (existing && existing.messages.length >= 4 && !existing.summary) {
-      summarizeSession(existing).catch(() => {});
+    if (latest && latest.messages.length >= 4 && !latest.summary) {
+      summarizeSession(latest).catch(() => {});
     }
 
     const session = {

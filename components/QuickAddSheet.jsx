@@ -279,6 +279,23 @@ export default function QuickAddSheet({ open, onClose, onNavigate, theme, onToas
       } else if (result.action === 'navigate') {
         haptic('light');
         onNavigate?.(result.params.screen);
+      } else if (result.action && result.action !== 'chat_response' && result.action !== 'error') {
+        // Generic handler: query_*, undo_last, и прочие действия через executeAction
+        try {
+          const { executeAction } = await import('../ai/execute');
+          const exec = await executeAction(result.action, result.params);
+          if (exec.executed) {
+            haptic('success');
+            const display = exec.result?.queryResult || result.message || '✅ Готово';
+            onToast?.(display.length > 120 ? display.slice(0, 120) + '…' : display);
+          } else {
+            haptic('error');
+            onToast?.(exec.error || result.message || '⚠️ Не удалось выполнить');
+          }
+        } catch {
+          haptic('error');
+          onToast?.(result.message || '⚠️ Ошибка');
+        }
       } else if (result.message) {
         haptic('success');
         onToast?.(result.message);
@@ -322,6 +339,17 @@ export default function QuickAddSheet({ open, onClose, onNavigate, theme, onToas
         await actions[result.action]();
         haptic('success');
         onToast?.(result.message || `🎤 Записано`);
+      } else if (result.action && result.action !== 'chat_response' && result.action !== 'error') {
+        try {
+          const { executeAction } = await import('../ai/execute');
+          const exec = await executeAction(result.action, result.params);
+          haptic(exec.executed ? 'success' : 'error');
+          const display = exec.result?.queryResult || result.message || '✅ Готово';
+          onToast?.(display.length > 120 ? display.slice(0, 120) + '…' : display);
+        } catch {
+          haptic('success');
+          onToast?.(result.message || `🎤 «${voiceText}»`);
+        }
       } else {
         haptic('success');
         onToast?.(result.message || `🎤 «${voiceText}»`);

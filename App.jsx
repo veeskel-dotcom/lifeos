@@ -840,6 +840,7 @@ function AppContent({ theme, setTheme }) {
           open={quickAddOpen}
           onClose={() => setQuickAddOpen(false)}
           theme={theme}
+          onToast={showToast}
           onNavigate={(screen, data) => {
             setQuickAddOpen(false);
             navigate(screen, data);
