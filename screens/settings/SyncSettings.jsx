@@ -104,7 +104,7 @@ export default function SyncSettings({ theme, onBack }) {
           </div>
 
           {serverInfo?.has_data && (
-            <div className="text-xs space-y-1 pl-13" style={{ color: theme.gray2 }}>
+            <div className="text-xs space-y-1" style={{ color: theme.gray2, paddingLeft: 52 }}>
               <div>Записей на сервере: <b style={{ color: theme.text }}>{serverInfo.records_count || '—'}</b></div>
               {serverInfo.last_sync && (
                 <div>Последний пуш: <b style={{ color: theme.text }}>{formatRelative(serverInfo.last_sync)}</b></div>

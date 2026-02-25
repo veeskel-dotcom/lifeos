@@ -17,7 +17,7 @@
         Последняя синхронизация:
         <span class="font-medium text-gray-700">{{ updated_at|date:"d.m.Y H:i" }}</span>
         &middot; Схема v{{ schema_version }}
-        &middot; {{ snapshots_count }} снапшот{{ snapshots_count|pluralize:"ов,а,ов" }}
+        &middot; {{ snapshots_count }} снапшот{{ snapshots_count|pluralize:",а" }}
       </p>
     </div>
   </div>

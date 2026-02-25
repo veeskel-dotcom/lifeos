@@ -70,7 +70,7 @@ export default async function handler(req, res) {
       body: isPush ? JSON.stringify(req.body) : undefined,
     });
 
-    const data = await vpsRes.json();
+    const data = await vpsRes.json().catch(() => ({ error: `Server returned ${vpsRes.status}` }));
     return res.status(vpsRes.status).json(data);
   } catch (e) {
     return res.status(502).json({ error: 'Failed to reach sync server', detail: e.message });

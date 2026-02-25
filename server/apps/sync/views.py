@@ -14,7 +14,7 @@ class PushSnapshotView(APIView):
     def post(self, request):
         data = request.data
         meta = data.get('_meta', {})
-        summary = data.pop('_summary', {})
+        summary = data.get('_summary', {})
 
         if not meta.get('version'):
             return Response(
@@ -24,10 +24,13 @@ class PushSnapshotView(APIView):
 
         body_size = len(request.body) if hasattr(request, 'body') else 0
 
+        # Clean data: strip internal keys for storage
+        clean_data = {k: v for k, v in data.items() if not k.startswith('_')}
+
         # Save snapshot
         snapshot = SyncSnapshot.objects.create(
-            device=request.user,
-            data=data,
+            device=request.auth,
+            data=clean_data,
             summary=summary,
             schema_version=meta['version'],
             records_count=meta.get('records_count', 0),
@@ -38,16 +41,17 @@ class PushSnapshotView(APIView):
         ActiveData.objects.update_or_create(
             id=1,
             defaults={
-                'data': data,
+                'data': clean_data,
                 'summary': summary,
                 'schema_version': meta['version'],
             },
         )
 
-        # Cleanup: keep last 30 days, minimum 3 snapshots
+        # Cleanup: keep last 30 days, minimum 3 snapshots per device
+        device = request.auth
         cutoff = timezone.now() - timedelta(days=30)
-        old = SyncSnapshot.objects.filter(created_at__lt=cutoff)
-        total = SyncSnapshot.objects.count()
+        old = SyncSnapshot.objects.filter(device=device, created_at__lt=cutoff)
+        total = SyncSnapshot.objects.filter(device=device).count()
         if total - old.count() >= 3:
             old.delete()
 
@@ -68,12 +72,12 @@ class SyncStatusView(APIView):
         if not active:
             return Response({'has_data': False})
 
-        last = SyncSnapshot.objects.filter(device=request.user).first()
+        last = SyncSnapshot.objects.filter(device=request.auth).first()
 
         return Response({
             'has_data': True,
             'last_sync': last.created_at.isoformat() if last else None,
             'schema_version': active.schema_version,
-            'records_count': active.data.get('_meta', {}).get('records_count', 0),
+            'records_count': last.records_count if last else 0,
             'updated_at': active.updated_at.isoformat(),
         })

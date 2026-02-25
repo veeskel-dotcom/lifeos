@@ -320,6 +320,14 @@ const PATHS = {
       <path d="M18 8h2l-2 3h2" />
     </g>
   ),
+  sync: (
+    <g fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12a8 8 0 0114.93-4" />
+      <polyline points="20 4 20 8 16 8" />
+      <path d="M20 12a8 8 0 01-14.93 4" />
+      <polyline points="4 20 4 16 8 16" />
+    </g>
+  ),
 };
 
 export default function Ic({ name, color, size = 36, r = 10, raw = false, className = '' }) {

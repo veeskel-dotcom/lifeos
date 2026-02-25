@@ -70,11 +70,11 @@ function computeSummary(data) {
       .filter(w => w.date === today)
       .reduce((s, w) => s + (w.amount_ml || 0), 0),
     last_workout_date: workouts.length
-      ? workouts.sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0]?.date
+      ? [...workouts].sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0]?.date
       : null,
     portfolio_count: portfolio.length,
     weight_current: bodyWeight.length
-      ? bodyWeight.sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0]?.weight
+      ? [...bodyWeight].sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0]?.weight
       : null,
     total_expenses_count: expenses.length,
     total_tasks_count: tasks.length,
