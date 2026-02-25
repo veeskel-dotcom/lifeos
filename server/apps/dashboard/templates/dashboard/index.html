@@ -1,0 +1,181 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+{% if not has_data %}
+  <div class="text-center py-20">
+    <div class="text-6xl mb-4">📱</div>
+    <h2 class="text-xl font-semibold text-gray-700 mb-2">Нет данных</h2>
+    <p class="text-gray-500">Нажмите «Синхронизировать» в LifeOS на телефоне</p>
+  </div>
+{% else %}
+
+  <!-- Sync status bar -->
+  <div class="flex flex-wrap items-center justify-between mb-8 gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Обзор</h1>
+      <p class="text-sm text-gray-500 mt-1">
+        Последняя синхронизация:
+        <span class="font-medium text-gray-700">{{ updated_at|date:"d.m.Y H:i" }}</span>
+        &middot; Схема v{{ schema_version }}
+        &middot; {{ snapshots_count }} снапшот{{ snapshots_count|pluralize:"ов,а,ов" }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+
+    <!-- Расходы за месяц -->
+    <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+          <span class="text-lg">💰</span>
+        </div>
+        <span class="text-sm font-medium text-gray-500">Расходы за месяц</span>
+      </div>
+      <p class="text-2xl font-bold text-gray-900">
+        {% if summary.month_expenses != None %}
+          {{ summary.month_expenses|floatformat:0 }} ₸
+        {% else %}
+          N/A
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Доходы за месяц -->
+    <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+          <span class="text-lg">📈</span>
+        </div>
+        <span class="text-sm font-medium text-gray-500">Доходы за месяц</span>
+      </div>
+      <p class="text-2xl font-bold text-gray-900">
+        {% if summary.month_incomes != None %}
+          {{ summary.month_incomes|floatformat:0 }} ₸
+        {% else %}
+          N/A
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Задачи -->
+    <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+          <span class="text-lg">✅</span>
+        </div>
+        <span class="text-sm font-medium text-gray-500">Задачи</span>
+      </div>
+      <p class="text-2xl font-bold text-gray-900">
+        {% if summary.active_tasks != None %}
+          {{ summary.active_tasks }} активных
+        {% else %}
+          N/A
+        {% endif %}
+      </p>
+      {% if summary.overdue_tasks %}
+        <p class="text-sm text-red-500 mt-1">{{ summary.overdue_tasks }} просрочено</p>
+      {% endif %}
+    </div>
+
+    <!-- Калории сегодня -->
+    <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
+          <span class="text-lg">🍽</span>
+        </div>
+        <span class="text-sm font-medium text-gray-500">Калории сегодня</span>
+      </div>
+      <p class="text-2xl font-bold text-gray-900">
+        {% if summary.today_calories != None %}
+          {{ summary.today_calories|floatformat:0 }} kcal
+        {% else %}
+          N/A
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Вода сегодня -->
+    <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+          <span class="text-lg">💧</span>
+        </div>
+        <span class="text-sm font-medium text-gray-500">Вода сегодня</span>
+      </div>
+      <p class="text-2xl font-bold text-gray-900">
+        {% if summary.today_water_ml != None %}
+          {{ summary.today_water_ml }} мл
+        {% else %}
+          N/A
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Последняя тренировка -->
+    <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
+          <span class="text-lg">🏋️</span>
+        </div>
+        <span class="text-sm font-medium text-gray-500">Последняя тренировка</span>
+      </div>
+      <p class="text-2xl font-bold text-gray-900">
+        {% if summary.last_workout_date %}
+          {{ summary.last_workout_date }}
+        {% else %}
+          N/A
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Портфель -->
+    <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+          <span class="text-lg">📊</span>
+        </div>
+        <span class="text-sm font-medium text-gray-500">Портфель</span>
+      </div>
+      <p class="text-2xl font-bold text-gray-900">
+        {% if summary.portfolio_count != None %}
+          {{ summary.portfolio_count }} активов
+        {% else %}
+          N/A
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Вес -->
+    <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center">
+          <span class="text-lg">⚖️</span>
+        </div>
+        <span class="text-sm font-medium text-gray-500">Текущий вес</span>
+      </div>
+      <p class="text-2xl font-bold text-gray-900">
+        {% if summary.weight_current != None %}
+          {{ summary.weight_current }} кг
+        {% else %}
+          N/A
+        {% endif %}
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Module record counts -->
+  <h2 class="text-lg font-semibold text-gray-800 mb-4">Записи по модулям</h2>
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+    {% for name, info in modules.items %}
+      <div class="bg-white rounded-lg border border-gray-100 p-4 text-center shadow-sm">
+        <p class="text-2xl font-bold text-gray-900">{{ info.count }}</p>
+        <p class="text-xs text-gray-500 mt-1 capitalize">{{ name }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+{% endif %}
+{% endblock %}

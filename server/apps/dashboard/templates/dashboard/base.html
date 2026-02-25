@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LifeOS Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            finance: '#34C759',
+            tasks: '#007AFF',
+            nutrition: '#FF9500',
+            sport: '#FF3B30',
+            invest: '#5856D6',
+            health: '#30B0C7',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <nav class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-14 items-center">
+        <div class="flex items-center gap-3">
+          <span class="text-xl font-bold text-gray-900">LifeOS</span>
+          <span class="text-sm text-gray-400">Dashboard</span>
+        </div>
+        <div class="flex items-center gap-4 text-sm text-gray-500">
+          <span>{{ user.username }}</span>
+          <a href="/admin/" class="text-blue-600 hover:underline">Admin</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

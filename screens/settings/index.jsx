@@ -10,6 +10,7 @@ import AnalyticsScreen from './AnalyticsScreen';
 import AboutScreen from './AboutScreen';
 import AppearanceScreen from './AppearanceScreen';
 import ErrorLogScreen from './ErrorLogScreen';
+import SyncSettings from './SyncSettings';
 
 export default function SettingsModule({ theme, onBack, onThemeChange, initialView }) {
   const [view, setView] = useState(initialView || 'main');
@@ -36,6 +37,8 @@ export default function SettingsModule({ theme, onBack, onThemeChange, initialVi
         return <AppearanceScreen theme={theme} onBack={goBack} onThemeChange={onThemeChange} />;
       case 'error-log':
         return <ErrorLogScreen theme={theme} onBack={goBack} />;
+      case 'sync':
+        return <SyncSettings theme={theme} onBack={goBack} />;
       default:
         return (
           <SettingsScreen

@@ -267,6 +267,18 @@ export default function SettingsScreen({ theme, onThemeChange, onBack, onNavigat
           />
         </Card>
 
+        {/* СИНХРОНИЗАЦИЯ */}
+        <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.gray1 }}>
+          Синхронизация
+        </div>
+        <Card theme={theme} style={{ padding: 0, overflow: 'hidden' }}>
+          <SettingsRow
+            iconName="sync" iconColor="#5856D6"
+            label="Синхронизация с сервером" arrow
+            onClick={() => onNavigate('sync')} theme={theme}
+          />
+        </Card>
+
         {/* АНАЛИТИКА */}
         <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.gray1 }}>
           Аналитика
