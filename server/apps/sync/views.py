@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import SyncSnapshot, ActiveData
+from .models import SyncSnapshot, ActiveData, ServerChange
 from .merge import apply_delta
 
 
@@ -111,4 +111,38 @@ class DeltaSyncView(APIView):
             'status': 'ok',
             'applied': len(changes),
             'timestamp': active.updated_at.isoformat(),
+        })
+
+
+class PullChangesView(APIView):
+    """GET /api/sync/pull/?since=<iso> — получить изменения с дашборда."""
+
+    def get(self, request):
+        since = request.query_params.get('since')
+        if not since:
+            return Response(
+                {'error': 'Missing ?since= parameter'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        changes = ServerChange.objects.filter(created_at__gt=since)[:200]
+        server_ts = timezone.now().isoformat()
+
+        # Cleanup: удалить записи старше 7 дней (уже были pull-нуты)
+        cutoff = timezone.now() - timedelta(days=7)
+        ServerChange.objects.filter(created_at__lt=cutoff).delete()
+
+        return Response({
+            'changes': [
+                {
+                    'table': c.table_name,
+                    'op': c.op,
+                    'record_id': c.record_id,
+                    'data': c.data,
+                    'ts': c.created_at.isoformat(),
+                }
+                for c in changes
+            ],
+            'server_ts': server_ts,
+            'count': len(changes),
         })

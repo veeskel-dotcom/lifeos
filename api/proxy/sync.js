@@ -49,11 +49,15 @@ export default async function handler(req, res) {
 
   // Route: ?endpoint=push | status
   const endpoint = req.query.endpoint || 'push';
-  if (!['push', 'status', 'delta'].includes(endpoint)) {
+  if (!['push', 'status', 'delta', 'pull'].includes(endpoint)) {
     return res.status(400).json({ error: 'Invalid endpoint' });
   }
 
-  const vpsUrl = `${SYNC_URL}/${endpoint}/`;
+  // Build VPS URL, forward query params (except 'endpoint')
+  const queryParams = { ...req.query };
+  delete queryParams.endpoint;
+  const qs = new URLSearchParams(queryParams).toString();
+  const vpsUrl = `${SYNC_URL}/${endpoint}/${qs ? '?' + qs : ''}`;
   const isPush = endpoint === 'push' || endpoint === 'delta';
 
   if (isPush && req.method !== 'POST') {

@@ -48,3 +48,19 @@ class ActiveData(models.Model):
 
     def __str__(self):
         return f"ActiveData (v{self.schema_version}, {self.updated_at:%Y-%m-%d %H:%M})"
+
+
+class ServerChange(models.Model):
+    """Изменения, сделанные на дашборде. Клиент пуллит их."""
+    table_name = models.CharField(max_length=50)
+    record_id = models.BigIntegerField()
+    op = models.CharField(max_length=10)  # add, update, delete
+    data = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['created_at']
+        indexes = [models.Index(fields=['created_at'])]
+
+    def __str__(self):
+        return f"{self.op} {self.table_name}#{self.record_id}"

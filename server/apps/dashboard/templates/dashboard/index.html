@@ -168,13 +168,31 @@
 
   <!-- Module record counts -->
   <h2 class="text-lg font-semibold text-gray-800 mb-4">Записи по модулям</h2>
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
-    {% for name, info in modules.items %}
-      <div class="bg-white rounded-lg border border-gray-100 p-4 text-center shadow-sm">
-        <p class="text-2xl font-bold text-gray-900">{{ info.count }}</p>
-        <p class="text-xs text-gray-500 mt-1 capitalize">{{ name }}</p>
-      </div>
-    {% endfor %}
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
+    <a href="/dashboard/expenses/" class="bg-white rounded-lg border border-gray-100 p-4 text-center shadow-sm hover:border-green-300 transition-colors">
+      <p class="text-2xl font-bold text-finance">{{ modules.finance.count }}</p>
+      <p class="text-xs text-gray-500 mt-1">Finance</p>
+    </a>
+    <a href="/dashboard/tasks/" class="bg-white rounded-lg border border-gray-100 p-4 text-center shadow-sm hover:border-blue-300 transition-colors">
+      <p class="text-2xl font-bold text-tasks">{{ modules.tasks.count }}</p>
+      <p class="text-xs text-gray-500 mt-1">Tasks</p>
+    </a>
+    <a href="/dashboard/food/" class="bg-white rounded-lg border border-gray-100 p-4 text-center shadow-sm hover:border-orange-300 transition-colors">
+      <p class="text-2xl font-bold text-nutrition">{{ modules.nutrition.count }}</p>
+      <p class="text-xs text-gray-500 mt-1">Nutrition</p>
+    </a>
+    <a href="/dashboard/workouts/" class="bg-white rounded-lg border border-gray-100 p-4 text-center shadow-sm hover:border-red-300 transition-colors">
+      <p class="text-2xl font-bold text-sport">{{ modules.sport.count }}</p>
+      <p class="text-xs text-gray-500 mt-1">Sport</p>
+    </a>
+    <a href="/dashboard/portfolio/" class="bg-white rounded-lg border border-gray-100 p-4 text-center shadow-sm hover:border-purple-300 transition-colors">
+      <p class="text-2xl font-bold text-invest">{{ modules.invest.count }}</p>
+      <p class="text-xs text-gray-500 mt-1">Invest</p>
+    </a>
+    <a href="/dashboard/weight/" class="bg-white rounded-lg border border-gray-100 p-4 text-center shadow-sm hover:border-cyan-300 transition-colors">
+      <p class="text-2xl font-bold text-health">{{ modules.health.count }}</p>
+      <p class="text-xs text-gray-500 mt-1">Health</p>
+    </a>
   </div>
 
 {% endif %}

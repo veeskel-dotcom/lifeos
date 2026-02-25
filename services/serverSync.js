@@ -7,6 +7,7 @@ import { getSetting, setSetting } from '../db/helpers';
 const SYNC_TABLES_EXCLUDE = new Set([
   'ai_conversations', 'ai_cache', 'ai_corrections',
   'ai_auto_rules', 'ai_memory', 'security_log', 'error_log',
+  '_sync_changelog',
 ]);
 
 /**
@@ -146,6 +147,61 @@ export async function getSyncStatus() {
   }
 }
 
+// ─── Этап 3: Pull (сервер → клиент) ────────────────────
+
+/**
+ * Подтянуть изменения с дашборда (ServerChange) в Dexie.
+ * КРИТИЧНО: отключает tracking чтобы не создать бесконечный цикл.
+ */
+export async function pullFromServer() {
+  if (!navigator.onLine) return { ok: false, reason: 'offline' };
+
+  const lastPull = await getSetting('last_server_pull') || '2000-01-01T00:00:00Z';
+
+  try {
+    const response = await fetch(
+      `/api/proxy/sync?endpoint=pull&since=${encodeURIComponent(lastPull)}`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+    if (!response.ok) return { ok: false, error: `HTTP ${response.status}` };
+
+    const { changes, server_ts } = await response.json();
+    if (!changes?.length) {
+      if (server_ts) await setSetting('last_server_pull', server_ts);
+      return { ok: true, applied: 0 };
+    }
+
+    // Отключить tracking чтобы pull не создавал changelog → push обратно
+    const { disableTracking, enableTracking, isTrackingEnabled } = await import('../db/changeTracker');
+    const db = (await import('../db/index')).default;
+    const wasEnabled = isTrackingEnabled();
+    disableTracking();
+
+    try {
+      for (const change of changes) {
+        const table = db[change.table];
+        if (!table) continue;
+
+        if (change.op === 'add' || change.op === 'update') {
+          if (change.data) await table.put(change.data);
+        } else if (change.op === 'delete') {
+          await table.delete(change.record_id);
+        }
+      }
+    } finally {
+      if (wasEnabled) enableTracking();
+    }
+
+    await setSetting('last_server_pull', server_ts);
+    return { ok: true, applied: changes.length };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e.name === 'TimeoutError' ? 'Таймаут pull (10с)' : e.message,
+    };
+  }
+}
+
 // ─── Этап 2: Дельта-синк ────────────────────────────────
 
 const DELTA_FALLBACK_THRESHOLD = 500;
@@ -218,6 +274,9 @@ export async function autoDeltaSync() {
 
   const autoSync = await getSetting('auto_server_sync');
   if (!autoSync) return { skipped: true, reason: 'disabled' };
+
+  // Сначала pull (изменения с дашборда → Dexie)
+  try { await pullFromServer(); } catch {}
 
   // Страховка: полный push раз в 24ч
   const lastFull = await getSetting('last_full_sync');

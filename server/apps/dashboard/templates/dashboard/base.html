@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LifeOS Dashboard</title>
+  <title>{% block title %}LifeOS Dashboard{% endblock %}</title>
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -21,25 +22,110 @@
       }
     }
   </script>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
+    .htmx-request .htmx-indicator { opacity: 1; }
+    .htmx-request.htmx-indicator { opacity: 1; }
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-  <nav class="bg-white border-b border-gray-200">
+<body class="bg-gray-50 min-h-screen" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <!-- Toast container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+  <!-- Top nav -->
+  <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-14 items-center">
         <div class="flex items-center gap-3">
-          <span class="text-xl font-bold text-gray-900">LifeOS</span>
+          <a href="/dashboard/" class="text-xl font-bold text-gray-900">LifeOS</a>
           <span class="text-sm text-gray-400">Dashboard</span>
         </div>
         <div class="flex items-center gap-4 text-sm text-gray-500">
-          <span>{{ user.username }}</span>
           <a href="/admin/" class="text-blue-600 hover:underline">Admin</a>
         </div>
       </div>
     </div>
   </nav>
 
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    {% block content %}{% endblock %}
-  </main>
+  <div class="max-w-7xl mx-auto flex">
+    <!-- Sidebar -->
+    <aside class="w-56 min-h-[calc(100vh-3.5rem)] bg-white border-r border-gray-200 py-4 px-3 hidden md:block">
+      <nav class="space-y-1">
+        {% with request.resolver_match.url_name as current %}
+        <a href="/dashboard/"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {% if current == 'dashboard-index' %}bg-gray-100 font-semibold text-gray-900{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+          <span class="w-5 text-center">&#x1F4CA;</span> Overview
+        </a>
+        <a href="/dashboard/expenses/"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {% if 'expenses' in current %}bg-green-50 font-semibold text-finance{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+          <span class="w-5 text-center text-finance">$</span> Expenses
+        </a>
+        <a href="/dashboard/incomes/"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {% if 'incomes' in current %}bg-green-50 font-semibold text-finance{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+          <span class="w-5 text-center text-finance">+</span> Incomes
+        </a>
+        <a href="/dashboard/tasks/"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {% if 'tasks' in current %}bg-blue-50 font-semibold text-tasks{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+          <span class="w-5 text-center text-tasks">&#x2713;</span> Tasks
+        </a>
+        <a href="/dashboard/food/"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {% if 'food' in current %}bg-orange-50 font-semibold text-nutrition{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+          <span class="w-5 text-center text-nutrition">&#x1F34E;</span> Food
+        </a>
+        <a href="/dashboard/water/"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {% if 'water' in current %}bg-blue-50 font-semibold text-health{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+          <span class="w-5 text-center text-health">&#x1F4A7;</span> Water
+        </a>
+        <a href="/dashboard/weight/"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {% if 'weight' in current %}bg-red-50 font-semibold text-sport{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+          <span class="w-5 text-center text-sport">&#x2696;</span> Weight
+        </a>
+        <a href="/dashboard/workouts/"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {% if 'workouts' in current %}bg-red-50 font-semibold text-sport{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+          <span class="w-5 text-center text-sport">&#x1F3CB;</span> Workouts
+        </a>
+        <a href="/dashboard/portfolio/"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {% if 'portfolio' in current %}bg-purple-50 font-semibold text-invest{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+          <span class="w-5 text-center text-invest">&#x1F4B0;</span> Portfolio
+        </a>
+        {% endwith %}
+      </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="flex-1 px-4 sm:px-6 lg:px-8 py-6">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Modal container for HTMX -->
+  <div id="modal-container"></div>
+
+  <!-- Toast JS -->
+  <script>
+    function showToast(message, type) {
+      type = type || 'success';
+      var colors = {success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500'};
+      var container = document.getElementById('toast-container');
+      var toast = document.createElement('div');
+      toast.className = (colors[type] || colors.info) + ' text-white px-4 py-2 rounded-lg shadow-lg text-sm transition-opacity duration-300';
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(function() { toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 300); }, 3000);
+    }
+
+    // Listen for HTMX events
+    document.body.addEventListener('showToast', function(e) {
+      showToast(e.detail.message, e.detail.type);
+    });
+
+    // HTMX error handling
+    document.body.addEventListener('htmx:responseError', function(e) {
+      showToast('Server error: ' + e.detail.xhr.status, 'error');
+    });
+  </script>
 </body>
 </html>
