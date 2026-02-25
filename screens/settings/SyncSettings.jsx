@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '../../components/ToastProvider';
-import { getSetting } from '../../db/helpers';
+import { getSetting, setSetting } from '../../db/helpers';
 import NavHeader from '../../components/NavHeader';
 import ScreenWrapper from '../../components/ScreenWrapper';
 
@@ -10,14 +10,27 @@ export default function SyncSettings({ theme, onBack }) {
   const [syncPhase, setSyncPhase] = useState('');
   const [lastSync, setLastSync] = useState(null);
   const [lastRecords, setLastRecords] = useState(null);
-  const [serverStatus, setServerStatus] = useState(null); // null | 'ok' | 'error' | 'loading'
+  const [serverStatus, setServerStatus] = useState(null);
   const [serverInfo, setServerInfo] = useState(null);
+  const [autoSync, setAutoSync] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     getSetting('last_server_sync').then(v => setLastSync(v));
     getSetting('last_server_sync_records').then(v => setLastRecords(v));
+    getSetting('auto_server_sync').then(v => setAutoSync(!!v));
     checkServer();
+    loadPendingCount();
+    const interval = setInterval(loadPendingCount, 10000);
+    return () => clearInterval(interval);
   }, []);
+
+  const loadPendingCount = async () => {
+    try {
+      const { getPendingCount } = await import('../../db/changeTracker');
+      setPendingCount(await getPendingCount());
+    } catch {}
+  };
 
   const checkServer = async () => {
     setServerStatus('loading');
@@ -39,27 +52,42 @@ export default function SyncSettings({ theme, onBack }) {
     if (syncing) return;
     setSyncing(true);
     setSyncPhase('Подготовка данных...');
-
     try {
       const { pushToServer } = await import('../../services/serverSync');
       setSyncPhase('Отправка на сервер...');
       const result = await pushToServer();
-
       if (result.ok) {
         const records = result.records || result.records_count || 0;
         const sizeKb = result.size_kb || 0;
-        showToast(`✅ Синхронизировано: ${records} записей${sizeKb ? ` (${sizeKb} КБ)` : ''}`);
+        showToast(`Синхронизировано: ${records} записей${sizeKb ? ` (${sizeKb} КБ)` : ''}`);
         setLastSync(new Date().toISOString());
         setLastRecords(records);
         checkServer();
+        loadPendingCount();
       } else {
-        showToast(`⚠️ ${result.error || 'Ошибка синхронизации'}`);
+        showToast(result.error || 'Ошибка синхронизации');
       }
     } catch (e) {
-      showToast(`⚠️ ${e.message || 'Ошибка'}`);
+      showToast(e.message || 'Ошибка');
     } finally {
       setSyncing(false);
       setSyncPhase('');
+    }
+  };
+
+  const toggleAutoSync = async (enabled) => {
+    setAutoSync(enabled);
+    await setSetting('auto_server_sync', enabled);
+    if (enabled) {
+      const { startDeltaSync } = await import('../../services/sync');
+      startDeltaSync();
+      const { enableTracking } = await import('../../db/changeTracker');
+      enableTracking();
+      showToast('Авто-синхронизация включена');
+    } else {
+      const { stopDeltaSync } = await import('../../services/sync');
+      stopDeltaSync();
+      showToast('Авто-синхронизация выключена');
     }
   };
 
@@ -113,7 +141,34 @@ export default function SyncSettings({ theme, onBack }) {
           )}
         </div>
 
-        {/* Кнопка синхронизации */}
+        {/* Авто-синхронизация */}
+        <div className="rounded-2xl p-4" style={{ background: theme.card, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-semibold" style={{ color: theme.text }}>Авто-синхронизация</div>
+              <div className="text-xs mt-0.5" style={{ color: theme.gray2 }}>
+                Дельта каждые 5 мин, полная раз в 24ч
+              </div>
+            </div>
+            <button
+              onClick={() => toggleAutoSync(!autoSync)}
+              className="relative w-12 h-7 rounded-full transition-colors"
+              style={{ background: autoSync ? '#5856D6' : theme.gray5 }}
+            >
+              <div
+                className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform"
+                style={{ transform: autoSync ? 'translateX(22px)' : 'translateX(2px)' }}
+              />
+            </button>
+          </div>
+          {pendingCount > 0 && (
+            <div className="text-xs mt-2" style={{ color: theme.gray2 }}>
+              {pendingCount} изменени{pendingCount === 1 ? 'е' : pendingCount < 5 ? 'я' : 'й'} ожида{pendingCount === 1 ? 'ет' : 'ют'} отправки
+            </div>
+          )}
+        </div>
+
+        {/* Кнопка полной синхронизации */}
         <button
           onClick={handleSync}
           disabled={syncing || serverStatus === 'error'}
@@ -124,7 +179,7 @@ export default function SyncSettings({ theme, onBack }) {
             opacity: serverStatus === 'error' ? 0.4 : 1,
           }}
         >
-          {syncing ? syncPhase : '↑ Синхронизировать'}
+          {syncing ? syncPhase : '↑ Полная синхронизация'}
         </button>
 
         {serverStatus === 'error' && (
@@ -167,9 +222,9 @@ export default function SyncSettings({ theme, onBack }) {
           </div>
           <div className="text-xs space-y-1.5" style={{ color: theme.gray1, lineHeight: '1.5' }}>
             <p>📱 Данные с телефона отправляются на ваш VPS</p>
+            <p>🔄 Авто-режим: дельта каждые 5 мин, полная раз в сутки</p>
             <p>💻 На компьютере откройте дашборд: /dashboard/</p>
             <p>🔒 AI-данные и логи не синхронизируются</p>
-            <p>⚙️ Настройка: Vercel Dashboard → Environment Variables</p>
           </div>
         </div>
       </div>

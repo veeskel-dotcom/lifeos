@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import SyncSnapshot, ActiveData
+from .merge import apply_delta
 
 
 class PushSnapshotView(APIView):
@@ -80,4 +81,34 @@ class SyncStatusView(APIView):
             'schema_version': active.schema_version,
             'records_count': last.records_count if last else 0,
             'updated_at': active.updated_at.isoformat(),
+        })
+
+
+class DeltaSyncView(APIView):
+    """POST /api/sync/delta/ — применить дельту к ActiveData."""
+
+    def post(self, request):
+        changes = request.data.get('changes', [])
+        meta = request.data.get('_meta', {})
+
+        if not changes:
+            return Response({'status': 'ok', 'applied': 0})
+
+        try:
+            active = ActiveData.objects.get(id=1)
+        except ActiveData.DoesNotExist:
+            return Response(
+                {'error': 'No active data. Run full sync first.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        active.data = apply_delta(active.data, changes)
+        if meta.get('version'):
+            active.schema_version = meta['version']
+        active.save()
+
+        return Response({
+            'status': 'ok',
+            'applied': len(changes),
+            'timestamp': active.updated_at.isoformat(),
         })

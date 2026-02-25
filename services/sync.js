@@ -36,6 +36,14 @@ export async function syncAll() {
     }
   }
 
+  // Дельта-синк на сервер (если включён)
+  try {
+    const { autoDeltaSync } = await import('./serverSync');
+    results.deltaSync = await autoDeltaSync();
+  } catch (e) {
+    results.deltaSync = { error: e.message };
+  }
+
   return { synced: true, results };
 }
 
@@ -60,5 +68,26 @@ export function stopPeriodicSync() {
   if (syncInterval) {
     clearInterval(syncInterval);
     syncInterval = null;
+  }
+}
+
+// ─── Дельта-синк (каждые 5 мин) ─────────────────────────
+
+let deltaSyncInterval = null;
+
+export function startDeltaSync(intervalMs = 5 * 60 * 1000) {
+  stopDeltaSync();
+  deltaSyncInterval = setInterval(async () => {
+    try {
+      const { autoDeltaSync } = await import('./serverSync');
+      await autoDeltaSync();
+    } catch {}
+  }, intervalMs);
+}
+
+export function stopDeltaSync() {
+  if (deltaSyncInterval) {
+    clearInterval(deltaSyncInterval);
+    deltaSyncInterval = null;
   }
 }

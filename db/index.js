@@ -86,4 +86,9 @@ db.version(6).stores({
   ai_memory: '++id, category, created_at',
 });
 
+// Wave 11: Delta sync changelog
+db.version(7).stores({
+  _sync_changelog: '++id, table_name, ts',
+});
+
 export default db;

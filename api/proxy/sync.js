@@ -49,15 +49,15 @@ export default async function handler(req, res) {
 
   // Route: ?endpoint=push | status
   const endpoint = req.query.endpoint || 'push';
-  if (!['push', 'status'].includes(endpoint)) {
+  if (!['push', 'status', 'delta'].includes(endpoint)) {
     return res.status(400).json({ error: 'Invalid endpoint' });
   }
 
   const vpsUrl = `${SYNC_URL}/${endpoint}/`;
-  const isPush = endpoint === 'push';
+  const isPush = endpoint === 'push' || endpoint === 'delta';
 
   if (isPush && req.method !== 'POST') {
-    return res.status(405).json({ error: 'POST required for push' });
+    return res.status(405).json({ error: 'POST required' });
   }
 
   try {

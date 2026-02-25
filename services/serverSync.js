@@ -1,6 +1,6 @@
 /**
  * serverSync.js — Синхронизация с VPS через Vercel proxy.
- * Этап 1: ручной push (кнопка в настройках).
+ * Этап 1: ручной full push. Этап 2: авто дельта-синк.
  */
 import { getSetting, setSetting } from '../db/helpers';
 
@@ -105,10 +105,18 @@ export async function pushToServer() {
     }
 
     const result = await response.json();
-    await setSetting('last_server_sync', new Date().toISOString());
+    const now = new Date().toISOString();
+    await setSetting('last_server_sync', now);
+    await setSetting('last_full_sync', now);
     await setSetting('last_server_sync_records', result.records || data._meta.records_count);
-    _retried = false;
 
+    // Очистить changelog после успешного full push
+    try {
+      const { clearAllChanges } = await import('../db/changeTracker');
+      await clearAllChanges();
+    } catch {}
+
+    _retried = false;
     return { ok: true, ...result };
   } catch (e) {
     if (!_retried && !e.noRetry) {
@@ -136,4 +144,90 @@ export async function getSyncStatus() {
   } catch {
     return null;
   }
+}
+
+// ─── Этап 2: Дельта-синк ────────────────────────────────
+
+const DELTA_FALLBACK_THRESHOLD = 500;
+const FULL_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24ч
+
+/**
+ * Отправить только изменения (дельту) на сервер.
+ * Fallback на полный push при > 500 изменений или 409 (нет ActiveData).
+ */
+export async function pushDelta() {
+  const { getPendingChanges, clearChanges, pruneIfNeeded } = await import('../db/changeTracker');
+  await pruneIfNeeded();
+
+  const changes = await getPendingChanges();
+  if (changes.length === 0) return { ok: true, skipped: true };
+
+  // Слишком много — полный push
+  if (changes.length > DELTA_FALLBACK_THRESHOLD) {
+    return pushToServer();
+  }
+
+  try {
+    const response = await fetch('/api/proxy/sync?endpoint=delta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        changes: changes.map(c => ({
+          table: c.table_name,
+          op: c.op,
+          record_id: c.record_id,
+          data: c.data,
+          ts: c.ts,
+        })),
+        _meta: { version: 7, changes_count: changes.length },
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    // 409 = нет ActiveData, нужен full push
+    if (response.status === 409) {
+      return pushToServer();
+    }
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      return { ok: false, error: err.error || `HTTP ${response.status}` };
+    }
+
+    const result = await response.json();
+    const maxId = Math.max(...changes.map(c => c.id));
+    await clearChanges(maxId);
+    await setSetting('last_server_sync', new Date().toISOString());
+
+    return { ok: true, delta: true, count: changes.length, ...result };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e.name === 'TimeoutError' ? 'Таймаут (15с)' : e.message || 'Ошибка дельта-синка',
+    };
+  }
+}
+
+/**
+ * Авто дельта-синк: вызывается каждые 5 мин.
+ * Проверяет: online, auto_server_sync, есть изменения.
+ * Раз в 24ч делает полный push (страховка от потерянных changelog записей).
+ */
+export async function autoDeltaSync() {
+  if (!navigator.onLine) return { skipped: true, reason: 'offline' };
+
+  const autoSync = await getSetting('auto_server_sync');
+  if (!autoSync) return { skipped: true, reason: 'disabled' };
+
+  // Страховка: полный push раз в 24ч
+  const lastFull = await getSetting('last_full_sync');
+  if (!lastFull || Date.now() - new Date(lastFull).getTime() > FULL_SYNC_INTERVAL_MS) {
+    return pushToServer();
+  }
+
+  const { getPendingCount } = await import('../db/changeTracker');
+  const count = await getPendingCount();
+  if (count === 0) return { ok: true, skipped: true };
+
+  return pushDelta();
 }

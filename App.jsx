@@ -61,7 +61,7 @@ import OfflineBanner from './components/OfflineBanner';
 import TransitionWrapper from './components/TransitionWrapper';
 import { initServiceWorker } from './lib/registerSW';
 import { checkNotificationTriggers } from './lib/notifications';
-import { startPeriodicSync, stopPeriodicSync } from './services/sync';
+import { startPeriodicSync, stopPeriodicSync, startDeltaSync, stopDeltaSync } from './services/sync';
 import { checkAndBackup } from './services/autoBackup';
 import { subscribe as subscribeTriggers, emit as emitTrigger } from './services/triggerBus';
 import { loadCurrency } from './utils/currency';
@@ -330,6 +330,15 @@ function AppContent({ theme, setTheme }) {
         }
       });
       startPeriodicSync();
+      // Дельта-синк: включить tracking + интервал если auto_server_sync
+      import('./db/helpers').then(({ getSetting }) =>
+        getSetting('auto_server_sync').then(v => {
+          if (v) {
+            import('./db/changeTracker').then(({ enableTracking }) => enableTracking());
+            startDeltaSync();
+          }
+        })
+      ).catch(() => {});
       logPerf('INIT_COMPLETE', Date.now() - initStart);
 
       // PWA Shortcuts: /?action=expense|task|workout
@@ -340,7 +349,7 @@ function AppContent({ theme, setTheme }) {
         if (actionMap[action]) setTimeout(() => navigate(actionMap[action]), 100);
       }
     })();
-    return () => { stopPeriodicSync(); unsub?.(); };
+    return () => { stopPeriodicSync(); stopDeltaSync(); unsub?.(); };
   }, []);
 
   /* ── Lock timeout ── */
