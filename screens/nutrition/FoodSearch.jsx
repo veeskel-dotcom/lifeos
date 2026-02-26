@@ -288,7 +288,7 @@ export default function FoodSearch({ meal, date, theme, onBack, initialMode }) {
             className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
             style={{ background: theme.gray5, border: 'none', cursor: 'pointer' }}
           ><Ic name="barcode" color={theme.gray1} size={20} r={5} raw /></button>
-          <VoiceInput onResult={(text) => handleQueryChange(text)} theme={theme} />
+          <VoiceInput onResult={(text) => handleQueryChange(text)} theme={theme} autoStart={initialMode === 'voice'} />
         </div>
 
         {/* Скрытые файловые инпуты */}

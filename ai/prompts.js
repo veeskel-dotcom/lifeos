@@ -5,8 +5,13 @@
 
 // ═══ Уровень 3: Парсинг команд (Gemini Flash) ═══
 export function PARSE_COMMAND_PROMPT(context) {
-  const memoryBlock = context?.user_memory?.length
-    ? `\nПамять о пользователе:\n${context.user_memory.join('\n')}`
+  // Извлекаем running_context чтобы не дублировать в JSON.stringify
+  const { running_context, ...cleanCtx } = context || {};
+  const memoryBlock = cleanCtx?.user_memory?.length
+    ? `\nПамять о пользователе:\n${cleanCtx.user_memory.join('\n')}`
+    : '';
+  const contextBlock = running_context
+    ? `\nКонтекст предыдущих разговоров:\n${running_context}`
     : '';
 
   return `Ты — AI-ассистент LifeOS. Разбери команду пользователя.
@@ -65,6 +70,12 @@ export function PARSE_COMMAND_PROMPT(context) {
 - «напомни завтра в 9 утра» → add_reminder {trigger_at: "завтра 09:00 ISO", label: "..."}
 - Вычисляй trigger_at как точную ISO дату-время от текущего момента.
 
+КОНТЕКСТ РАЗГОВОРОВ:
+Если есть контекст предыдущих разговоров — используй его для:
+- Категоризации ("150к на плитку" + контекст "Ремонт бюджет 500к" → category: "Ремонт")
+- Уточнения ("а что с замерщиком?" → понять о чём речь из контекста)
+- Связи с предыдущими решениями
+
 ПАМЯТЬ:
 Если пользователь говорит о себе (предпочтения, привычки, цели, здоровье) — сохрани через save_memory.
 - «я не ем мясо» → save_memory {category: "preference", fact: "Не ест мясо (вегетарианец)"}
@@ -86,8 +97,8 @@ export function PARSE_COMMAND_PROMPT(context) {
 «Перевод» и «p2p» → add_transfer (НЕ add_expense).
 
 Контекст пользователя:
-${context ? JSON.stringify(context) : 'нет контекста'}
-${memoryBlock}
+${Object.keys(cleanCtx).length ? JSON.stringify(cleanCtx) : 'нет контекста'}
+${memoryBlock}${contextBlock}
 
 ВАЖНО: Ответ ТОЛЬКО в JSON. Без markdown, без пояснений, без \`\`\`.
 Формат: {"action": "...", "params": {...}, "response": "текст для пользователя"}
@@ -107,15 +118,20 @@ ${memoryBlock}
 
 // ═══ Уровень 4: Анализ (Claude Sonnet) ═══
 export function ANALYSIS_PROMPT(context) {
-  const memoryBlock = context?.user_memory?.length
-    ? `\nПамять о пользователе:\n${context.user_memory.join('\n')}`
+  // Извлекаем running_context чтобы не дублировать в JSON.stringify
+  const { running_context, ...cleanCtx } = context || {};
+  const memoryBlock = cleanCtx?.user_memory?.length
+    ? `\nПамять о пользователе:\n${cleanCtx.user_memory.join('\n')}`
+    : '';
+  const contextBlock = running_context
+    ? `\nКонтекст предыдущих разговоров:\n${running_context}`
     : '';
 
   return `Ты — AI-аналитик LifeOS. Анализируешь данные пользователя и даёшь персонализированные инсайты.
 
 Данные:
-${JSON.stringify(context)}
-${memoryBlock}
+${JSON.stringify(cleanCtx)}
+${memoryBlock}${contextBlock}
 
 Правила:
 - Отвечай на русском
@@ -126,5 +142,6 @@ ${memoryBlock}
 - Минимальный эффект для упоминания: разница > 20%
 - Если выборка < 5 дней — пометь "предварительное наблюдение"
 - Используй память о пользователе для персонализированных рекомендаций
+- Если есть контекст предыдущих разговоров — делай кросс-референсы (связывай темы, ссылайся на решения и ожидания)
 - Формат: 2-3 инсайта (аномалии, прогресс, рекомендации) + краткие выводы`;
 }

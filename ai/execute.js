@@ -330,11 +330,22 @@ async function dispatch(action, params) {
 
     case 'query_memory': {
       const { getMemories } = await import('../services/aiMemory');
-      const mems = await getMemories(30);
-      if (!mems.length) return { queryResult: '🧠 Пока пусто. Расскажи о себе, и я запомню!' };
-      const bycat = {};
-      mems.forEach(m => (bycat[m.category] ??= []).push(m.fact));
-      return { queryResult: `🧠 Что я помню:\n${Object.entries(bycat).map(([c, facts]) => `**${c}**: ${facts.join('; ')}`).join('\n')}` };
+      const { getRunningContext } = await import('../services/chatHistory');
+      const [mems, runCtx] = await Promise.all([
+        getMemories(30),
+        getRunningContext().catch(() => null),
+      ]);
+      const parts = [];
+      if (mems.length) {
+        const bycat = {};
+        mems.forEach(m => (bycat[m.category] ??= []).push(m.fact));
+        parts.push(`🧠 Факты:\n${Object.entries(bycat).map(([c, facts]) => `**${c}**: ${facts.join('; ')}`).join('\n')}`);
+      }
+      if (runCtx) {
+        parts.push(`📋 Контекст разговоров:\n${runCtx}`);
+      }
+      if (!parts.length) return { queryResult: '🧠 Пока пусто. Расскажи о себе, и я запомню!' };
+      return { queryResult: parts.join('\n\n') };
     }
 
     // ── Рутины ──
@@ -364,11 +375,30 @@ async function dispatch(action, params) {
 
     case 'forget_memory': {
       const { searchMemory, deleteMemory } = await import('../services/aiMemory');
-      const found = await searchMemory(params.fact_fragment || params.query || '');
+      const fragment = params.fact_fragment || params.query || '';
+      const found = await searchMemory(fragment);
       if (found.length) {
         await deleteMemory(found[0].id);
-        return { forgotten: found[0].fact };
       }
+      // Также удаляем из running context если содержит этот факт
+      try {
+        const { getRunningContext } = await import('../services/chatHistory');
+        const { setSetting } = await import('../db/helpers');
+        const ctx = await getRunningContext();
+        if (ctx && fragment && ctx.toLowerCase().includes(fragment.toLowerCase())) {
+          const { callAI } = await import('./client');
+          const result = await callAI({
+            prompt: `Удали из этого контекста всё что связано с "${fragment}". Верни обновлённый контекст (Markdown). Если ничего не осталось — верни пустую строку.\n\n${ctx}`,
+            model: 'parsing',
+            maxTokens: 800,
+            temperature: 0.1,
+          });
+          const cleaned = result.content?.trim();
+          if (cleaned) await setSetting('ai_context_summary', cleaned);
+          else await setSetting('ai_context_summary', null);
+        }
+      } catch { /* running context cleanup not critical */ }
+      if (found.length) return { forgotten: found[0].fact };
       return { error: 'Не нашёл такого факта в памяти' };
     }
 

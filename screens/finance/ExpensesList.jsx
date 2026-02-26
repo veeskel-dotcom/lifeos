@@ -58,6 +58,18 @@ export default function ExpensesList({ theme, onBack, onNavigate, filterAccountI
   const accounts = useLiveQuery(() => getAccounts().catch(() => []));
   const allExpenses = useLiveQuery(() => getExpenses({ limit }).catch(() => []), [limit]);
 
+  /* ── Previous month sum for YoY comparison ── */
+  const prevMonthSum = useLiveQuery(() => {
+    if (periodFilter !== 'month' || filterCategoryId || filterMonth) return null;
+    const now = new Date();
+    const pm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const dateFrom = pm.toISOString().slice(0, 10);
+    const dateTo = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0, 10);
+    return getExpenses({ dateFrom, dateTo, limit: 100000 })
+      .then(list => list.reduce((s, e) => s + (e.amount || 0), 0))
+      .catch(() => null);
+  }, [periodFilter, filterCategoryId, filterMonth]);
+
   /* ── A1.5 drilldown header label ── */
   const drilldownLabel = useMemo(() => {
     if (!filterCategoryId) return null;
@@ -217,13 +229,27 @@ export default function ExpensesList({ theme, onBack, onNavigate, filterAccountI
       )}
 
       {/* Hero total — proto S2 */}
-      {filtered && !filterCategoryId && (
+      {filtered && !filterCategoryId && (() => {
+        const curSum = filtered.reduce((s, e) => s + (e.amount || 0), 0);
+        return (
         <div className="flex justify-between items-baseline px-4 pb-2">
           <span className="tabular-nums" style={{ fontSize: 24, fontWeight: 700, color: theme.text }}>
-            {fmtMoney(filtered.reduce((s, e) => s + (e.amount || 0), 0))}
+            {fmtMoney(curSum)}
           </span>
+          {periodFilter === 'month' && prevMonthSum > 0 && (() => {
+            const pct = Math.round(((curSum - prevMonthSum) / prevMonthSum) * 100);
+            if (pct === 0) return null;
+            const prevIdx = (new Date().getMonth() - 1 + 12) % 12;
+            const isUp = pct > 0;
+            return (
+              <span style={{ fontSize: 13, fontWeight: 600, color: isUp ? theme.red : theme.green }}>
+                {isUp ? '↑' : '↓'}{Math.abs(pct)}% к {MONTHS_SHORT[prevIdx]}
+              </span>
+            );
+          })()}
         </div>
-      )}
+        );
+      })()}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 pb-24">

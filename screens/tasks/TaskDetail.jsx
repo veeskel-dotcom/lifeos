@@ -256,11 +256,16 @@ export default function TaskDetail({ taskId, theme, onBack }) {
               >
                 {task.title}
               </span>
-              {task.deadline && task.deadline < new Date().toISOString().split('T')[0] && !isDone && (
-                <div className="text-sm font-medium mt-0.5" style={{ color: theme.red }}>
-                  Просрочена
-                </div>
-              )}
+              {task.deadline && task.deadline < new Date().toISOString().split('T')[0] && !isDone && (() => {
+                const daysOverdue = Math.floor((Date.now() - new Date(task.deadline + 'T00:00:00').getTime()) / 86400000);
+                const mod10 = daysOverdue % 10, mod100 = daysOverdue % 100;
+                const suffix = (mod10 === 1 && mod100 !== 11) ? 'день' : (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) ? 'дня' : 'дней';
+                return (
+                  <div className="text-sm font-medium mt-0.5" style={{ color: theme.red }}>
+                    Просрочена на {daysOverdue} {suffix}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>

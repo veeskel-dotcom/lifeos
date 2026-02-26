@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { isVoiceSupported, startListening } from '../ai/voice';
 
 /**
@@ -7,10 +7,11 @@ import { isVoiceSupported, startListening } from '../ai/voice';
  * @param {function} onResult - (text) => void
  * @param {object} theme
  */
-export default function VoiceInput({ onResult, theme }) {
+export default function VoiceInput({ onResult, theme, autoStart = false }) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
   const recognitionRef = useRef(null);
+  const didAutoStart = useRef(false);
 
   const supported = isVoiceSupported();
 
@@ -45,6 +46,13 @@ export default function VoiceInput({ onResult, theme }) {
   const stop = useCallback(() => {
     recognitionRef.current?.stop();
   }, []);
+
+  useEffect(() => {
+    if (autoStart && supported && !didAutoStart.current) {
+      didAutoStart.current = true;
+      start();
+    }
+  }, [autoStart, supported, start]);
 
   return (
     <div className="flex items-center gap-1 shrink-0">

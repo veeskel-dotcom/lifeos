@@ -487,14 +487,17 @@ async function collectContext(tier = 'L4', topics = ['all']) {
 
     // L3: минимальный контекст для парсинга (~200 токенов)
     if (tier === 'L3') {
-      const [memories, tasks] = await Promise.all([
+      const { getSetting } = await import('../db/helpers');
+      const [memories, tasks, runningContext] = await Promise.all([
         db.ai_memory.orderBy('created_at').reverse().limit(15).toArray().catch(() => []),
         db.tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').limit(5).toArray().catch(() => []),
+        getSetting('ai_context_summary').catch(() => null),
       ]);
       return {
         today,
         active_tasks: tasks.map(t => t.title),
         user_memory: memories.map(m => `[${m.category}] ${m.fact}`),
+        ...(runningContext ? { running_context: runningContext } : {}),
       };
     }
 
@@ -547,11 +550,15 @@ async function collectContext(tier = 'L4', topics = ['all']) {
       daysSinceWorkout = Math.floor((Date.now() - new Date(cq.lastWorkout.date + 'T00:00:00').getTime()) / 86400000);
     }
 
+    // Running context (deep memory)
+    const runningContext = await getSetting('ai_context_summary').catch(() => null);
+
     const ctx = {
       today,
       active_tasks: tasks.slice(0, 5).map(t => t.title),
       overdue_tasks_count: tasks.filter(t => t.deadline && t.deadline < today).length,
       user_memory: memories.map(m => `[${m.category}] ${m.fact}`),
+      ...(runningContext ? { running_context: runningContext } : {}),
     };
 
     // Финансы

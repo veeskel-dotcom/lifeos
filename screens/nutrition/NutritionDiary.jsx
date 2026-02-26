@@ -692,6 +692,7 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
         title={`Добавить в ${MEALS.find(m => m.key === activeActionMeal)?.label || ''}`}
         theme={theme}
         actions={[
+          { icon: <Ic name="mic" color={theme.orange} size={20} r={5} raw />, label: 'Голосом', action: () => onOpenSearch?.(activeActionMeal, 'voice') },
           { icon: <Ic name="food" color={theme.accent} size={20} r={5} raw />, label: 'Поиск продукта', action: () => onOpenSearch?.(activeActionMeal) },
           { icon: <Ic name="camera" color={theme.accent} size={20} r={5} raw />, label: 'Фото еды', action: () => onOpenSearch?.(activeActionMeal, 'photo') },
           { icon: <Ic name="barcode" color={theme.accent} size={20} r={5} raw />, label: 'Сканировать штрихкод', action: () => onOpenSearch?.(activeActionMeal, 'barcode') },

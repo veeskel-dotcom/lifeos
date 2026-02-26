@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
-import { getOrCreateSession, addMessage, getRecentMessages, clearHistory, getSessionHistory } from '../../services/chatHistory';
+import { getOrCreateSession, addMessage, getRecentMessages, clearHistory, getSessionHistory, getRunningContext, getLastSessionEndTs } from '../../services/chatHistory';
 import IOSKeyboardSpacer from '../../components/IOSKeyboardSpacer';
 import Ic from '../../components/Icon';
 
@@ -45,12 +45,53 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
     if (sess?.messages?.length) {
       setMessages(sess.messages);
     } else {
-      // Проактивные подсказки для пустого чата
+      // ── Welcome-back: проактивное приветствие при возвращении (gap > 24ч) ──
+      let didWelcome = false;
       try {
-        const { generateProactiveNudges } = await import('../../services/briefing');
-        const nudges = await generateProactiveNudges();
-        if (nudges.length > 0) setDynamicSuggestions(nudges);
-      } catch {}
+        if (navigator.onLine) {
+          const [runningCtx, lastEndTs] = await Promise.all([
+            getRunningContext(),
+            getLastSessionEndTs(),
+          ]);
+          const gap = lastEndTs ? Date.now() - lastEndTs : 0;
+          if (runningCtx && gap > 24 * 60 * 60 * 1000) {
+            // Генерируем приветствие через Flash AI
+            const gapDays = Math.floor(gap / 86400000);
+            const gapText = gapDays === 1 ? 'вчера' : gapDays < 7 ? `${gapDays} дн. назад` : `${Math.floor(gapDays / 7)} нед. назад`;
+            const { callAI } = await import('../../ai/client');
+            const welcomeResult = await callAI({
+              prompt: `Пользователь возвращается (последний раз общались ${gapText}).
+На основе контекста сгенерируй краткое приветствие (2-3 предложения).
+Упомяни 1-2 ключевых незавершённых дела или решения.
+Тон: дружелюбный, деловой. Русский язык.
+
+Контекст:\n${runningCtx}`,
+              model: 'parsing',
+              maxTokens: 200,
+              temperature: 0.7,
+            });
+            const welcomeText = welcomeResult.content?.trim();
+            if (welcomeText && sess) {
+              const welcomeMsg = { role: 'assistant', content: welcomeText, timestamp: new Date().toISOString(), isWelcome: true };
+              setMessages([welcomeMsg]);
+              await addMessage(sess.session_id, 'assistant', welcomeText, { isWelcome: true });
+              // Обновляем timestamp чтобы welcome не повторялся при следующем открытии
+              const { setSetting } = await import('../../db/helpers');
+              await setSetting('last_session_end_ts', Date.now());
+              didWelcome = true;
+            }
+          }
+        }
+      } catch { /* welcome not critical */ }
+
+      // Проактивные подсказки для пустого чата (только если не было welcome)
+      if (!didWelcome) {
+        try {
+          const { generateProactiveNudges } = await import('../../services/briefing');
+          const nudges = await generateProactiveNudges();
+          if (nudges.length > 0) setDynamicSuggestions(nudges);
+        } catch {}
+      }
     }
 
     // Derived memories: раз в неделю
@@ -213,15 +254,14 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
             import('../../services/aiMemory'),
           ]);
           const { getSetting } = await import('../../db/helpers');
-          const { getSessionHistory: getSessHist } = await import('../../services/chatHistory');
           const ctxToday = new Date().toISOString().split('T')[0];
           const ctxMonthStart = ctxToday.slice(0, 8) + '01';
-          const [ctxTasks, ctxExpenses, ctxMems, ctxBudget, recentSessions] = await Promise.all([
+          const [ctxTasks, ctxExpenses, ctxMems, ctxBudget, runningCtx] = await Promise.all([
             ctxDb.tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').limit(10).toArray().catch(() => []),
             ctxDb.expenses.where('date').between(ctxMonthStart, ctxToday + '\uffff', true, true).toArray().catch(() => []),
             getMemories(20),
             getSetting('monthly_budget').catch(() => null),
-            getSessHist().catch(() => []),
+            getRunningContext().catch(() => null),
           ]);
           const monthSpent = ctxExpenses.reduce((s, e) => s + (e.amount_base || e.amount || 0), 0);
           const ctxData = {
@@ -232,13 +272,13 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
             budget_remaining: ctxBudget ? ctxBudget - monthSpent : null,
           };
           const memLines = ctxMems.map(m => `[${m.category}] ${m.fact}`);
-          const summaries = recentSessions.filter(s => s.summary).slice(0, 3).map(s => s.summary);
           systemPrompt = `Ты — LifeOS AI-ассистент. Ты знаешь всё о пользователе.
 
 Данные: ${JSON.stringify(ctxData)}
 ${memLines.length ? `\nПамять:\n${memLines.join('\n')}` : ''}
-${summaries.length ? `\nПредыдущие разговоры:\n${summaries.join('\n')}` : ''}
+${runningCtx ? `\nКонтекст из предыдущих разговоров:\n${runningCtx}` : ''}
 
+Ссылайся на конкретные факты из контекста. Если тема обсуждалась ранее — покажи что помнишь.
 Отвечай кратко, конкретно, с цифрами. Русский язык. Используй данные в ответах.`;
         } catch { /* fallback to basic prompt */ }
         const userPrompt = history.length

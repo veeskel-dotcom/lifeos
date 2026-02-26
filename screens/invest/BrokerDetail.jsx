@@ -3,6 +3,7 @@ import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
 import ProgressBar from '../../components/ProgressBar';
 import EmptyState from '../../components/EmptyState';
+import Ic from '../../components/Icon';
 import { getPortfolio, getBrokerMeta } from '../../services/portfolio';
 import { fmtMoney as fmt } from '../../utils/currency';
 
@@ -143,16 +144,16 @@ export default function BrokerDetail({ broker, theme, onBack, onNavigate }) {
         {/* Import */}
         <Card theme={theme} style={{ padding: 0, overflow: 'hidden' }}>
           {[
-            { icon: '📷', color: theme.orange || '#FF9500', label: 'Фото отчёта' },
-            { icon: '📤', color: theme.accent, label: 'Загрузить PDF/Excel' },
-            { icon: '📝', color: theme.purple || '#AF52DE', label: 'Добавить вручную' },
+            { icon: 'camera', color: theme.orange || '#FF9500', label: 'Фото отчёта' },
+            { icon: 'share', color: theme.accent, label: 'Загрузить PDF/Excel' },
+            { icon: 'note', color: theme.purple || '#AF52DE', label: 'Добавить вручную' },
           ].map((item, i) => (
             <div key={item.label}
               className="flex items-center cursor-pointer active:opacity-70"
               style={{ gap: 10, padding: '12px 14px', borderBottom: i < 2 ? `0.5px solid ${theme.gray5}` : 'none' }}>
               <div className="flex items-center justify-center shrink-0"
                 style={{ width: 24, height: 24, borderRadius: 6, background: item.color + '18' }}>
-                <span style={{ fontSize: 12 }}>{item.icon}</span>
+                <Ic name={item.icon} color={item.color} size={16} r={0} raw />
               </div>
               <span className="flex-1" style={{ fontSize: 14, color: theme.text }}>{item.label}</span>
               <span style={{ color: theme.gray3 }}>→</span>
