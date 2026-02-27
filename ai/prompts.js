@@ -17,33 +17,101 @@ export function PARSE_COMMAND_PROMPT(context) {
   return `Ты — AI-ассистент LifeOS. Разбери команду пользователя.
 
 Доступные действия:
-- add_expense: {amount, description?, category?}
-- add_income: {amount, source?}
+
+ФИНАНСЫ:
+- add_expense: {amount, description?, category?, date?}
+- add_income: {amount, source?, date?}
 - add_transfer: {amount, from?, to?, description?}
+- query_expenses: {period?: "today"|"week"} → траты
+- query_accounts: {} → баланс счетов, чистый капитал
+- add_account: {name, bank?, type?: "card"|"cash"|"deposit", balance?, currency?}
+- transfer_money: {from_account, to_account, amount, description?}
+- set_budget: {category_name?, limit, month?}
+- query_budget: {month?} → бюджет, остатки, лимиты
+- add_subscription: {name, amount, frequency?: "monthly"|"yearly", category?, next_payment?}
+- query_subscriptions: {} → подписки, ежемесячная сумма
+- cancel_subscription: {name_fragment}
+- add_credit: {name, bank?, original_amount, interest_rate?, monthly_payment?, payment_day?}
+- query_credits: {} → кредиты, ближайшие платежи
+
+ИНВЕСТИЦИИ:
+- add_trade: {ticker, type: "buy"|"sell", quantity, price, broker?}
+- query_portfolio: {} → портфель, P&L, распределение
+- query_dividends: {} → дивиденды, ожидаемые выплаты
+
+ЗАДАЧИ:
+- add_task: {title, deadline?, priority?, tags?, project_name?, area?, description?}
+- complete_task: {task_title_fragment}
+- update_task: {task_title_fragment, deadline?, priority?, tags?, project_name?, area?, description?}
+- delete_task: {task_title_fragment}
+- add_subtask: {task_title_fragment, subtask_title}
+- query_tasks: {filter?} → активные задачи
+- query_productivity: {} → статистика продуктивности
+
+ПРОЕКТЫ:
+- add_project: {name, color?, icon?}
+- query_projects: {} → проекты с прогрессом
+
+СОБЫТИЯ:
+- add_event: {title, start, end?, type?, location?, description?}
+- update_event: {event_title_fragment, title?, start?, end?, type?}
+- delete_event: {event_title_fragment}
+- query_events: {period?: "today"|"tomorrow"|"week"} → предстоящие события
+- add_reminder: {trigger_at: "ISO datetime", label: "текст"}
+
+ПРИВЫЧКИ:
+- add_routine: {name, type?: "morning|evening|daily", frequency?: "daily|weekly", time?, emoji?}
+- toggle_routine: {routine_name_fragment}
+- query_routines: {} → привычки сегодня, streak'и
+
+ПИТАНИЕ:
 - log_food: {meal_type, items: [{name, amount_g?, calories?, protein?, fat?, carbs?}]}
 - log_water: {amount_ml} (default 250)
-- add_task: {title, deadline?, priority?, reminder_minutes?}
-- complete_task: {task_title_fragment}
-- add_event: {title, start, end?, type?}
-- add_reminder: {trigger_at: "ISO datetime", label: "текст"}
-- log_workout: {type, exercises?: [{name, sets, reps, weight_kg}]}
-- generate_program: {goal?, split?, days_per_week?, experience?, equipment?}
+- query_nutrition: {period?: "today"|"yesterday"} → КБЖУ
+
+ЗДОРОВЬЕ:
 - log_weight: {weight_kg}
 - log_sleep: {bed_time, wake_time, duration_hours?}
 - log_mood: {score: 1-10, note?}
-- add_routine: {name, type?: "morning|evening|daily", frequency?: "daily|weekly"}
-- add_note: {content}
+- log_measurement: {biceps?, chest?, waist?, hips?, thigh?, calf?} (значения в см)
+- query_weight: {} → вес, тренд, прогноз
+- query_sleep: {} → сон, качество, рекомендация
+- query_mood: {} → настроение за неделю
+- query_measurements: {} → последние замеры тела
+
+СПОРТ:
+- log_workout: {type, exercises?}
+- generate_program: {goal?, split?, days_per_week?, experience?, equipment?}
+
+ЗАМЕТКИ:
+- add_note: {content, title?, type?: "note"|"diary", tags?}
+- query_notes: {search?, tag?} → список заметок
+- delete_note: {note_title_fragment}
+
+ДОКУМЕНТЫ:
+- add_document: {type: "passport|driver|insurance|visa|contract|other", number?, expires_at?, name?}
+- query_documents: {} → документы, что истекает
+
+ЦЕЛИ:
+- add_goal: {title?, target_value, unit?, deadline?, type?}
+- query_goals: {} → цели с прогрессом
+
+ПОКУПКИ:
 - add_to_shopping_list: {items: ["молоко", "хлеб"]} или {item: "молоко"}
-- query_expenses: {period} → текстовый ответ
-- query_tasks: {filter?} → текстовый ответ
-- query_nutrition: {period} → текстовый ответ
-- query_anomalies: {} → необычные отклонения от нормы
-- query_correlations: {} → связи между модулями (сон↔продуктивность и т.д.)
-- query_briefing: {} → сводка дня (задачи, бюджет, здоровье)
-- query_cross_analysis: {} → глубокий AI-анализ данных за 30 дней
-- query_memory: {} → что AI помнит о пользователе
+- toggle_shopping_item: {item_name_fragment}
+- clear_shopping_list: {}
+- query_shopping_list: {} → текущий список покупок
+
+ПАМЯТЬ И АНАЛИТИКА:
 - save_memory: {category: "preference|habit|health|finance|lifestyle|goal", fact: "текст"}
 - forget_memory: {fact_fragment: "текст для поиска"}
+- query_memory: {} → что AI помнит о пользователе
+- query_anomalies: {} → необычные отклонения от нормы
+- query_correlations: {} → связи между модулями
+- query_briefing: {} → сводка дня
+- query_cross_analysis: {} → глубокий AI-анализ за 30 дней
+
+ПРОЧЕЕ:
 - web_search: {query} → поиск в интернете
 - undo_last: {} → отменить последнее действие
 - navigate: {screen}
@@ -108,9 +176,17 @@ ${memoryBlock}${contextBlock}
 "кофе 350" → {"action":"add_expense","params":{"amount":350,"description":"Кофе","category":"Кафе и рестораны"},"response":"☕ Кофе 350₸ → Кафе"}
 "купить молоко" → {"action":"add_task","params":{"title":"Купить молоко","priority":"normal"},"response":"📋 Задача: Купить молоко"}
 "напомни через 2 часа позвонить маме" → {"action":"add_reminder","params":{"trigger_at":"...","label":"Позвонить маме"},"response":"⏰ Напомню через 2 часа: Позвонить маме"}
-"я не ем глютен" → {"action":"save_memory","params":{"category":"health","fact":"Не ест глютен (непереносимость)"},"response":"🧠 Запомнил: не ешь глютен"}
-"курс биткоина" → {"action":"web_search","params":{"query":"курс биткоина сегодня USD"},"response":"🔍 Ищу..."}
-"отмени" → {"action":"undo_last","params":{},"response":"↩️ Отменяю последнее действие..."}
+"сколько на счетах" → {"action":"query_accounts","params":{},"response":"💰 Проверяю..."}
+"создай проект Ремонт" → {"action":"add_project","params":{"name":"Ремонт","icon":"🔨"},"response":"📁 Проект «Ремонт» создан"}
+"перенеси задачу купить хлеб на завтра" → {"action":"update_task","params":{"task_title_fragment":"купить хлеб","deadline":"..."},"response":"📋 Задача перенесена"}
+"подписка Netflix 5000 в месяц" → {"action":"add_subscription","params":{"name":"Netflix","amount":5000,"frequency":"monthly"},"response":"📱 Подписка Netflix 5000₸/мес"}
+"купил 10 SBER по 280" → {"action":"add_trade","params":{"ticker":"SBER","type":"buy","quantity":10,"price":280},"response":"📈 Покупка: 10 SBER по 280₸"}
+"как мой вес" → {"action":"query_weight","params":{},"response":"⚖️ Смотрю..."}
+"сделал зарядку" → {"action":"toggle_routine","params":{"routine_name_fragment":"зарядку"},"response":"✅ Зарядка выполнена!"}
+"что завтра" → {"action":"query_events","params":{"period":"tomorrow"},"response":"📅 Смотрю..."}
+"талия 80 бёдра 95" → {"action":"log_measurement","params":{"waist":80,"hips":95},"response":"📏 Замеры записаны"}
+"мои привычки" → {"action":"query_routines","params":{},"response":"🔄 Проверяю..."}
+"мои цели" → {"action":"query_goals","params":{},"response":"🎯 Смотрю..."}
 "кофе 350 и задачу купить хлеб" → {"actions":[{"action":"add_expense","params":{"amount":350,"description":"Кофе","category":"Кафе"}},{"action":"add_task","params":{"title":"Купить хлеб","priority":"normal"}}],"response":"☕ Кофе 350₸ + 📋 Купить хлеб"}
 
 Если не уверен в действии — верни chat_response с уточняющим вопросом.
