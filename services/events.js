@@ -13,6 +13,7 @@ export async function addEvent(data) {
       description: data.description || '',
       reminder_min: data.reminder_min ?? 30,
       recurrence: data.recurrence || null,
+      linked_task_id: data.linked_task_id || null,
       color: data.color || '#007AFF',
       created_at: new Date().toISOString(),
     };

@@ -16,6 +16,16 @@ function fmtTime(iso) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+function fmtDuration(startIso, endIso) {
+  if (!startIso || !endIso) return '';
+  const mins = Math.round((new Date(endIso) - new Date(startIso)) / 60000);
+  if (mins <= 0) return '';
+  if (mins < 60) return `${mins} мин`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h} ч ${m} мин` : `${h} ч`;
+}
+
 /**
  * CalendarView — Fantastical-style DayTicker + месячная сетка.
  * Горизонтальная полоса дней (14 дней), тап → задачи/события дня, pull → месяц.
@@ -250,7 +260,9 @@ export default function CalendarView({ tasks, theme, onTap, onToggle, onNavigate
                   onClick={() => onNavigate?.('event-form', { edit: ev, date: ev.date })}
                 >
                   <div className="text-sm font-medium" style={{ color: theme.text }}>{ev.title}</div>
-                  {ev.location && <div className="text-[11px]" style={{ color: theme.gray2 }}>📍 {ev.location}</div>}
+                  <div className="text-[11px]" style={{ color: theme.gray2 }}>
+                    {[fmtDuration(ev.start, ev.end), ev.location ? `📍 ${ev.location}` : ''].filter(Boolean).join(' · ')}
+                  </div>
                 </div>
               </div>
             );

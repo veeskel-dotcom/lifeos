@@ -440,6 +440,18 @@ export default function NutritionDiary({ theme, onOpenSearch, onOpenManual, onMe
                   {hasItems ? `${mealCal} ккал` : ''}
                 </span>
                 <button
+                  onClick={() => onOpenSearch?.(key, 'voice')}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 28, height: 28, borderRadius: 14,
+                    background: (theme.orange || '#FF9500') + '18',
+                    border: 'none', cursor: 'pointer',
+                  }}
+                  aria-label="Голосом"
+                >
+                  <Ic name="mic" color={theme.orange || '#FF9500'} size={16} r={4} raw />
+                </button>
+                <button
                   onClick={() => setActiveActionMeal(key)}
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "center",

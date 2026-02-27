@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { addEvent, updateEvent, deleteEvent } from '../../services/events';
 import { createReminder } from '../../services/reminders';
+import { getTasks } from '../../services/tasks';
 import SelectSheet from '../../components/SelectSheet';
 
 const EVENT_TYPES = [
@@ -43,10 +44,26 @@ export default function EventForm({ theme, onBack, initialDate, existing }) {
   const [notes, setNotes] = useState(existing?.description || '');
   const [recurrence, setRecurrence] = useState(existing?.recurrence || 'none');
   const [reminderMin, setReminderMin] = useState(existing?.reminder_min ?? 15);
-  const [linkedTask] = useState(existing?.linked_task || null);
+  const [linkedTaskId, setLinkedTaskId] = useState(existing?.linked_task_id || null);
+  const [linkedTaskTitle, setLinkedTaskTitle] = useState(existing?.linked_task_title || '');
   const [showRepeat, setShowRepeat] = useState(false);
   const [showRemind, setShowRemind] = useState(false);
+  const [showTaskPicker, setShowTaskPicker] = useState(false);
+  const [taskOptions, setTaskOptions] = useState([]);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    getTasks().then(tasks => {
+      setTaskOptions([
+        { value: null, label: 'Нет' },
+        ...tasks.filter(t => t.status !== 'done').map(t => ({ value: t.id, label: t.title })),
+      ]);
+      if (existing?.linked_task_id) {
+        const t = tasks.find(t => t.id === existing.linked_task_id);
+        if (t) setLinkedTaskTitle(t.title);
+      }
+    }).catch(() => {});
+  }, []);
 
   const fmtDate = (d) => {
     if (!d) return 'Выбрать';
@@ -65,6 +82,7 @@ export default function EventForm({ theme, onBack, initialDate, existing }) {
       type, location, description: notes,
       reminder_min: reminderMin >= 0 ? reminderMin : null,
       recurrence: recurrence !== 'none' ? recurrence : null,
+      linked_task_id: linkedTaskId || null,
     };
 
     if (existing?.id) {
@@ -208,9 +226,9 @@ export default function EventForm({ theme, onBack, initialDate, existing }) {
         </div>
 
         {/* Связать с задачей */}
-        <div style={{ ...dropStyle, marginBottom: 12 }}>
+        <div onClick={() => setShowTaskPicker(true)} style={{ ...dropStyle, marginBottom: 12 }}>
           <span>🔗 Связать с задачей</span>
-          <span style={{ color: theme.gray3 }}>{linkedTask || 'Нет'} ▾</span>
+          <span style={{ color: linkedTaskId ? theme.text : theme.gray3 }}>{linkedTaskTitle || 'Нет'} ▾</span>
         </div>
 
         {/* Заметки */}
@@ -232,6 +250,13 @@ export default function EventForm({ theme, onBack, initialDate, existing }) {
       <SelectSheet open={showRemind} onClose={() => setShowRemind(false)} title="Напоминание"
         options={REMIND_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
         selected={reminderMin} onSelect={(v) => { setReminderMin(v); setShowRemind(false); }} theme={theme} />
+      <SelectSheet open={showTaskPicker} onClose={() => setShowTaskPicker(false)} title="Связать с задачей"
+        options={taskOptions}
+        selected={linkedTaskId} onSelect={(v) => {
+          setLinkedTaskId(v);
+          setLinkedTaskTitle(taskOptions.find(o => o.value === v)?.label || '');
+          setShowTaskPicker(false);
+        }} theme={theme} />
     </div>
   );
 }
