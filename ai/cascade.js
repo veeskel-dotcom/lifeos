@@ -367,7 +367,7 @@ function level2_patterns(text) {
 // ═══════════════════════════════════════════
 
 async function level3_parseCommand(input, chatHistory, topics) {
-  const context = await collectContext('L3', topics);
+  const context = await collectContext('L3', topics, input);
 
   const result = await callAI({
     prompt: input,
@@ -402,7 +402,7 @@ async function level3_parseCommand(input, chatHistory, topics) {
 // ═══════════════════════════════════════════
 
 async function level4_analysis(input, chatHistory, topics) {
-  const context = await collectContext('L4', topics);
+  const context = await collectContext('L4', topics, input);
 
   const result = await callAI({
     prompt: input,
@@ -480,16 +480,18 @@ function handleAIError(err) {
 // Контекст для промптов
 // ═══════════════════════════════════════════
 
-async function collectContext(tier = 'L4', topics = ['all']) {
+async function collectContext(tier = 'L4', topics = ['all'], userMessage = null) {
   try {
     const db = (await import('../db/index')).default;
+    const { getRelevantMemories } = await import('../services/embeddings');
     const today = new Date().toISOString().split('T')[0];
 
     // L3: минимальный контекст для парсинга (~200 токенов)
     if (tier === 'L3') {
       const { getSetting } = await import('../db/helpers');
+      // Parallel: vector embed (with timeout) + DB reads
       const [memories, tasks, runningContext] = await Promise.all([
-        db.ai_memory.orderBy('created_at').reverse().limit(15).toArray().catch(() => []),
+        getRelevantMemories(userMessage, 15).catch(() => []),
         db.tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').limit(5).toArray().catch(() => []),
         getSetting('ai_context_summary').catch(() => null),
       ]);
@@ -508,10 +510,10 @@ async function collectContext(tier = 'L4', topics = ['all']) {
     const loadAll = topics.includes('all');
     const has = (t) => loadAll || topics.includes(t);
 
-    // Всегда: tasks + memory
+    // Всегда: tasks + memory (vector search for relevant memories)
     const baseQueries = [
       db.tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').limit(20).toArray().catch(() => []),
-      db.ai_memory.orderBy('created_at').reverse().limit(30).toArray().catch(() => []),
+      getRelevantMemories(userMessage, 30).catch(() => []),
     ];
     // Условные запросы
     const conditionalQueries = {

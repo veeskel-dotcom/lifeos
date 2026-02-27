@@ -1,16 +1,18 @@
 /**
  * Vercel Serverless Function: /api/proxy/openrouter
  * Proxies requests to OpenRouter API, keeping the API key server-side.
+ * Supports both chat/completions and embeddings endpoints.
  *
  * Environment variable required: OPENROUTER_API_KEY (set in Vercel dashboard, no VITE_ prefix)
  */
 
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_EMBEDDINGS_URL = 'https://openrouter.ai/api/v1/embeddings';
 
 // Simple in-memory rate limiting per IP (resets on cold start)
 const ipCalls = new Map();
 const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX = 30; // max 30 requests per minute per IP
+const RATE_LIMIT_MAX = 60; // max 60 requests per minute per IP
 
 function checkRateLimit(ip) {
   const now = Date.now();
@@ -58,7 +60,14 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Server misconfiguration: API key not set' });
   }
 
-  // Validate request body
+  // Detect request type: embeddings (has `input`) vs chat (has `messages`)
+  const isEmbeddings = req.body?.input !== undefined;
+
+  if (isEmbeddings) {
+    return handleEmbeddings(req, res, apiKey, origin, host);
+  }
+
+  // Validate chat request body
   const { model, messages, max_tokens, temperature, stream } = req.body || {};
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'Invalid request: messages array required' });
@@ -67,7 +76,7 @@ export default async function handler(req, res) {
   // Streaming requests
   if (stream) {
     try {
-      const upstreamRes = await fetch(OPENROUTER_URL, {
+      const upstreamRes = await fetch(OPENROUTER_CHAT_URL, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -112,9 +121,9 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Non-streaming requests
+  // Non-streaming chat requests
   try {
-    const upstreamRes = await fetch(OPENROUTER_URL, {
+    const upstreamRes = await fetch(OPENROUTER_CHAT_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -134,5 +143,40 @@ export default async function handler(req, res) {
     return res.status(200).json(data);
   } catch (e) {
     return res.status(502).json({ error: 'Failed to reach OpenRouter', detail: e.message });
+  }
+}
+
+// ═══ Embeddings handler ═══
+async function handleEmbeddings(req, res, apiKey, origin, host) {
+  const { model, input, dimensions } = req.body || {};
+
+  if (!input) {
+    return res.status(400).json({ error: 'Invalid request: input required for embeddings' });
+  }
+
+  const body = { model: model || 'baai/bge-m3', input };
+  if (dimensions) body.dimensions = dimensions;
+
+  try {
+    const upstreamRes = await fetch(OPENROUTER_EMBEDDINGS_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': origin || `https://${host}`,
+        'X-Title': 'LifeOS',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await upstreamRes.json();
+
+    if (!upstreamRes.ok) {
+      return res.status(upstreamRes.status).json(data);
+    }
+
+    return res.status(200).json(data);
+  } catch (e) {
+    return res.status(502).json({ error: 'Failed to reach OpenRouter embeddings', detail: e.message });
   }
 }

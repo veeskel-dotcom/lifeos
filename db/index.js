@@ -91,4 +91,9 @@ db.version(7).stores({
   _sync_changelog: '++id, table_name, ts',
 });
 
+// Wave 12: Vector Memory v2 — updated_at index + embedding field (nullable blob)
+db.version(8).stores({
+  ai_memory: '++id, category, created_at, updated_at',
+});
+
 export default db;

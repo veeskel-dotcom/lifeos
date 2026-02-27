@@ -39,6 +39,19 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
   // ── Init session ──
   useEffect(() => { initSession(); }, []);
 
+  // ── Online: reconcile unembedded facts ──
+  useEffect(() => {
+    const handleOnline = () => {
+      setTimeout(() => {
+        import('../../services/embeddings')
+          .then(m => m.reconcileOfflineFacts())
+          .catch(() => {});
+      }, 2000);
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
   const initSession = async () => {
     const sess = await getOrCreateSession(lastMsgTime.current);
     setSession(sess);
@@ -104,6 +117,12 @@ export default function AIChatScreen({ theme, onBack, onNavigate }) {
         await setSetting('last_derived_memories', Date.now());
       }
     } catch { /* derived memories not critical */ }
+
+    // Vector Memory v2: migrate existing facts (background, once)
+    try {
+      const { migrateExistingFacts } = await import('../../services/embeddings');
+      migrateExistingFacts().catch(() => {});
+    } catch { /* migration not critical */ }
   };
 
   // ── Autoscroll ──
@@ -428,6 +447,8 @@ ${runningCtx ? `\nКонтекст из предыдущих разговоро�
   const handleClearHistory = async () => {
     setShowMenu(false);
     await clearHistory();
+    // Reset embedding cache (vector memory)
+    try { const { cacheReset } = await import('../../services/embeddings'); cacheReset(); } catch {}
     lastMsgTime.current = null;
     const sess = await getOrCreateSession(null);
     setSession(sess);
