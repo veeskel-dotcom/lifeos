@@ -27,6 +27,7 @@ export function PARSE_COMMAND_PROMPT(context) {
 - add_event: {title, start, end?, type?}
 - add_reminder: {trigger_at: "ISO datetime", label: "текст"}
 - log_workout: {type, exercises?: [{name, sets, reps, weight_kg}]}
+- generate_program: {goal?, split?, days_per_week?, experience?, equipment?}
 - log_weight: {weight_kg}
 - log_sleep: {bed_time, wake_time, duration_hours?}
 - log_mood: {score: 1-10, note?}

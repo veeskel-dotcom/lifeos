@@ -254,7 +254,16 @@ export default function SportModule({ theme, onBack, initialView }) {
 
       case 'aiTrainer':
         return <AITrainerScreen theme={theme} onBack={goBack}
-          onStartWorkout={() => navigate('startWorkout')} />;
+          onStartWorkout={async (existingWorkoutId) => {
+            if (existingWorkoutId) {
+              const w = await getWorkout(existingWorkoutId);
+              setActiveWorkoutId(existingWorkoutId);
+              setActiveWorkout(w);
+              setView('activeWorkout');
+            } else {
+              navigate('startWorkout');
+            }
+          }} />;
 
       default:
         return <SportOverview theme={theme} onNavigate={navigate} onBack={onBack} />;

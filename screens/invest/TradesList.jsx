@@ -5,6 +5,7 @@ import EmptyState from '../../components/EmptyState';
 import SkeletonCard from '../../components/SkeletonCard';
 import { getAllTrades } from '../../services/trades';
 import { fmtMoney } from '../../utils/currency';
+import Ic from '../../components/Icon';
 
 const MONTH_NAMES = [
   'ЯНВАРЬ', 'ФЕВРАЛЬ', 'МАРТ', 'АПРЕЛЬ', 'МАЙ', 'ИЮНЬ',
@@ -115,7 +116,9 @@ export default function TradesList({ theme, onBack, onNavigate }) {
                   <div key={t.id || i} className="flex items-center cursor-pointer"
                     onClick={() => onNavigate?.('assetDetail', t.assetId)}
                     style={{ gap: 10, padding: '10px 14px', borderBottom: i < group.items.length - 1 ? `0.5px solid ${theme.gray5}` : 'none' }}>
-                    <div style={{ width: 8, height: 8, borderRadius: 4, background: t.type === 'buy' ? theme.green : theme.red }} />
+                    <div style={t.type === 'sell' ? { transform: 'scaleY(-1)' } : undefined}>
+                      <Ic name="trend" color={t.type === 'buy' ? theme.green : theme.red} size={24} r={6} />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>
                         <span style={{ fontWeight: 600 }}>{t.ticker}</span>

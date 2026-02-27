@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { useLiveQuery } from '../../hooks/useDB';
 import NavHeader from '../../components/NavHeader';
 import Card from '../../components/Card';
-import ProgressBar from '../../components/ProgressBar';
+import EmptyState from '../../components/EmptyState';
+import SkeletonCard from '../../components/SkeletonCard';
+import Ic from '../../components/Icon';
+import { useToast } from '../../components/ToastProvider';
+import { generateProgram, getTodaySession, getProgressInsights, getSavedProgram } from '../../services/aiTrainer';
+import { startWorkout, addExerciseToWorkout, getWorkout } from '../../services/workouts';
+import { getExercise } from '../../services/exercises';
 
 const DAYS = [
   { day: 'Понедельник', short: 'Пн' },
@@ -31,9 +37,140 @@ function ChipBar({ items, active, onSelect, theme }) {
   );
 }
 
+/* ═══ Chip selector for SetupSheet ═══ */
+function ChipGroup({ options, value, onChange, theme }) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      {options.map(o => (
+        <div key={o.value} onClick={() => onChange(o.value)}
+          style={{
+            padding: '6px 12px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            background: value === o.value ? theme.accent + '15' : theme.gray5,
+            color: value === o.value ? theme.accent : theme.gray1,
+            border: value === o.value ? `1.5px solid ${theme.accent}` : '1.5px solid transparent',
+          }}>
+          {o.label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ═══ SetupSheet — настройка параметров программы ═══ */
+function SetupSheet({ theme, onGenerate, onClose, existing }) {
+  const [goal, setGoal] = useState(existing?.goal || 'Масса + сила');
+  const [split, setSplit] = useState(existing?.split || 'Push / Pull / Legs');
+  const [days, setDays] = useState(existing?.daysPerWeek || '4');
+  const [experience, setExperience] = useState(existing?.experience || 'Средний');
+  const [equipment, setEquipment] = useState(existing?.equipment || 'Полный зал');
+  const [loading, setLoading] = useState(false);
+
+  const handleGenerate = async () => {
+    setLoading(true);
+    try {
+      await onGenerate({ goal, split, daysPerWeek: parseInt(days), experience, equipment });
+      onClose();
+    } catch (e) {
+      console.error('[SetupSheet]', e);
+      // Error handled by parent (toast)
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}
+      onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose(); }}>
+      <div style={{ width: '100%', maxWidth: 448, borderRadius: '16px 16px 0 0', padding: '16px 20px 32px', background: theme.bg, maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={{ width: 40, height: 4, borderRadius: 9999, margin: '0 auto 16px', background: theme.gray4 }} />
+        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: theme.text }}>Параметры программы</div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: theme.gray2, marginBottom: 6 }}>ЦЕЛЬ</div>
+            <ChipGroup theme={theme} value={goal} onChange={setGoal} options={[
+              { value: 'Масса + сила', label: 'Масса + сила' },
+              { value: 'Сила', label: 'Сила' },
+              { value: 'Гипертрофия', label: 'Гипертрофия' },
+              { value: 'Выносливость', label: 'Выносливость' },
+            ]} />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: theme.gray2, marginBottom: 6 }}>СПЛИТ</div>
+            <ChipGroup theme={theme} value={split} onChange={setSplit} options={[
+              { value: 'Push / Pull / Legs', label: 'PPL' },
+              { value: 'Upper / Lower', label: 'Upper-Lower' },
+              { value: 'Full Body', label: 'Full Body' },
+            ]} />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: theme.gray2, marginBottom: 6 }}>ДНЕЙ В НЕДЕЛЮ</div>
+            <ChipGroup theme={theme} value={days} onChange={setDays} options={[
+              { value: '3', label: '3' }, { value: '4', label: '4' },
+              { value: '5', label: '5' }, { value: '6', label: '6' },
+            ]} />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: theme.gray2, marginBottom: 6 }}>ОПЫТ</div>
+            <ChipGroup theme={theme} value={experience} onChange={setExperience} options={[
+              { value: 'Новичок', label: 'Новичок' },
+              { value: 'Средний', label: 'Средний' },
+              { value: 'Продвинутый', label: 'Продвинутый' },
+            ]} />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: theme.gray2, marginBottom: 6 }}>ОБОРУДОВАНИЕ</div>
+            <ChipGroup theme={theme} value={equipment} onChange={setEquipment} options={[
+              { value: 'Полный зал', label: 'Полный зал' },
+              { value: 'Гантели', label: 'Только гантели' },
+              { value: 'Дома', label: 'Дома' },
+            ]} />
+          </div>
+        </div>
+
+        <button onClick={handleGenerate} disabled={loading}
+          style={{
+            width: '100%', padding: 14, borderRadius: 12, textAlign: 'center', fontSize: 16, fontWeight: 600,
+            color: '#fff', border: 'none', cursor: loading ? 'wait' : 'pointer', marginTop: 16,
+            background: loading ? theme.gray3 : (theme.purple || '#AF52DE'),
+            opacity: loading ? 0.7 : 1,
+          }}>
+          {loading ? 'Генерирую программу...' : '🤖 Сгенерировать'}
+        </button>
+        {!loading && (
+          <button onClick={onClose}
+            style={{ width: '100%', padding: 8, textAlign: 'center', fontSize: 14, marginTop: 8, color: theme.gray2, background: 'none', border: 'none', cursor: 'pointer' }}>
+            Отмена
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══ ProgramView ═══ */
 function ProgramView({ program, theme, onRegenerate, onEdit, onStartWorkout }) {
   const todayIdx = new Date().getDay(); // 0=Sun
   const todayKey = todayIdx === 0 ? 6 : todayIdx - 1; // 0=Mon
+
+  if (!program || !program.schedule) {
+    return (
+      <div style={{ padding: '0 16px' }}>
+        <EmptyState
+          icon={<Ic name="bot" color={theme.purple || '#AF52DE'} size={48} r={14} />}
+          title="Нет программы"
+          subtitle="AI создаст персональную программу тренировок"
+          actionLabel="🤖 Создать программу"
+          onAction={onRegenerate}
+          theme={theme}
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '0 16px' }}>
@@ -44,17 +181,17 @@ function ProgramView({ program, theme, onRegenerate, onEdit, onStartWorkout }) {
           <div>
             <div style={{ color: theme.text, fontSize: 15, fontWeight: 600 }}>Ваша программа</div>
             <div style={{ color: theme.gray2, fontSize: 12 }}>
-              Сгенерирована AI · {program?.updatedAt || 'нет данных'}
+              Сгенерирована AI · {program.updatedAt || 'нет данных'}
             </div>
           </div>
         </div>
 
         <div style={{ background: (theme.purple || '#AF52DE') + '08', borderRadius: 10, padding: 12, marginBottom: 8 }}>
           {[
-            { label: 'Цель', value: program?.goal || 'Не задана' },
-            { label: 'Сплит', value: program?.split || '—' },
-            { label: 'Дней в неделю', value: program?.daysPerWeek || '—' },
-            { label: 'Фаза', value: program?.phase || '—', color: theme.accent },
+            { label: 'Цель', value: program.goal || 'Не задана' },
+            { label: 'Сплит', value: program.split || '—' },
+            { label: 'Дней в неделю', value: program.daysPerWeek || '—' },
+            { label: 'Фаза', value: program.phase || '—', color: theme.accent },
           ].map(row => (
             <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
               <span style={{ color: theme.gray1, fontSize: 13 }}>{row.label}</span>
@@ -64,7 +201,7 @@ function ProgramView({ program, theme, onRegenerate, onEdit, onStartWorkout }) {
         </div>
 
         {/* Periodization */}
-        {program?.totalWeeks && (
+        {program.totalWeeks && (
           <>
             <div style={{ color: theme.gray1, fontSize: 12, fontWeight: 600, marginBottom: 6 }}>ПЕРИОДИЗАЦИЯ</div>
             <div style={{ display: 'flex', gap: 2, marginBottom: 4 }}>
@@ -84,9 +221,9 @@ function ProgramView({ program, theme, onRegenerate, onEdit, onStartWorkout }) {
         Расписание недели
       </div>
       <Card theme={theme} style={{ padding: 0, overflow: 'hidden' }}>
-        {(program?.schedule || []).map((s, i) => {
+        {(program.schedule || []).map((s, i) => {
           const isToday = i === todayKey;
-          const colors = { push: theme.red, pull: theme.accent, legs: theme.purple, upper: theme.orange, rest: theme.gray3 };
+          const colors = { push: theme.red, pull: theme.accent, legs: theme.purple, upper: theme.orange, lower: theme.green, full: theme.accent, rest: theme.gray3 };
           const barColor = colors[s.type] || theme.gray3;
           return (
             <div key={i} style={{
@@ -112,7 +249,8 @@ function ProgramView({ program, theme, onRegenerate, onEdit, onStartWorkout }) {
                 </div>
               )}
               {isToday && !s.done && !s.rest && (
-                <button style={{ padding: '5px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', background: theme.accent, border: 'none', cursor: 'pointer' }} onClick={onStartWorkout}>Начать</button>
+                <button style={{ padding: '5px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', background: theme.accent, border: 'none', cursor: 'pointer' }}
+                  onClick={onStartWorkout}>Начать</button>
               )}
             </div>
           );
@@ -132,7 +270,7 @@ function ProgramView({ program, theme, onRegenerate, onEdit, onStartWorkout }) {
       </div>
 
       {/* AI recommendation */}
-      {program?.aiHint && (
+      {program.aiHint && (
         <div style={{ borderRadius: 12, padding: 12, marginTop: 8, background: (theme.purple || '#AF52DE') + '06', border: '1px solid ' + (theme.purple || '#AF52DE') + '15' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
             <span style={{ fontSize: 12 }}>🤖</span>
@@ -145,43 +283,104 @@ function ProgramView({ program, theme, onRegenerate, onEdit, onStartWorkout }) {
   );
 }
 
-function SessionView({ theme }) {
-  // L1: Progressive overload hints for current workout
-  const exercises = [
-    { name: 'Жим лёжа', last: '80 кг × 8', target: '82.5 кг × 6-8', hint: '+2.5 кг от прошлого раза' },
-    { name: 'Жим гантелей на наклонной', last: '28 кг × 10', target: '28 кг × 12', hint: 'Добавь повторения' },
-    { name: 'Разводка', last: '14 кг × 12', target: '16 кг × 10', hint: 'Следующая ступень веса' },
-    { name: 'Французский жим', last: '30 кг × 10', target: '30 кг × 12', hint: 'Закрепи подход' },
-  ];
+/* ═══ SessionView — сегодняшняя тренировка с прогрессией ═══ */
+function SessionView({ program, theme, onStartWorkout }) {
+  const [session, setSession] = useState(undefined); // undefined=loading, null=rest, []=no data
+
+  useEffect(() => {
+    if (!program?.exercisePlan) { setSession([]); return; }
+    getTodaySession(program).then(setSession).catch(() => setSession([]));
+  }, [program]);
+
+  if (session === undefined) {
+    return (
+      <div style={{ padding: '0 16px' }}>
+        <SkeletonCard theme={theme} />
+        <SkeletonCard variant="compact" theme={theme} />
+      </div>
+    );
+  }
+
+  if (session === null) {
+    return (
+      <div style={{ padding: '0 16px' }}>
+        <EmptyState
+          icon="🧘"
+          title="Сегодня отдых"
+          subtitle="Восстановление важно для прогресса"
+          theme={theme}
+        />
+      </div>
+    );
+  }
+
+  if (session.length === 0) {
+    return (
+      <div style={{ padding: '0 16px' }}>
+        <EmptyState
+          icon={<Ic name="bot" color={theme.purple || '#AF52DE'} size={48} r={14} />}
+          title="Нет программы"
+          subtitle="Создайте программу во вкладке «Программа»"
+          theme={theme}
+        />
+      </div>
+    );
+  }
+
+  const HINT_COLORS = { up: theme.green, keep: theme.orange, down: theme.red };
 
   return (
     <div style={{ padding: '0 16px' }}>
-      <div style={{ background: theme.accent + '08', borderRadius: 12 }}>
+      <div style={{ background: theme.accent + '08', borderRadius: 12, padding: 12, marginBottom: 8 }}>
         <div style={{ color: theme.accent, fontSize: 14, fontWeight: 600 }}>Progressive Overload</div>
         <div style={{ color: theme.gray2, fontSize: 12, marginTop: 4 }}>
           AI анализирует ваш прогресс и предлагает целевые показатели
         </div>
       </div>
 
-      {exercises.map((ex, i) => (
+      {session.map((ex, i) => (
         <Card key={i} theme={theme} style={{ padding: '12px 14px' }}>
           <div style={{ color: theme.text, fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{ex.name}</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ color: theme.gray2, fontSize: 12 }}>Прошлый раз</span>
-            <span style={{ color: theme.gray1, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{ex.last}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          {ex.last && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ color: theme.gray2, fontSize: 12 }}>Прошлый раз</span>
+              <span style={{ color: theme.gray1, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{ex.last}</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: ex.hint ? 6 : 0 }}>
             <span style={{ color: theme.accent, fontSize: 12, fontWeight: 500 }}>Цель сегодня</span>
-            <span style={{ color: theme.accent, fontSize: 12, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{ex.target}</span>
+            <span style={{ color: theme.accent, fontSize: 12, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+              {ex.target || `${ex.targetSets}×${ex.targetReps}`}
+            </span>
           </div>
-          <div style={{ color: theme.green, fontSize: 12 }}>💡 {ex.hint}</div>
+          {ex.hint && (
+            <div style={{ color: HINT_COLORS[ex.hintType] || theme.green, fontSize: 12 }}>
+              💡 {ex.hint}
+            </div>
+          )}
         </Card>
       ))}
+
+      <button onClick={onStartWorkout}
+        style={{
+          width: '100%', padding: 14, borderRadius: 12, textAlign: 'center', fontSize: 16, fontWeight: 600,
+          color: '#fff', border: 'none', cursor: 'pointer', marginTop: 8,
+          background: theme.accent,
+        }}>
+        Начать тренировку
+      </button>
     </div>
   );
 }
 
+/* ═══ HintsView — тренды + статические советы ═══ */
 function HintsView({ theme }) {
+  const [insights, setInsights] = useState(undefined);
+
+  useEffect(() => {
+    getProgressInsights().then(setInsights).catch(() => setInsights([]));
+  }, []);
+
   const tips = [
     { icon: '🎯', title: 'Техника жима', text: 'Сведи лопатки, упрись ногами. Снаряд опускай до груди, не отбивай.' },
     { icon: '⏱', title: 'Отдых между подходами', text: 'Базовые: 2-3 мин. Изолирующие: 60-90 сек. Не больше 5 мин.' },
@@ -189,8 +388,43 @@ function HintsView({ theme }) {
     { icon: '😴', title: 'Восстановление', text: 'Минимум 7ч сна. Мышцы растут во время отдыха, не в зале.' },
   ];
 
+  const DIRECTION_ICONS = { up: '↑', flat: '→', down: '↓' };
+  const DIRECTION_COLORS = { up: theme.green, flat: theme.orange, down: theme.red };
+
   return (
     <div style={{ padding: '0 16px' }}>
+      {/* Data-driven insights */}
+      {insights === undefined ? (
+        <SkeletonCard theme={theme} />
+      ) : insights.length > 0 && (
+        <>
+          <div style={{ fontSize: 12, fontWeight: 600, color: theme.gray1, marginBottom: 6 }}>ПРОГРЕССИЯ ВЕСОВ</div>
+          {insights.map((ins, i) => (
+            <Card key={i} theme={theme} style={{ padding: '10px 14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>{ins.name}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: DIRECTION_COLORS[ins.direction] }}>
+                  {ins.currentWeight} кг {DIRECTION_ICONS[ins.direction]}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+                {ins.weights.map((w, j) => (
+                  <span key={j} style={{ fontSize: 11, color: j === ins.weights.length - 1 ? theme.text : theme.gray2 }}>
+                    {w}{j < ins.weights.length - 1 ? ' →' : ''}
+                  </span>
+                ))}
+              </div>
+              <div style={{ fontSize: 12, color: DIRECTION_COLORS[ins.direction] }}>
+                🤖 {ins.hint}
+              </div>
+            </Card>
+          ))}
+          <div style={{ height: 8 }} />
+        </>
+      )}
+
+      {/* Static tips */}
+      <div style={{ fontSize: 12, fontWeight: 600, color: theme.gray1, marginBottom: 6 }}>СОВЕТЫ</div>
       {tips.map((tip, i) => (
         <Card key={i} theme={theme} style={{ padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -206,33 +440,64 @@ function HintsView({ theme }) {
   );
 }
 
+/* ═══ Main Component ═══ */
 export default function AITrainerScreen({ theme, onBack, onStartWorkout }) {
   const [tab, setTab] = useState('program');
+  const [showSetup, setShowSetup] = useState(false);
+  const { showToast } = useToast();
 
-  // Load saved program or use demo data
+  // Load saved program
   const program = useLiveQuery(async () => {
-    const db = (await import('../../db')).default;
-    const saved = await db.settings.get('ai_program').catch(() => null);
-    return saved?.value || {
-      goal: 'Масса + сила',
-      split: 'Push / Pull / Legs',
-      daysPerWeek: '4 (Пн/Вт/Чт/Пт)',
-      phase: 'Набор (неделя 6/8)',
-      totalWeeks: 8,
-      currentWeek: 6,
-      updatedAt: 'обновлена 10 фев',
-      aiHint: 'Неделя 6: объём нагрузки на пике. На следующей неделе рекомендую deload — снизить веса на 40%, сохранить подходы.',
-      schedule: [
-        { name: 'Грудь + Трицепс (Push)', type: 'push', exercises: 5, duration: '~50 мин', done: true },
-        { name: 'Спина + Бицепс (Pull)', type: 'pull', exercises: 5, duration: '~55 мин', done: true },
-        { name: 'Отдых', type: 'rest', rest: true, duration: 'Восстановление' },
-        { name: 'Ноги (Legs)', type: 'legs', exercises: 5, duration: '~55 мин', done: false },
-        { name: 'Плечи + Руки (Upper)', type: 'upper', exercises: 4, duration: '~45 мин', done: false },
-        { name: 'Отдых', type: 'rest', rest: true, duration: 'Восстановление' },
-        { name: 'Отдых', type: 'rest', rest: true, duration: 'Восстановление' },
-      ],
-    };
+    return getSavedProgram();
   });
+
+  const handleGenerate = async (params) => {
+    try {
+      await generateProgram(params);
+      showToast('Программа создана!');
+    } catch (e) {
+      console.error('[AITrainer] generate error:', e);
+      const msg = e.message === 'AI_PARSE_ERROR' ? 'AI вернул некорректный ответ. Попробуйте ещё раз.'
+        : e.message?.startsWith('LIMIT_REACHED') ? 'Достигнут лимит AI. Попробуйте позже.'
+        : 'Не удалось сгенерировать. Попробуйте ещё раз.';
+      showToast(msg);
+      throw e; // re-throw so SetupSheet knows
+    }
+  };
+
+  const handleStartFromProgram = async () => {
+    if (!program?.exercisePlan) { onStartWorkout?.(); return; }
+
+    const todayIdx = new Date().getDay();
+    const dayKey = String(todayIdx === 0 ? 6 : todayIdx - 1);
+    const dayPlan = program.exercisePlan[dayKey];
+
+    if (!dayPlan || dayPlan.length === 0) {
+      onStartWorkout?.();
+      return;
+    }
+
+    let workoutId;
+    try {
+      workoutId = await startWorkout(null);
+      for (const item of dayPlan) {
+        const exId = typeof item.exerciseId === 'string' ? parseInt(item.exerciseId, 10) : item.exerciseId;
+        const ex = await getExercise(exId);
+        if (ex) {
+          await addExerciseToWorkout(workoutId, { id: ex.id, name: ex.name });
+        }
+      }
+      onStartWorkout?.(workoutId);
+    } catch (e) {
+      console.error('[AITrainer] start workout error:', e);
+      // If workout was created but exercises failed, use partial workout
+      if (workoutId) {
+        onStartWorkout?.(workoutId);
+      } else {
+        onStartWorkout?.();
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: theme.bg }}>
@@ -254,14 +519,25 @@ export default function AITrainerScreen({ theme, onBack, onStartWorkout }) {
           <ProgramView
             program={program}
             theme={theme}
-            onStartWorkout={onStartWorkout}
-            onRegenerate={() => {}}
-            onEdit={() => {}}
+            onStartWorkout={handleStartFromProgram}
+            onRegenerate={() => setShowSetup(true)}
+            onEdit={() => setShowSetup(true)}
           />
         )}
-        {tab === 'session' && <SessionView theme={theme} />}
+        {tab === 'session' && (
+          <SessionView program={program} theme={theme} onStartWorkout={handleStartFromProgram} />
+        )}
         {tab === 'hint' && <HintsView theme={theme} />}
       </div>
+
+      {showSetup && (
+        <SetupSheet
+          theme={theme}
+          existing={program}
+          onGenerate={handleGenerate}
+          onClose={() => setShowSetup(false)}
+        />
+      )}
     </div>
   );
 }

@@ -231,6 +231,18 @@ async function dispatch(action, params) {
       return startWorkout(null); // без шаблона
     }
 
+    case 'generate_program': {
+      const { generateProgram } = await import('../services/aiTrainer');
+      const result = await generateProgram({
+        goal: params.goal || 'Масса + сила',
+        split: params.split || 'Push / Pull / Legs',
+        daysPerWeek: params.days_per_week || 4,
+        experience: params.experience || 'Средний',
+        equipment: params.equipment || 'Полный зал',
+      });
+      return { success: true, message: `Программа создана: ${result.split}, ${result.totalWeeks} недель` };
+    }
+
     // ── Список покупок ──
     case 'add_to_shopping_list': {
       const { addItem } = await import('../services/shopping');
