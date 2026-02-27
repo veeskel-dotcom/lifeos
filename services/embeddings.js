@@ -31,17 +31,15 @@ export async function embed(text) {
   if (!text || !navigator.onLine) return null;
   const trimmed = text.slice(0, 500); // cap input length
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), EMBED_TIMEOUT_MS);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), EMBED_TIMEOUT_MS);
-
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ model: EMBEDDING_MODEL, input: trimmed }),
       signal: controller.signal,
     });
-    clearTimeout(timer);
 
     if (!res.ok) {
       console.error('[embed] API error:', res.status);
@@ -54,23 +52,29 @@ export async function embed(text) {
     if (e.name === 'AbortError') console.warn('[embed] timeout');
     else console.error('[embed]', e.message);
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
 // ═══ Embed batch of texts (chunks of BATCH_SIZE) ═══
 export async function embedBatch(texts) {
-  if (!texts?.length || !navigator.onLine) return texts.map(() => null);
+  if (!Array.isArray(texts) || !texts.length) return [];
+  if (!navigator.onLine) return texts.map(() => null);
 
   const results = new Array(texts.length).fill(null);
 
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
     const chunk = texts.slice(i, i + BATCH_SIZE).map(t => (t || '').slice(0, 500));
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), EMBED_TIMEOUT_MS * 3); // 15s for batch
 
     try {
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({ model: EMBEDDING_MODEL, input: chunk }),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -86,7 +90,10 @@ export async function embedBatch(texts) {
         }
       }
     } catch (e) {
-      console.error('[embedBatch] chunk error:', e.message);
+      if (e.name === 'AbortError') console.warn('[embedBatch] chunk timeout');
+      else console.error('[embedBatch] chunk error:', e.message);
+    } finally {
+      clearTimeout(timer);
     }
   }
 
@@ -108,18 +115,26 @@ export function cosineSim(a, b) {
 
 // ═══ Embedding Cache (A2) — in-memory, loaded once ═══
 let embeddingCache = null;
+let cacheLoadPromise = null;
 
 export async function getEmbeddingCache() {
   if (embeddingCache) return embeddingCache;
-  const all = await db.ai_memory.toArray();
-  embeddingCache = all.map(f => ({
-    id: f.id,
-    fact: f.fact,
-    category: f.category,
-    embedding: f.embedding || null,
-    created_at: f.created_at,
-  }));
-  return embeddingCache;
+  if (cacheLoadPromise) return cacheLoadPromise;
+  cacheLoadPromise = db.ai_memory.toArray().then(all => {
+    embeddingCache = all.map(f => ({
+      id: f.id,
+      fact: f.fact,
+      category: f.category,
+      embedding: f.embedding || null,
+      created_at: f.created_at,
+    }));
+    cacheLoadPromise = null;
+    return embeddingCache;
+  }).catch(e => {
+    cacheLoadPromise = null;
+    throw e;
+  });
+  return cacheLoadPromise;
 }
 
 export function cacheAdd(entry) {
@@ -140,6 +155,7 @@ export function cacheDelete(id) {
 // Reset cache (for clearHistory)
 export function cacheReset() {
   embeddingCache = null;
+  cacheLoadPromise = null;
 }
 
 // ═══ Relevant Memory Retrieval (A4) ═══
@@ -167,7 +183,7 @@ export async function getRelevantMemories(query, limit = 15) {
 
       // Include unembedded facts (fresh, not yet reconciled)
       const unembedded = cache.filter(f => !f.embedding).slice(0, 5);
-      const topScored = scored.slice(0, limit - unembedded.length);
+      const topScored = scored.slice(0, Math.max(1, limit - unembedded.length));
 
       return [...topScored, ...unembedded].slice(0, limit);
     }
@@ -202,10 +218,12 @@ export async function reconcileOfflineFacts() {
   }
 
   // 3. Sequential dedup — each sees result of previous, throttled 1 sec
+  // Pass skipEmbed=true since we already batch-embedded above
   const { reconcileFact } = await import('./aiMemory');
   for (const fact of unembedded) {
-    if (!cache.find(e => e.id === fact.id)?.embedding) continue;
-    await reconcileFact(fact.id, fact.fact, fact.category);
+    const cached = cache.find(e => e.id === fact.id);
+    if (!cached?.embedding) continue;
+    await reconcileFact(fact.id, fact.fact, fact.category, cached.embedding);
     await new Promise(r => setTimeout(r, 1000)); // throttle: don't saturate rate limit
   }
 

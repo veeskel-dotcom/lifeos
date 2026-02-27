@@ -107,14 +107,16 @@ async function processQueue() {
 
 // ═══ reconcileFact — embed + cosine + LLM decision ═══
 
-export async function reconcileFact(factId, factText, category) {
-  // 1. Embed the new fact
-  const vector = await embed(factText);
+export async function reconcileFact(factId, factText, category, precomputedVector = null) {
+  // 1. Embed the new fact (skip if pre-computed, e.g. from batch reconciliation)
+  const vector = precomputedVector || await embed(factText);
   if (!vector) return; // offline or API error
 
-  // 2. Save embedding to DB + update cache
-  await db.ai_memory.update(factId, { embedding: vector });
-  cacheUpdate(factId, { embedding: vector });
+  // 2. Save embedding to DB + update cache (skip if pre-computed — already saved)
+  if (!precomputedVector) {
+    await db.ai_memory.update(factId, { embedding: vector });
+    cacheUpdate(factId, { embedding: vector });
+  }
 
   // 3. Cosine search, EXCLUDING self
   const cache = await getEmbeddingCache();
@@ -359,8 +361,11 @@ export async function extractFactsLLM(text) {
     });
 
     const content = (result.content || '').trim();
-    // Parse JSON array — handle markdown code blocks
-    const jsonStr = content.replace(/^```json?\s*/, '').replace(/\s*```$/, '');
+    // Parse JSON array — handle markdown code blocks + extract array from any wrapping
+    let jsonStr = content.replace(/^```json?\s*/, '').replace(/\s*```$/, '');
+    // Extract first JSON array if wrapped in text
+    const arrayMatch = jsonStr.match(/\[[\s\S]*\]/);
+    if (arrayMatch) jsonStr = arrayMatch[0];
     let facts;
     try {
       facts = JSON.parse(jsonStr);
