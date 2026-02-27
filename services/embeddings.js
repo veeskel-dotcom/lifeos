@@ -65,7 +65,7 @@ export async function embedBatch(texts) {
   const results = new Array(texts.length).fill(null);
 
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
-    const chunk = texts.slice(i, i + BATCH_SIZE).map(t => (t || '').slice(0, 500));
+    const chunk = texts.slice(i, i + BATCH_SIZE).map(t => (t || '').slice(0, 500).trim() || 'empty');
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), EMBED_TIMEOUT_MS * 3); // 15s for batch
 
@@ -149,7 +149,8 @@ export function cacheUpdate(id, fields) {
 
 export function cacheDelete(id) {
   if (!embeddingCache) return;
-  embeddingCache = embeddingCache.filter(e => e.id !== id);
+  const idx = embeddingCache.findIndex(e => e.id === id);
+  if (idx >= 0) embeddingCache.splice(idx, 1);
 }
 
 // Reset cache (for clearHistory)
@@ -197,15 +198,19 @@ export async function getRelevantMemories(query, limit = 15) {
 }
 
 // ═══ Offline Reconciliation (A7) ═══
+let isReconciling = false;
+
 export async function reconcileOfflineFacts() {
-  if (!navigator.onLine) return;
+  if (!navigator.onLine || isReconciling) return;
 
   const cache = await getEmbeddingCache();
   const unembedded = cache.filter(f => !f.embedding);
   if (!unembedded.length) return;
 
   console.log(`[embeddings] Reconciling ${unembedded.length} unembedded facts...`);
+  isReconciling = true;
 
+  try {
   // 1. Batch embed in chunks
   const texts = unembedded.map(f => f.fact);
   const embeddings = await embedBatch(texts);
@@ -228,6 +233,9 @@ export async function reconcileOfflineFacts() {
   }
 
   console.log(`[embeddings] Reconciliation done`);
+  } finally {
+    isReconciling = false;
+  }
 }
 
 // ═══ Migration: embed existing facts on first launch (A8) ═══

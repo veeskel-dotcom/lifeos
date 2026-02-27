@@ -4,7 +4,8 @@ import { embed, cosineSim, getEmbeddingCache, cacheAdd, cacheUpdate, cacheDelete
 // ═══ AI Memory v2 — долгосрочная память ассистента ═══
 // Two-phase addMemory (A1): Phase A sync (word overlap, 50ms) → Phase B async (vector + LLM)
 
-let addLock = false;
+// Async mutex for addMemory — queues callers instead of dropping them
+let addLockPromise = Promise.resolve();
 
 // ═══ Read ═══
 
@@ -23,13 +24,14 @@ export async function getMemories(limit = 30) {
 
 // ═══ Phase A: Sync addMemory (~50ms) ═══
 
-export async function addMemory(category, fact, source = 'user_said') {
-  if (addLock) {
-    await new Promise(r => setTimeout(r, 100));
-    if (addLock) return { id: null, updated: false, skipped: true };
-  }
-  addLock = true;
+export function addMemory(category, fact, source = 'user_said') {
+  // Chain on the mutex — each call waits for the previous to finish (no drops)
+  const result = addLockPromise.then(() => _addMemoryImpl(category, fact, source));
+  addLockPromise = result.catch(() => {}); // keep chain alive on error
+  return result;
+}
 
+async function _addMemoryImpl(category, fact, source) {
   try {
     // Guard: empty or too long facts
     if (!fact || fact.trim().length < 3) return { id: null, updated: false, skipped: true };
@@ -77,8 +79,6 @@ export async function addMemory(category, fact, source = 'user_said') {
   } catch (e) {
     console.error('[aiMemory.addMemory]', e);
     throw e;
-  } finally {
-    addLock = false;
   }
 }
 
@@ -108,6 +108,12 @@ async function processQueue() {
 // ═══ reconcileFact — embed + cosine + LLM decision ═══
 
 export async function reconcileFact(factId, factText, category, precomputedVector = null) {
+  // 0. Re-read from DB to get fresh text (Phase A may have updated it since enqueue)
+  const fresh = await db.ai_memory.get(factId);
+  if (!fresh) return; // record was deleted while queued
+  factText = fresh.fact;
+  category = fresh.category;
+
   // 1. Embed the new fact (skip if pre-computed, e.g. from batch reconciliation)
   const vector = precomputedVector || await embed(factText);
   if (!vector) return; // offline or API error
@@ -131,9 +137,10 @@ export async function reconcileFact(factId, factText, category, precomputedVecto
 
   // 4. LLM decision
   try {
+    const sanitize = (s) => s.replace(/"/g, "'").replace(/\n/g, ' ');
     const { callAI } = await import('../ai/client');
     const result = await callAI({
-      prompt: `Сравни два факта о пользователе. Новый: "${factText}". Существующий: "${candidates[0].fact}".
+      prompt: `Сравни два факта о пользователе. Новый: "${sanitize(factText)}". Существующий: "${sanitize(candidates[0].fact)}".
 Ответь ОДНИМ словом:
 - UPDATE — если новый факт обновляет/уточняет существующий (merge)
 - DELETE — если новый факт устарел или противоречит существующему
@@ -235,8 +242,10 @@ async function findSimilar(newFact) {
     const oldWords = extractWords(m.fact);
     if (oldWords.length === 0) continue;
     const common = newWords.filter(w => oldWords.includes(w)).length;
-    const similarity = common / Math.max(newWords.length, oldWords.length);
-    if (similarity > 0.6 && similarity > bestScore) {
+    const maxLen = Math.max(newWords.length, oldWords.length);
+    const similarity = common / maxLen;
+    // Require 0.75 overlap AND at least 3 common words to avoid false merges on short facts
+    if (similarity > 0.75 && common >= 3 && similarity > bestScore) {
       bestMatch = m;
       bestScore = similarity;
     }
@@ -253,14 +262,15 @@ const EXPIRY_DAYS = { event: 90, decision: 90, goal: 180, habit: 120 };
 
 async function evictExpiredFacts() {
   try {
-    const all = await db.ai_memory.toArray();
+    // Use cache (lightweight, no embeddings in iteration) instead of full DB load
+    const cache = await getEmbeddingCache();
     const now = Date.now();
     const toDelete = [];
 
-    for (const fact of all) {
+    for (const fact of cache) {
       const maxDays = EXPIRY_DAYS[fact.category];
       if (!maxDays) continue; // permanent categories
-      const refDate = fact.updated_at || fact.created_at;
+      const refDate = fact.created_at; // cache has created_at
       if (!refDate) continue;
       const ageDays = (now - new Date(refDate).getTime()) / (1000 * 60 * 60 * 24);
       if (ageDays > maxDays) toDelete.push(fact.id);
