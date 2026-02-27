@@ -117,7 +117,7 @@ export async function reconcileFact(factId, factText, category) {
   const candidates = cache
     .filter(e => e.id !== factId && e.embedding)
     .map(e => ({ ...e, score: cosineSim(vector, e.embedding) }))
-    .filter(e => e.score > 0.85)
+    .filter(e => e.score > 0.65)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 
