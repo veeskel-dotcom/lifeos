@@ -12,10 +12,10 @@ const MONTH_NAMES = [
 ];
 
 const EVENT_COLORS = {
-  meeting: '#007AFF',
+  work: '#007AFF',
   personal: '#34C759',
-  reminder: '#FF9500',
-  deadline: '#FF3B30',
+  event: '#FF9500',
+  health: '#FF3B30',
 };
 
 export default function CalendarScreen({ theme, onBack, onNavigate }) {
@@ -180,7 +180,8 @@ export default function CalendarScreen({ theme, onBack, onNavigate }) {
         )}
 
         {dayEvents.map(ev => (
-          <Card key={ev.id} theme={theme} style={{ marginBottom: 8, padding: 12 }}>
+          <Card key={ev.id} theme={theme} style={{ marginBottom: 8, padding: 12, cursor: 'pointer' }}
+            onClick={() => onNavigate('event-form', { edit: ev, date: ev.date })}>
             <div className="flex items-center gap-2">
               <div className="w-1 h-8 rounded-full" style={{ background: EVENT_COLORS[ev.type] || theme.accent }} />
               <div className="flex-1">

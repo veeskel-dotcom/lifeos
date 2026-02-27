@@ -521,10 +521,9 @@ function AppContent({ theme, setTheme }) {
         return (
           <EventForm
             theme={theme}
-            existing={sub.edit}
-            defaultDate={sub.date}
+            existing={typeof sub === 'object' ? sub?.edit : undefined}
+            initialDate={typeof sub === 'string' ? sub : sub?.date}
             onBack={goBack}
-            onSave={() => { goBack(); showToast('Событие сохранено'); }}
           />
         );
 

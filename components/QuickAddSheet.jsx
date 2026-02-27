@@ -58,6 +58,8 @@ export default function QuickAddSheet({ open, onClose, onNavigate, theme, onToas
     },
     /* O1: Тренировка */
     { iconName: 'gym', color: theme.red || '#FF3B30', label: 'Тренировка', action: () => { haptic('light'); onClose(); onNavigate?.('active-workout'); } },
+    /* Событие */
+    { iconName: 'calendar', color: theme.accent || '#007AFF', label: 'Событие', action: () => { haptic('light'); onClose(); onNavigate?.('event-form'); } },
     /* O1.5: Сделка (инвестиции) */
     { iconName: 'trend', color: '#5856D6', label: 'Сделка', action: () => { haptic('light'); onClose(); onNavigate?.('invest', { subScreen: 'tradeForm' }); } },
     /* O2: Заметка */

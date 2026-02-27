@@ -234,6 +234,7 @@ export default function TasksList({ theme, onBack, onNavigate, initialView, onTo
             theme={theme}
             onTap={(id) => onNavigate('taskDetail', { taskId: id })}
             onToggle={async (id) => { await toggleTask(id); load(); }}
+            onNavigate={onNavigate}
           />
         ) : view === 'kanban' ? (
           <KanbanView tasks={tasks} theme={theme} onToggle={handleToggle} onTap={(id) => onNavigate('taskDetail', { taskId: id })} onRefresh={load} />

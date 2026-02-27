@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { addEvent } from '../../services/events';
+import { addEvent, updateEvent, deleteEvent } from '../../services/events';
 import { createReminder } from '../../services/reminders';
 import SelectSheet from '../../components/SelectSheet';
 
@@ -27,14 +27,20 @@ const REMIND_OPTIONS = [
   { value: -1, label: '🔔 Без напоминания' },
 ];
 
-export default function EventForm({ theme, onBack, onDelete, initialDate, existing }) {
+const parseTime = (iso) => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
+export default function EventForm({ theme, onBack, initialDate, existing }) {
   const [title, setTitle] = useState(existing?.title || '');
   const [date, setDate] = useState(initialDate || existing?.date || new Date().toISOString().slice(0, 10));
-  const [startTime, setStartTime] = useState(existing?.startTime || '10:00');
-  const [endTime, setEndTime] = useState(existing?.endTime || '11:00');
+  const [startTime, setStartTime] = useState(parseTime(existing?.start) || '10:00');
+  const [endTime, setEndTime] = useState(parseTime(existing?.end) || '11:00');
   const [type, setType] = useState(existing?.type || 'personal');
   const [location, setLocation] = useState(existing?.location || '');
-  const [notes, setNotes] = useState(existing?.notes || '');
+  const [notes, setNotes] = useState(existing?.description || '');
   const [recurrence, setRecurrence] = useState(existing?.recurrence || 'none');
   const [reminderMin, setReminderMin] = useState(existing?.reminder_min ?? 15);
   const [linkedTask] = useState(existing?.linked_task || null);
@@ -54,17 +60,30 @@ export default function EventForm({ theme, onBack, onDelete, initialDate, existi
     setErrors({});
     const startISO = `${date}T${startTime}:00`;
     const endISO = endTime ? `${date}T${endTime}:00` : null;
-    const event = await addEvent({
-      title: title.trim(), start: startISO, end: endISO,
+    const data = {
+      title: title.trim(), date, start: startISO, end: endISO,
       type, location, description: notes,
       reminder_min: reminderMin >= 0 ? reminderMin : null,
       recurrence: recurrence !== 'none' ? recurrence : null,
-    });
-    if (reminderMin >= 0 && event) {
-      const triggerAt = new Date(startISO);
-      triggerAt.setMinutes(triggerAt.getMinutes() - reminderMin);
-      await createReminder('event', event.id, triggerAt.toISOString(), `${title} через ${reminderMin} мин`);
+    };
+
+    if (existing?.id) {
+      await updateEvent(existing.id, data);
+    } else {
+      const event = await addEvent(data);
+      if (reminderMin >= 0 && event) {
+        const triggerAt = new Date(startISO);
+        triggerAt.setMinutes(triggerAt.getMinutes() - reminderMin);
+        await createReminder('event', event.id, triggerAt.toISOString(), `${title} через ${reminderMin} мин`);
+      }
     }
+    onBack();
+  };
+
+  const handleDelete = async () => {
+    if (!existing?.id) return;
+    if (!confirm('Удалить событие?')) return;
+    await deleteEvent(existing.id);
     onBack();
   };
 
@@ -118,8 +137,8 @@ export default function EventForm({ theme, onBack, onDelete, initialDate, existi
         {/* Header: Событие + Удалить */}
         <div className="flex justify-between items-center" style={{ marginBottom: 14 }}>
           <span style={{ fontSize: 17, fontWeight: 600, color: theme.text }}>Событие</span>
-          {onDelete && (
-            <span onClick={onDelete} style={{ fontSize: 14, color: theme.red, cursor: 'pointer', fontWeight: 500 }}>Удалить</span>
+          {existing?.id && (
+            <span onClick={handleDelete} style={{ fontSize: 14, color: theme.red, cursor: 'pointer', fontWeight: 500 }}>Удалить</span>
           )}
         </div>
 

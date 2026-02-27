@@ -1,34 +1,40 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import Card from '../../components/Card';
+import { getEventsForDay, getEventsForMonth } from '../../services/events';
 
 const DAYS_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-
-function getMonday(d) {
-  const dt = new Date(typeof d === 'string' && d.length === 10 ? d + 'T12:00:00' : d);
-  const day = dt.getDay() || 7;
-  dt.setDate(dt.getDate() - day + 1);
-  return dt;
-}
+const EVENT_TYPE_COLORS = { work: '#007AFF', personal: '#34C759', event: '#FF9500', health: '#FF3B30' };
 
 function dateStr(d) {
   return d.toISOString().split('T')[0];
 }
 
+function fmtTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 /**
  * CalendarView — Fantastical-style DayTicker + месячная сетка.
- * Горизонтальная полоса дней (14 дней), тап → задачи дня, pull → месяц.
+ * Горизонтальная полоса дней (14 дней), тап → задачи/события дня, pull → месяц.
  * @param {Array} tasks - все задачи
  * @param {object} theme
  * @param {function} onTap - (taskId) => void
  * @param {function} onToggle - (taskId) => void
+ * @param {function} onNavigate - (screen, params) => void
  */
-export default function CalendarView({ tasks, theme, onTap, onToggle }) {
+export default function CalendarView({ tasks, theme, onTap, onToggle, onNavigate }) {
   const today = dateStr(new Date());
   const [selectedDate, setSelectedDate] = useState(today);
   const [showMonth, setShowMonth] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0);
   const tickerRef = useRef(null);
+
+  // Events state
+  const [dayEvents, setDayEvents] = useState([]);
+  const [eventDates, setEventDates] = useState(new Set());
 
   // 14 дней: 7 назад + сегодня + 6 вперёд
   const dayTicker = useMemo(() => {
@@ -53,12 +59,39 @@ export default function CalendarView({ tasks, theme, onTap, onToggle }) {
       });
   }, [tasks, selectedDate]);
 
-  // Точки — есть ли задачи в этот день
+  // Точки задач
   const taskDates = useMemo(() => {
     const dates = new Set();
     tasks.forEach(t => { if (t.deadline) dates.add(t.deadline); });
     return dates;
   }, [tasks]);
+
+  // Fetch событий дня
+  useEffect(() => {
+    getEventsForDay(selectedDate).then(setDayEvents).catch(() => setDayEvents([]));
+  }, [selectedDate]);
+
+  // Fetch dot-индикаторов событий (тикер 14 дней + видимый месяц в сетке)
+  useEffect(() => {
+    const months = new Set();
+    // Тикер: ±7 дней от сегодня (может пересекать 2 месяца)
+    for (let i = -7; i <= 6; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      months.add(d.toISOString().slice(0, 7));
+    }
+    // Месячная сетка: текущий видимый месяц
+    const now = new Date();
+    const gridMonth = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+    months.add(gridMonth.toISOString().slice(0, 7));
+
+    Promise.all([...months].map(m => getEventsForMonth(m)))
+      .then(arrays => {
+        const allDates = new Set();
+        arrays.flat().forEach(e => allDates.add(e.date));
+        setEventDates(allDates);
+      }).catch(() => {});
+  }, [monthOffset]);
 
   // Месячная сетка
   const monthData = useMemo(() => {
@@ -99,6 +132,7 @@ export default function CalendarView({ tasks, theme, onTap, onToggle }) {
         {dayTicker.map(d => {
           const isSelected = d.date === selectedDate;
           const hasTasks = taskDates.has(d.date);
+          const hasEvents = eventDates.has(d.date);
           return (
             <button
               key={d.date}
@@ -118,9 +152,11 @@ export default function CalendarView({ tasks, theme, onTap, onToggle }) {
                 style={{ color: isSelected ? '#fff' : d.isToday ? theme.accent : theme.text }}>
                 {d.day}
               </span>
-              {/* Dot indicator */}
-              <div className="w-1 h-1 rounded-full mt-1"
-                style={{ background: hasTasks ? (isSelected ? '#fff' : theme.accent) : 'transparent' }} />
+              {/* Dual dot indicators: задачи (синий) + события (зелёный) */}
+              <div className="flex gap-0.5 mt-1" style={{ minHeight: 4 }}>
+                {hasTasks && <div className="w-1 h-1 rounded-full" style={{ background: isSelected ? '#fff' : theme.accent }} />}
+                {hasEvents && <div className="w-1 h-1 rounded-full" style={{ background: isSelected ? '#fff' : theme.green }} />}
+              </div>
             </button>
           );
         })}
@@ -162,6 +198,7 @@ export default function CalendarView({ tasks, theme, onTap, onToggle }) {
               if (!cell) return <div key={`e${i}`} />;
               const isSelected = cell.date === selectedDate;
               const hasTasks = taskDates.has(cell.date);
+              const hasEvents = eventDates.has(cell.date);
               return (
                 <button
                   key={cell.date}
@@ -173,8 +210,11 @@ export default function CalendarView({ tasks, theme, onTap, onToggle }) {
                   }}
                 >
                   {cell.day}
-                  {hasTasks && !isSelected && (
-                    <div className="w-1 h-1 rounded-full absolute bottom-1" style={{ background: theme.accent }} />
+                  {!isSelected && (hasTasks || hasEvents) && (
+                    <div className="flex gap-0.5 absolute bottom-1">
+                      {hasTasks && <div className="w-1 h-1 rounded-full" style={{ background: theme.accent }} />}
+                      {hasEvents && <div className="w-1 h-1 rounded-full" style={{ background: theme.green }} />}
+                    </div>
                   )}
                 </button>
               );
@@ -183,20 +223,48 @@ export default function CalendarView({ tasks, theme, onTap, onToggle }) {
         </Card>
       )}
 
-      {/* ═══ Tasks for selected date ═══ */}
+      {/* ═══ Day header ═══ */}
       <div className="px-1">
         <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.gray1 }}>
           {selectedDate === today ? 'Сегодня' : new Date(selectedDate + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
-          {dayTasks.length > 0 && ` · ${dayTasks.length}`}
+          {(dayTasks.length + dayEvents.length) > 0 && ` · ${dayTasks.length + dayEvents.length}`}
         </span>
       </div>
 
-      {dayTasks.length === 0 ? (
+      {/* ═══ Events for selected date ═══ */}
+      {dayEvents.length > 0 && (
+        <div className="flex flex-col gap-1">
+          {dayEvents.map(ev => {
+            const evColor = EVENT_TYPE_COLORS[ev.type] || theme.accent;
+            return (
+              <div key={ev.id} className="flex gap-2.5">
+                <div className="w-11 text-right pt-2.5 shrink-0">
+                  <span className="text-sm tabular-nums" style={{ color: theme.gray1 }}>
+                    {fmtTime(ev.start)}
+                  </span>
+                </div>
+                <div className="shrink-0" style={{ width: 2, borderRadius: 1, background: evColor + '30' }} />
+                <div
+                  className="flex-1 py-2 px-3 mb-1 rounded-xl cursor-pointer active:opacity-70"
+                  style={{ background: theme.card, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', borderLeft: `3px solid ${evColor}` }}
+                  onClick={() => onNavigate?.('event-form', { edit: ev, date: ev.date })}
+                >
+                  <div className="text-sm font-medium" style={{ color: theme.text }}>{ev.title}</div>
+                  {ev.location && <div className="text-[11px]" style={{ color: theme.gray2 }}>📍 {ev.location}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ═══ Tasks for selected date ═══ */}
+      {dayTasks.length === 0 && dayEvents.length === 0 ? (
         <div className="flex flex-col items-center py-8">
           <span className="text-3xl mb-2">🗓️</span>
-          <span className="text-sm" style={{ color: theme.gray2 }}>Нет задач на этот день</span>
+          <span className="text-sm" style={{ color: theme.gray2 }}>Нет дел на этот день</span>
         </div>
-      ) : (
+      ) : dayTasks.length > 0 ? (
         <div className="flex flex-col gap-1">
           {dayTasks.map((task, i) => {
             const isDone = task.status === 'done';
@@ -246,7 +314,7 @@ export default function CalendarView({ tasks, theme, onTap, onToggle }) {
             );
           })}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

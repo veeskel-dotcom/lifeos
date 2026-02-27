@@ -12,6 +12,7 @@ export async function addEvent(data) {
       location: data.location || '',
       description: data.description || '',
       reminder_min: data.reminder_min ?? 30,
+      recurrence: data.recurrence || null,
       color: data.color || '#007AFF',
       created_at: new Date().toISOString(),
     };
