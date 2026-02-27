@@ -454,7 +454,8 @@ export default function QuickAddSheet({ open, onClose, onNavigate, theme, onToas
             className="flex-1 bg-transparent text-sm outline-none"
             style={{ color: theme.text }}
           />
-          {text ? (
+          <VoiceInput onResult={handleVoiceResult} theme={theme} />
+          {text && (
             <button
               onClick={handleSubmitText}
               className="text-sm font-semibold"
@@ -462,8 +463,6 @@ export default function QuickAddSheet({ open, onClose, onNavigate, theme, onToas
             >
               →
             </button>
-          ) : (
-            <VoiceInput onResult={handleVoiceResult} theme={theme} />
           )}
         </div>
       </div>

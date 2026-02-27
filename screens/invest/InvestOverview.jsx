@@ -166,7 +166,7 @@ export default function InvestOverview({ theme, onNavigate, onToast }) {
       <div style={{ padding: '0 0 4px', fontSize: 12, fontWeight: 600, color: theme.gray1 }}>ИМПОРТ</div>
       <Card theme={theme} style={{ padding: 0, overflow: 'hidden', marginBottom: 8 }}>
         <div className="flex items-center cursor-pointer" onClick={() => onToast?.('📸 Фото-импорт в разработке')} style={{ gap: 10, padding: '12px 14px', borderBottom: `0.5px solid ${theme.gray5}` }}>
-          <Ic name="camera" color={theme.orange || '#FF9500'} size={28} r={7} />
+          <Ic name="camera" color={theme.orange || '#FF9500'} size={28} r={14} />
           <div className="flex-1">
             <div style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>Фото отчёта</div>
             <div style={{ fontSize: 12, color: theme.gray2 }}>AI распознает позиции</div>
@@ -174,7 +174,7 @@ export default function InvestOverview({ theme, onNavigate, onToast }) {
           <span style={{ color: theme.gray3 }}>→</span>
         </div>
         <div className="flex items-center cursor-pointer" onClick={() => onToast?.('📄 Импорт документов в разработке')} style={{ gap: 10, padding: '12px 14px', borderBottom: `0.5px solid ${theme.gray5}` }}>
-          <Ic name="share" color={theme.accent} size={28} r={7} />
+          <Ic name="share" color={theme.accent} size={28} r={14} />
           <div className="flex-1">
             <div style={{ fontSize: 14, fontWeight: 500, color: theme.text }}>PDF/Excel от брокера</div>
             <div style={{ fontSize: 12, color: theme.gray2 }}>Загрузить документ</div>
@@ -182,7 +182,7 @@ export default function InvestOverview({ theme, onNavigate, onToast }) {
           <span style={{ color: theme.gray3 }}>→</span>
         </div>
         <div className="flex items-center cursor-pointer" onClick={() => onNavigate?.('tradeForm')} style={{ gap: 10, padding: '12px 14px' }}>
-          <Ic name="note" color={theme.purple || '#AF52DE'} size={28} r={7} />
+          <Ic name="note" color={theme.purple || '#AF52DE'} size={28} r={14} />
           <div className="flex-1">
             <div style={{ fontSize: 14, color: theme.text }}>Добавить счёт вручную</div>
           </div>
