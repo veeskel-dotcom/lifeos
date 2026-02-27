@@ -242,6 +242,17 @@ export async function reconcileOfflineFacts() {
 export async function migrateExistingFacts() {
   if (!navigator.onLine) return;
 
+  // Wait for any in-progress reconciliation to finish first
+  if (isReconciling) {
+    console.log('[migration] Waiting for active reconciliation...');
+    await new Promise(r => {
+      const check = setInterval(() => {
+        if (!isReconciling) { clearInterval(check); r(); }
+      }, 500);
+      setTimeout(() => { clearInterval(check); r(); }, 30000); // max 30s wait
+    });
+  }
+
   const cache = await getEmbeddingCache();
   const unembedded = cache.filter(f => !f.embedding);
 

@@ -50,11 +50,13 @@ async function _addMemoryImpl(category, fact, source) {
     }
 
     const now = new Date().toISOString();
+    // Permanent categories get higher importance to survive overflow eviction
+    const PERM_CATS = ['preference', 'health', 'lifestyle'];
     const record = {
       category,
       fact,
       source,
-      importance: 2,
+      importance: PERM_CATS.includes(category) ? 5 : 2,
       created_at: now,
       updated_at: now,
       embedding: null,
@@ -88,7 +90,7 @@ const reconcileQueue = [];
 let isReconciling = false;
 
 function enqueueReconcile(factId, fact, category) {
-  reconcileQueue.push({ factId, fact, category });
+  reconcileQueue.push({ factId, fact, category, enqueuedAt: new Date().toISOString() });
   if (!isReconciling) processQueue();
 }
 
@@ -97,7 +99,7 @@ async function processQueue() {
   while (reconcileQueue.length > 0) {
     const task = reconcileQueue.shift();
     try {
-      await reconcileFact(task.factId, task.fact, task.category);
+      await reconcileFact(task.factId, task.fact, task.category, null, task.enqueuedAt);
     } catch (e) {
       console.error('[reconcileQueue]', e);
     }
@@ -107,10 +109,12 @@ async function processQueue() {
 
 // ═══ reconcileFact — embed + cosine + LLM decision ═══
 
-export async function reconcileFact(factId, factText, category, precomputedVector = null) {
+export async function reconcileFact(factId, factText, category, precomputedVector = null, enqueuedAt = null) {
   // 0. Re-read from DB to get fresh text (Phase A may have updated it since enqueue)
   const fresh = await db.ai_memory.get(factId);
   if (!fresh) return; // record was deleted while queued
+  // Skip if fact was modified after enqueue (Phase A merged new data into it)
+  if (enqueuedAt && fresh.updated_at > enqueuedAt) return;
   factText = fresh.fact;
   category = fresh.category;
 
@@ -129,7 +133,7 @@ export async function reconcileFact(factId, factText, category, precomputedVecto
   const candidates = cache
     .filter(e => e.id !== factId && e.embedding)
     .map(e => ({ ...e, score: cosineSim(vector, e.embedding) }))
-    .filter(e => e.score > 0.65)
+    .filter(e => e.score > 0.80)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 
@@ -245,7 +249,7 @@ async function findSimilar(newFact) {
     const maxLen = Math.max(newWords.length, oldWords.length);
     const similarity = common / maxLen;
     // Require 0.75 overlap AND at least 3 common words to avoid false merges on short facts
-    if (similarity > 0.75 && common >= 3 && similarity > bestScore) {
+    if (similarity >= 0.75 && common >= 3 && similarity > bestScore) {
       bestMatch = m;
       bestScore = similarity;
     }
