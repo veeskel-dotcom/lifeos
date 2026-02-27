@@ -377,6 +377,9 @@ async function level3_parseCommand(input, chatHistory, topics) {
     temperature: 0.1,
   });
 
+  // LLM fact extraction — fire-and-forget, always (A5: dedup handles overlap)
+  import('../services/aiMemory').then(m => m.extractFactsLLM(input)).catch(() => {});
+
   try {
     const parsed = JSON.parse(result.content);
     // Multi-action support
@@ -411,6 +414,9 @@ async function level4_analysis(input, chatHistory, topics) {
     maxTokens: 1000,
     temperature: 0.3,
   });
+
+  // LLM fact extraction — fire-and-forget, always (A5)
+  import('../services/aiMemory').then(m => m.extractFactsLLM(input)).catch(() => {});
 
   return { action: 'chat_response', params: null, message: result.content };
 }

@@ -31,6 +31,10 @@ export async function addMemory(category, fact, source = 'user_said') {
   addLock = true;
 
   try {
+    // Guard: empty or too long facts
+    if (!fact || fact.trim().length < 3) return { id: null, updated: false, skipped: true };
+    fact = fact.slice(0, 200).trim(); // truncate to 200 chars
+
     // Word overlap dedup (Phase A) — catches exact duplicates
     const existing = await findSimilar(fact);
     if (existing) {
@@ -331,5 +335,49 @@ export async function extractAndSaveFromText(text) {
       await addMemory(cat, fact, 'auto_extracted');
       saved++;
     } catch { /* not critical */ }
+  }
+}
+
+// ═══ LLM Fact Extraction (Phase 2) — для L3+ сообщений ═══
+
+const EXTRACT_FACTS_PROMPT = `Извлеки ДОЛГОСРОЧНЫЕ факты о пользователе из сообщения.
+Игнорируй транзиентное (настроение момента, разовые жалобы, погода, конкретные суммы разовых покупок).
+Категории: preference, habit, health, finance, lifestyle, goal, event, decision
+JSON массив: [{"cat":"...","fact":"..."}]. Пустой [] если нет фактов.
+Максимум 5 фактов. Формулируй кратко (до 100 символов на факт). Русский.`;
+
+export async function extractFactsLLM(text) {
+  if (!text || text.length < 10 || !navigator.onLine) return;
+
+  try {
+    const { callAI } = await import('../ai/client');
+    const result = await callAI({
+      prompt: `${EXTRACT_FACTS_PROMPT}\n\nСообщение: "${text.slice(0, 500)}"`,
+      model: 'parsing',
+      maxTokens: 300,
+      temperature: 0.1,
+    });
+
+    const content = (result.content || '').trim();
+    // Parse JSON array — handle markdown code blocks
+    const jsonStr = content.replace(/^```json?\s*/, '').replace(/\s*```$/, '');
+    let facts;
+    try {
+      facts = JSON.parse(jsonStr);
+    } catch {
+      return; // AI didn't return valid JSON
+    }
+
+    if (!Array.isArray(facts) || facts.length === 0) return;
+
+    for (const { cat, fact } of facts.slice(0, 5)) {
+      if (!fact || fact.length < 3 || fact.length > 200) continue;
+      const category = cat || 'lifestyle';
+      try {
+        await addMemory(category, fact, 'llm_extracted');
+      } catch { /* dedup will handle conflicts */ }
+    }
+  } catch (e) {
+    console.error('[extractFactsLLM]', e.message);
   }
 }

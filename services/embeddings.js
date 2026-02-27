@@ -201,12 +201,12 @@ export async function reconcileOfflineFacts() {
     cacheUpdate(unembedded[i].id, { embedding: embeddings[i] });
   }
 
-  // 3. Sequential dedup — each sees result of previous
+  // 3. Sequential dedup — each sees result of previous, throttled 1 sec
   const { reconcileFact } = await import('./aiMemory');
   for (const fact of unembedded) {
-    if (!cache.find(e => e.id === fact.id)?.embedding) continue; // skip if embed failed
+    if (!cache.find(e => e.id === fact.id)?.embedding) continue;
     await reconcileFact(fact.id, fact.fact, fact.category);
-    // Throttle: ~1 sec between LLM calls to not saturate rate limit
+    await new Promise(r => setTimeout(r, 1000)); // throttle: don't saturate rate limit
   }
 
   console.log(`[embeddings] Reconciliation done`);
